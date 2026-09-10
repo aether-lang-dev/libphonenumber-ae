@@ -18,6 +18,8 @@ aeb(cap) {
         dep("core_tests/.parity.ae")  // Google PhoneNumberUtilTest baseline
         dep("core_tests/.roundtrip.ae") // all-territory invariant sweep
         dep("core_tests/.short.ae")     // ShortNumberInfo behaviour
+        dep("core_tests/.tz.ae")        // PhoneNumberToTimeZonesMapper behaviour
+        dep("core_tests/.carrier.ae")   // PhoneNumberToCarrierMapper behaviour
 
         // Native-FFI bindings.
         dep("python/.tests.ae")

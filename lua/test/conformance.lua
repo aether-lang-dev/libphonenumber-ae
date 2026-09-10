@@ -1,4 +1,4 @@
---- The 40-check binding conformance suite (docs/conformance.md, v3).
+--- The 44-check binding conformance suite (docs/conformance.md, v5).
 ---
 --- Proves the Lua binding marshals every value shape across the FFI. It is NOT
 --- a phone-number test suite — the behavioural cases live in the engine's own
@@ -48,7 +48,21 @@ local function is_false(got, what)
     tostring(got), 2) end
 end
 
-print("=== phonenumber_ae Lua binding conformance (v3) ===")
+--- Assert a 1-based list equals `want` element-for-element.
+local function eq_list(got, want, what)
+  if #got ~= #want then
+    error(string.format("%s: length got %d, want %d", what or "list",
+      #got, #want), 2)
+  end
+  for i = 1, #want do
+    if got[i] ~= want[i] then
+      error(string.format("%s[%d]:\n        got  %q\n        want %q",
+        what or "list", i, tostring(got[i]), tostring(want[i])), 2)
+    end
+  end
+end
+
+print("=== phonenumber_ae Lua binding conformance (v5) ===")
 print(string.format("engine: %s (ABI v%d)", pn.engine_path(), pn.abi_version()))
 
 -- ---- the forty ----
@@ -187,8 +201,8 @@ test("33 matcher_raw", function()
   eq(matches[1].raw, "201-555-0123", "match raw")
 end)
 
-test("34 abi_version == 3", function()
-  eq(pn.abi_version(), 3, "abi_version")
+test("34 abi_version == 5", function()
+  eq(pn.abi_version(), 5, "abi_version")
 end)
 
 test("35 short is_emergency US 911", function()
@@ -215,6 +229,24 @@ test("40 short example_number US == 112", function()
   eq(pn.short_example_number("US"), "112")
 end)
 
+test("41 time_zones_for_number US == America/New_York", function()
+  eq_list(pn.time_zones_for_number("US", "2015550123"),
+          { "America/New_York" }, "time_zones US")
+end)
+
+test("42 time_zones_for_number GB == Europe/London", function()
+  eq_list(pn.time_zones_for_number("GB", "2070313000"),
+          { "Europe/London" }, "time_zones GB")
+end)
+
+test("43 unknown_time_zone == Etc/Unknown", function()
+  eq(pn.unknown_time_zone(), "Etc/Unknown")
+end)
+
+test("44 carrier_name_for_number GB 7106000000 == O2", function()
+  eq(pn.carrier_name_for_number("GB", "7106000000"), "O2")
+end)
+
 -- ---- a few surface extras ----
 
 test("format style aliases agree", function()
@@ -233,6 +265,15 @@ test("sorted_regions is deterministic", function()
   local s = pn.sorted_regions()
   eq(#s, #pn.regions(), "same length")
   is_true(s[1] <= s[#s], "ordered")
+end)
+
+test("time_zone_count agrees with the list length", function()
+  eq(pn.time_zone_count("US", "2015550123"), 1, "time_zone_count")
+  eq(#pn.time_zones_for_number("US", "2015550123"), 1, "list length")
+end)
+
+test("carrier_name_for_valid agrees for a valid number", function()
+  eq(pn.carrier_name_for_valid_number("GB", "7106000000"), "O2")
 end)
 
 test("many round trips do not leak", function()

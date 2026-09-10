@@ -1,4 +1,4 @@
-//! The binding conformance suite (docs/conformance.md, v3 — 40 checks).
+//! The binding conformance suite (docs/conformance.md, v5 — 44 checks).
 //!
 //! Proves the Rust binding marshals every value shape across the FFI. It is
 //! NOT a phone-number test suite — the behavioural cases live in the engine's
@@ -222,7 +222,7 @@ fn t33_matcher_raw() {
 
 #[test]
 fn t34_abi_version() {
-    assert_eq!(engine().abi_version(), 3);
+    assert_eq!(engine().abi_version(), 5);
 }
 
 #[test]
@@ -253,6 +253,32 @@ fn t39_short_cost() {
 #[test]
 fn t40_short_example() {
     assert_eq!(engine().short_example_number("US"), "112");
+}
+
+#[test]
+fn t41_time_zones_us() {
+    assert_eq!(
+        engine().time_zones_for_number("US", "2015550123"),
+        vec!["America/New_York".to_string()]
+    );
+}
+
+#[test]
+fn t42_time_zones_gb() {
+    assert_eq!(
+        engine().time_zones_for_number("GB", "2070313000"),
+        vec!["Europe/London".to_string()]
+    );
+}
+
+#[test]
+fn t43_unknown_time_zone() {
+    assert_eq!(engine().unknown_time_zone(), "Etc/Unknown");
+}
+
+#[test]
+fn t44_carrier_name() {
+    assert_eq!(engine().carrier_name_for_number("GB", "7106000000"), "O2");
 }
 
 // ---- extras exercising the typed idiomatic surface ----
@@ -305,7 +331,7 @@ fn cost_enum_matches_raw() {
 #[test]
 fn free_functions_share_one_engine() {
     // The crate-level free functions load one process-wide engine.
-    assert_eq!(pn::abi_version(), 3);
+    assert_eq!(pn::abi_version(), 5);
     assert_eq!(pn::country_code("US"), "1");
     let num = pn::parse("+1 201 555 0123", "US");
     assert_eq!(num.national_number(), "2015550123");

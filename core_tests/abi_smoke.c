@@ -103,9 +103,13 @@ int main(int argc, char **argv) {
     int   (*short_possible)(const char*,const char*)             = sym("aether_pn_embed_short_is_possible");
     int   (*short_cost)(const char*,const char*)                 = sym("aether_pn_embed_short_expected_cost");
     char* (*short_example)(const char*)                          = sym("aether_pn_embed_short_example_number");
+    int   (*tz_count)(const char*,const char*)                   = sym("aether_pn_embed_tz_count");
+    char* (*tz_all)(const char*,const char*)                     = sym("aether_pn_embed_tz_all");
+    char* (*tz_unknown)(void)                                    = sym("aether_pn_embed_tz_unknown");
+    char* (*carrier_name)(const char*,const char*)               = sym("aether_pn_embed_carrier_name");
 
     /* ABI version */
-    ck_i("abi_version", abi_version(), 3);
+    ck_i("abi_version", abi_version(), 5);
 
     /* metadata plumbing */
     ck_s("US cc", country_code("US"), "1");
@@ -199,6 +203,17 @@ int main(int argc, char **argv) {
     ck_i("US 12 not possible short", short_possible("US","12"), 0);
     ck_i("US 911 toll-free cost", short_cost("US","911"), 0);
     ck_s("US short example", short_example("US"), "112");
+
+
+    /* PhoneNumberToTimeZonesMapper */
+    ck_s("US NY timezone", tz_all("US","2015550123"), "America/New_York");
+    ck_i("US NY tz count", tz_count("US","2015550123"), 1);
+    ck_s("GB timezone", tz_all("GB","2070313000"), "Europe/London");
+    ck_s("tz unknown sentinel", tz_unknown(), "Etc/Unknown");
+
+
+    /* PhoneNumberToCarrierMapper */
+    ck_s("GB carrier", carrier_name("GB","7106000000"), "O2");
 
     dlclose(H);
     if (failures) { fprintf(stderr, "abi_smoke: %d FAILURE(S)\n", failures); return 1; }

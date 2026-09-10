@@ -37,13 +37,22 @@ formatInternational('US', '2015550123')    // "+1 (201) 555-0123"
 
 numberType('US', '2015550123')             // NumberType.FIXED_LINE
 regions()                                   // ["AC", "AD", ...]
-abiVersion()                                // 3
+abiVersion()                                // 5
 
 // short / emergency numbers (ShortNumberInfo)
 isEmergencyNumber('US', '911')             // true
 isValidShortNumber('US', '911')            // true
 shortExpectedCost('US', '911')             // ShortNumberCost.TOLL_FREE
 shortExampleNumber('US')                   // "112"
+
+// time zones (PhoneNumberToTimeZonesMapper)
+timeZonesForNumber('US', '2015550123')     // ["America/New_York"]
+timeZonesForNumber('GB', '2070313000')     // ["Europe/London"]
+unknownTimeZone()                          // "Etc/Unknown"
+
+// carrier names (PhoneNumberToCarrierMapper)
+carrierNameForNumber('GB', '7106000000')   // "O2"
+carrierNameForValidNumber('GB', '7106000000') // "O2" (only if valid)
 ```
 
 `PhoneNumbers` is a Groovy facade over the Java `PhoneNumbers` class, which

@@ -44,7 +44,7 @@ aeb(cap) {
             println("zig: conformance suite reported failures")
             return 1
         }
-        println("zig: PASS — v3 conformance (parse, formats, AsYouType, matcher, ShortNumberInfo)")
+        println("zig: PASS — v5 conformance (parse, formats, AsYouType, matcher, ShortNumberInfo, TimeZones, Carrier)")
         return 0
     }
 }

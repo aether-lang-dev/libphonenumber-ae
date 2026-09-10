@@ -1,0 +1,92 @@
+// core.carrier — a pure-Aether PhoneNumberToCarrierMapper (the carrier side-
+// library of libphonenumber), English names.
+//
+// Compiled from resources/carrier/en/<cc>.txt (via core/gen/generate_carrier.ae)
+// into core/carrier_metadata.ae, stored as ONE string blob (the table is ~29k
+// entries — too many for the compiler's per-function statement cap as list.add
+// calls, but fine as a single string constant).
+//
+// Answers getNameForNumber by longest-prefix match over the E.164 digits. The
+// blob is "cc<0x1F>prefix<0x1F>name\n" rows; we scan it directly in a single
+// pass (no list materialization) so a lookup is one linear pass over the blob,
+// keeping the longest prefix that matches. The input is a phone number's full
+// E.164 digit string ("<cc><national>", no '+'); the ABI layer parses a raw
+// (region, input) to that.
+
+import std.string
+import core.carrier_metadata
+
+exports(carrier_name_for_e164)
+
+fn digits(s: string) -> string {
+    out = ""
+    n = string.length(s)
+    for (i = 0; i < n; i++) {
+        c = string.char_at(s, i)
+        if c >= 48 && c <= 57 { out = "${out}${string.substring(s, i, i + 1)}" }
+    }
+    return out
+}
+
+// The carrier name for the longest prefix of the E.164 digits, or "" if none.
+// Single pass over the blob: for each row, the two 0x1F field boundaries give
+// prefix (bytes [p0..p1)) and name (bytes [p1+1..rowEnd)). We compare the
+// prefix against `d` in place and keep the longest match's name.
+// PERFORMANCE: string.char_at(s, i) recomputes strlen(s) on every call when s
+// is a plain C string, so scanning a 600 KB blob with it is O(n^2) (measured:
+// ~18 s for a handful of lookups). string.char_at_n(s, len, i) takes the cached
+// length and is O(1), so we fetch the length ONCE and use the _n form and
+// substring_n throughout — turning the scan back into O(n) (sub-second).
+carrier_name_for_e164(e164: string) -> string {
+    d = digits(e164)
+    dlen = string.length(d)
+    if dlen == 0 { return "" }
+    b = carrier_metadata.blob()
+    n = string.length(b)
+    us = 31   // 0x1F field separator
+    nl = 10   // '\n' row separator
+
+    best = ""
+    best_len = -1
+    row_start = 0
+    i = 0
+    while i <= n {
+        at_nl = 0
+        if i == n { at_nl = 1 } else { if string.char_at_n(b, n, i) == nl { at_nl = 1 } }
+        if at_nl == 1 {
+            // row is b[row_start .. i). Find its two 0x1F separators.
+            f1 = -1   // end of cc  (first US)
+            f2 = -1   // end of prefix (second US)
+            j = row_start
+            while j < i {
+                if string.char_at_n(b, n, j) == us {
+                    if f1 < 0 { f1 = j }
+                    else if f2 < 0 { f2 = j; break }
+                }
+                j = j + 1
+            }
+            if f1 >= 0 && f2 >= 0 {
+                pl = f2 - (f1 + 1)   // prefix length
+                if pl <= dlen && pl > best_len {
+                    // compare d[0..pl) with prefix b[f1+1 .. f2)
+                    if prefix_eq(b, n, f1 + 1, d, pl) == 1 {
+                        best = string.substring_n(b, n, f2 + 1, i)   // name
+                        best_len = pl
+                    }
+                }
+            }
+            row_start = i + 1
+        }
+        i = i + 1
+    }
+    return best
+}
+
+// Are the pl bytes of `b` (cached length blen) starting at boff equal to the
+// first pl bytes of `d`?
+fn prefix_eq(b: string, blen: int, boff: int, d: string, pl: int) -> int {
+    for (k = 0; k < pl; k++) {
+        if string.char_at_n(b, blen, boff + k) != string.char_at(d, k) { return 0 }
+    }
+    return 1
+}

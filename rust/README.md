@@ -6,12 +6,12 @@ This crate is **marshalling only**. The library itself — the metadata table,
 `isPossible`/`isValid`, number-type classification, the formatter, the
 AsYouType formatter, the matcher — is the pure-Aether engine in
 `core/phonenumber.ae`, compiled from Google libphonenumber's own metadata,
-shared by every language binding in this monorepo and reached through the v3
+shared by every language binding in this monorepo and reached through the v5
 `aether_pn_embed_*` C ABI (`core/embed.ae`, full `PhoneNumberUtil` parity plus
-`ShortNumberInfo`). Cross-language behaviour is therefore identical by
-construction, not by test.
+`ShortNumberInfo`, time zones and carrier names). Cross-language behaviour is
+therefore identical by construction, not by test.
 
-`src/native.rs` is the **canonical 1:1 symbol table** for that ABI: all 50
+`src/native.rs` is the **canonical 1:1 symbol table** for that ABI: all 64
 exported symbols, in the order `core/embed.ae` declares them, with the exact C
 signature. Other bindings are expected to be diffable against it.
 
@@ -90,6 +90,33 @@ assert_eq!(pn::short_expected_cost("US", "911"), pn::COST_TOLL_FREE);
 assert_eq!(pn::short_example_number("US"), "112");
 ```
 
+### Time zones
+
+The engine parses the raw `(region, input)` to E.164 itself, then does a
+longest-prefix match over its digits.
+
+```rust
+use phonenumber_ae as pn;
+
+assert_eq!(pn::time_zones_for_number("US", "2015550123"), ["America/New_York"]);
+assert_eq!(pn::time_zones_for_number("GB", "2070313000"), ["Europe/London"]);
+assert_eq!(pn::time_zone_count("US", "2015550123"), 1); // 0 = only the unknown zone
+assert_eq!(pn::unknown_time_zone(), "Etc/Unknown");
+```
+
+A number with no known zone maps to a single-element `vec!["Etc/Unknown"]`.
+
+### Carrier names
+
+```rust
+use phonenumber_ae as pn;
+
+assert_eq!(pn::carrier_name_for_number("GB", "7106000000"), "O2");
+// carrier_name_for_valid_number returns a name only if the number is valid, else ""
+```
+
+English names only; `""` means no carrier is known for the number.
+
 To load a specific `.so`, use the [`PhoneNumbers`] type — the same surface over
 an engine you loaded yourself:
 
@@ -114,7 +141,9 @@ assert_eq!(num.national_number(), "1212345678");
 | Helpers | `is_number_match`(`_enum`), `truncate_too_long`, `normalize_digits_only`, `convert_alpha_characters`, `is_alpha_number` |
 | Stateful | `AsYouTypeFormatter` (`as_you_type_formatter`), `find_numbers` → `Vec<Match>` |
 | Short numbers | `short_is_possible`, `short_is_valid`, `is_emergency_number`, `connects_to_emergency_number`, `short_is_carrier_specific`, `short_is_sms_service`, `short_expected_cost`(`_enum`), `short_example_number` |
-| Metadata | `abi_version` (→ `3`) |
+| Time zones | `time_zones_for_number` → `Vec<String>`, `time_zone_count`, `unknown_time_zone` |
+| Carrier | `carrier_name_for_number`, `carrier_name_for_valid_number` |
+| Metadata | `abi_version` (→ `5`) |
 
 Every metadata/free-function surface is available both crate-level (over one
 process-wide engine) and as a method on `PhoneNumbers`.
@@ -151,7 +180,7 @@ or, with the engine built for you:
 aeb rust/.tests.ae
 ```
 
-The suite is the 40-check v3 conformance contract in `docs/conformance.md`,
+The suite is the 44-check v5 conformance contract in `docs/conformance.md`,
 plus a few extras covering the typed idiomatic surface.
 
 ## Notes for maintainers

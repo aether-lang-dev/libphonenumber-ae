@@ -1,6 +1,6 @@
 'use strict';
 /**
- * Idiomatic JavaScript surface over the phonenumber engine (ABI v3).
+ * Idiomatic JavaScript surface over the phonenumber engine (ABI v5).
  *
  * Carries no phone-number logic — see the monorepo's one rule. Every function
  * here marshals to an `aether_pn_embed_*` call in `native.js`.
@@ -381,6 +381,62 @@ const ShortNumberInfo = {
   },
 };
 
+// ---- PhoneNumberToTimeZonesMapper (timezone lookup) ----
+
+/**
+ * IANA time-zone lookup for a number, mirroring libphonenumber's
+ * `PhoneNumberToTimeZonesMapper`. Every method marshals to an
+ * `aether_pn_embed_tz_*` ABI call; the unknown-zone sentinel is
+ * `"Etc/Unknown"`.
+ */
+const TimeZones = {
+  /**
+   * The IANA time-zone ids for a number, as an array. A number with no known
+   * zone maps to a single-element array of the unknown zone (`["Etc/Unknown"]`).
+   */
+  timeZonesForNumber(region, input) {
+    const api = _api();
+    const r = _str(region);
+    const i = _str(input);
+    const n = api.tzCount(r, i);
+    if (n === 0) return [this.unknownTimeZone()];
+    const out = [];
+    for (let k = 0; k < n; k++) {
+      out.push(native.takeString(api, api.tzAt(r, i, k)));
+    }
+    return out;
+  },
+
+  /** How many time zones the number maps to (0 = only the unknown zone). */
+  timeZoneCount(region, input) {
+    return _api().tzCount(_str(region), _str(input));
+  },
+
+  /** The unknown-zone sentinel, `"Etc/Unknown"`. */
+  unknownTimeZone() {
+    return _s('tzUnknown');
+  },
+};
+
+// ---- PhoneNumberToCarrierMapper (English carrier names) ----
+
+/**
+ * English carrier-name lookup for a number, mirroring libphonenumber's
+ * `PhoneNumberToCarrierMapper`. Every method marshals to an
+ * `aether_pn_embed_carrier_*` ABI call; `""` means no carrier is known.
+ */
+const Carrier = {
+  /** The carrier name for a number (English), or "" if none is known. */
+  carrierNameForNumber(region, input) {
+    return _s('carrierName', _str(region), _str(input));
+  },
+
+  /** The carrier name only when the number is valid, else "". */
+  carrierNameForValidNumber(region, input) {
+    return _s('carrierNameForValid', _str(region), _str(input));
+  },
+};
+
 module.exports = {
   // metadata
   countryCode, exampleNumber, exampleNumberForType, invalidExampleNumber,
@@ -401,4 +457,6 @@ module.exports = {
   AsYouTypeFormatter, Match, findNumbers,
   // short / emergency numbers
   ShortNumberInfo,
+  // timezone + carrier lookup
+  TimeZones, Carrier,
 };

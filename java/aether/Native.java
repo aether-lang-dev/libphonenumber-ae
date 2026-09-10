@@ -15,8 +15,9 @@ import java.util.List;
 
 /**
  * The 1:1 symbol table for the phonenumber C ABI ({@code core/embed.ae}) —
- * <b>ABI v3, full {@code PhoneNumberUtil} parity plus {@code ShortNumberInfo}</b>
- * — bound with the Java 22+ Foreign Function &amp; Memory API (JEP 454).
+ * <b>ABI v5, full {@code PhoneNumberUtil} parity plus {@code ShortNumberInfo},
+ * the timezone mapper and the carrier mapper</b> — bound with the Java 22+
+ * Foreign Function &amp; Memory API (JEP 454).
  *
  * <p>This class is the ONLY place in the Java binding that knows about the C
  * ABI. Everything above it ({@link PhoneNumbers} and the value classes) is
@@ -110,7 +111,7 @@ public final class Native {
     public final Linker linker;
     private final SymbolLookup lookup;
 
-    // ---- the ABI symbols, one MethodHandle each (58 total) ----
+    // ---- the ABI symbols, one MethodHandle each (64 total) ----
 
     // lifecycle / metadata
     public final MethodHandle abiVersion;
@@ -185,6 +186,16 @@ public final class Native {
     public final MethodHandle shortIsSmsService;
     public final MethodHandle shortExpectedCost;
     public final MethodHandle shortExampleNumber;
+
+    // PhoneNumberToTimeZonesMapper
+    public final MethodHandle tzCount;
+    public final MethodHandle tzAt;
+    public final MethodHandle tzAll;
+    public final MethodHandle tzUnknown;
+
+    // PhoneNumberToCarrierMapper
+    public final MethodHandle carrierName;
+    public final MethodHandle carrierNameForValid;
 
     private static volatile Native cached;
 
@@ -314,6 +325,17 @@ public final class Native {
                 FunctionDescriptor.of(I, P, P));
         shortExampleNumber = downcall("aether_pn_embed_short_example_number",
                 FunctionDescriptor.of(P, P));
+
+        // PhoneNumberToTimeZonesMapper
+        tzCount = downcall("aether_pn_embed_tz_count", FunctionDescriptor.of(I, P, P));
+        tzAt = downcall("aether_pn_embed_tz_at", FunctionDescriptor.of(P, P, P, I));
+        tzAll = downcall("aether_pn_embed_tz_all", FunctionDescriptor.of(P, P, P));
+        tzUnknown = downcall("aether_pn_embed_tz_unknown", FunctionDescriptor.of(P));
+
+        // PhoneNumberToCarrierMapper
+        carrierName = downcall("aether_pn_embed_carrier_name", FunctionDescriptor.of(P, P, P));
+        carrierNameForValid = downcall("aether_pn_embed_carrier_name_for_valid",
+                FunctionDescriptor.of(P, P, P));
     }
 
     private SymbolLookup openLibrary(String explicitPath) {

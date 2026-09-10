@@ -13,9 +13,9 @@
 //! table, `isPossible`/`isValid`, number-type classification, the formatter,
 //! the AsYouType formatter, the matcher — is the pure-Aether
 //! `core/phonenumber.ae`, shared by every language binding in this monorepo and
-//! reached over the v3 `aether_pn_embed_*` C ABI (full `PhoneNumberUtil` parity
-//! plus `ShortNumberInfo`). Everything here is marshalling; see [`native`] for
-//! the 1:1 symbol table.
+//! reached over the v5 `aether_pn_embed_*` C ABI (full `PhoneNumberUtil` parity
+//! plus `ShortNumberInfo`, time zones and carrier names). Everything here is
+//! marshalling; see [`native`] for the 1:1 symbol table.
 //!
 //! The ABI is stateless — there is no handle, only caller-owned strings — so
 //! the free functions [`country_code`], [`parse`], [`format`], etc. load a
@@ -280,7 +280,7 @@ impl PhoneNumbers {
         })
     }
 
-    /// The ABI revision the loaded engine reports (3 for this crate).
+    /// The ABI revision the loaded engine reports (5 for this crate).
     pub fn abi_version(&self) -> i32 {
         unsafe { (self.api.abi_version)() }
     }
@@ -614,6 +614,50 @@ impl PhoneNumbers {
         self.str_1(self.api.short_example_number, region)
     }
 
+    // ---- PhoneNumberToTimeZonesMapper (timezone lookup) ----
+    //
+    // The engine parses the raw `(region, input)` to E.164 itself, then does a
+    // longest-prefix match over its digits. The unknown-zone sentinel is
+    // `"Etc/Unknown"`.
+
+    /// The IANA time-zone ids a number maps to. A number with no known zone
+    /// maps to a single-element `vec!["Etc/Unknown".to_string()]`.
+    pub fn time_zones_for_number(&self, region: &str, input: &str) -> Vec<String> {
+        let (r, i) = match (native::to_c(region), native::to_c(input)) {
+            (Ok(r), Ok(i)) => (r, i),
+            _ => return vec![self.unknown_time_zone()],
+        };
+        let n = unsafe { (self.api.tz_count)(r.as_ptr(), i.as_ptr()) };
+        if n == 0 {
+            return vec![self.unknown_time_zone()];
+        }
+        (0..n)
+            .map(|idx| unsafe { self.api.take_string((self.api.tz_at)(r.as_ptr(), i.as_ptr(), idx)) })
+            .collect()
+    }
+
+    /// How many time zones a number maps to (`0` = only the unknown zone).
+    pub fn time_zone_count(&self, region: &str, input: &str) -> i32 {
+        self.int_2(self.api.tz_count, region, input)
+    }
+
+    /// The unknown-zone sentinel, `"Etc/Unknown"`.
+    pub fn unknown_time_zone(&self) -> String {
+        unsafe { self.api.take_string((self.api.tz_unknown)()) }
+    }
+
+    // ---- PhoneNumberToCarrierMapper (English carrier names) ----
+
+    /// The English carrier name for a number, or `""` if no carrier is known.
+    pub fn carrier_name_for_number(&self, region: &str, input: &str) -> String {
+        self.str_2(self.api.carrier_name, region, input)
+    }
+
+    /// The English carrier name only when the number is valid, else `""`.
+    pub fn carrier_name_for_valid_number(&self, region: &str, input: &str) -> String {
+        self.str_2(self.api.carrier_name_for_valid, region, input)
+    }
+
     // ---- marshalling helpers ----
 
     fn str_1(&self, f: unsafe extern "C" fn(*const c_char) -> *mut c_char, a: &str) -> String {
@@ -851,7 +895,7 @@ fn shared() -> &'static PhoneNumbers {
     })
 }
 
-/// The ABI revision the loaded engine reports (3 for this crate).
+/// The ABI revision the loaded engine reports (5 for this crate).
 pub fn abi_version() -> i32 {
     shared().abi_version()
 }
@@ -1084,4 +1128,34 @@ pub fn short_expected_cost_enum(region: &str, input: &str) -> Cost {
 /// An example short number for the region, or `""`.
 pub fn short_example_number(region: &str) -> String {
     shared().short_example_number(region)
+}
+
+// ---- PhoneNumberToTimeZonesMapper (timezone lookup) ----
+
+/// The IANA time-zone ids a number maps to (a number with no known zone maps to
+/// `["Etc/Unknown"]`).
+pub fn time_zones_for_number(region: &str, input: &str) -> Vec<String> {
+    shared().time_zones_for_number(region, input)
+}
+
+/// How many time zones a number maps to (`0` = only the unknown zone).
+pub fn time_zone_count(region: &str, input: &str) -> i32 {
+    shared().time_zone_count(region, input)
+}
+
+/// The unknown-zone sentinel, `"Etc/Unknown"`.
+pub fn unknown_time_zone() -> String {
+    shared().unknown_time_zone()
+}
+
+// ---- PhoneNumberToCarrierMapper (English carrier names) ----
+
+/// The English carrier name for a number, or `""` if no carrier is known.
+pub fn carrier_name_for_number(region: &str, input: &str) -> String {
+    shared().carrier_name_for_number(region, input)
+}
+
+/// The English carrier name only when the number is valid, else `""`.
+pub fn carrier_name_for_valid_number(region: &str, input: &str) -> String {
+    shared().carrier_name_for_valid_number(region, input)
 }

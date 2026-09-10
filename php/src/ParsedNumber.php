@@ -1,7 +1,7 @@
 <?php
 
 /**
- * A parsed phone number (ABI v3).
+ * A parsed phone number (ABI v5).
  *
  * Wraps the caller-owned parsed-number string the ABI returns from
  * {@see PhoneNumber::parse()}; its fields are read on demand through the pn_*

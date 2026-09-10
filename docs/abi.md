@@ -1,4 +1,4 @@
-# The C ABI (`aether_pn_embed_*`) — v3: PhoneNumberUtil + ShortNumberInfo
+# The C ABI (`aether_pn_embed_*`) — v5: PhoneNumberUtil + ShortNumberInfo + TimeZones + Carrier
 
 The one seam every binding speaks to. Defined by
 [`core/embed.ae`](../core/embed.ae) and the string bridge in
@@ -13,7 +13,7 @@ The one seam every binding speaks to. Defined by
    caller-owned *strings*: you get one back, pass it to accessor calls, and free
    it like any other returned string. Every call is independent.
 3. **Signatures are scalar-only** — `const char*` and `int`.
-4. **Append-only.** ABI version is `3` (`aether_pn_embed_abi_version()`).
+4. **Append-only.** ABI version is `5` (`aether_pn_embed_abi_version()`).
 
 `region` is ISO-3166 alpha-2 (case-insensitive). `input` is a raw number a human
 might type (digits + spaces/dashes/parens/dots, optional `+cc`, optional
@@ -33,7 +33,7 @@ extension `ext`/`x`/`;ext=`, optional vanity letters).
 ### Lifecycle / metadata
 | Symbol | Signature |
 |---|---|
-| `abi_version` | `int ()` → 3 |
+| `abi_version` | `int ()` → 5 |
 | `free_string` | `void (char*)` |
 | `country_code` | `char* (region)` |
 | `example_number` | `char* (region)` |
@@ -128,6 +128,30 @@ is the raw short number plus a region. **ShortNumberCost** (`short_expected_cost
 | `short_is_sms_service` | `int (region, input)` |
 | `short_expected_cost` | `int (region, input)` → ShortNumberCost |
 | `short_example_number` | `char* (region)` |
+
+### PhoneNumberToTimeZonesMapper (timezone lookup)
+
+Longest-prefix match over the number's E.164 digits. Pass a raw `(region, input)`
+like everywhere else; the engine parses to E.164 internally. The unknown-zone
+sentinel is `"Etc/Unknown"`.
+
+| Symbol | Signature |
+|---|---|
+| `tz_count` | `int (region, input)` — number of zones (0 = only the unknown zone) |
+| `tz_at` | `char* (region, input, int idx)` — the idx-th IANA zone id; unknown out of range |
+| `tz_all` | `char* (region, input)` — the `&`-joined zone list (or the unknown zone) |
+| `tz_unknown` | `char* ()` — `"Etc/Unknown"` |
+
+### PhoneNumberToCarrierMapper (English carrier names)
+
+Longest-prefix match over the E.164 digits. Pass a raw `(region, input)`; the
+engine parses to E.164 internally. English names only. Returns `""` when no
+carrier is known for the number.
+
+| Symbol | Signature |
+|---|---|
+| `carrier_name` | `char* (region, input)` — the carrier name, or `""` |
+| `carrier_name_for_valid` | `char* (region, input)` — a name only if the number is valid, else `""` |
 
 ## Example (C)
 

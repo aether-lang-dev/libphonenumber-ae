@@ -9,10 +9,11 @@ every function marshals to an `aether_pn_embed_*` call across the flat C ABI
 described in `core/embed.ae`. One engine, one set of behaviours, N language
 surfaces.
 
-Speaks **ABI v3** (`abiVersion()` → 3): the full `PhoneNumberUtil` surface —
+Speaks **ABI v5** (`abiVersion()` → 5): the full `PhoneNumberUtil` surface —
 parse, validation with reasons, all four format styles, an
 AsYouTypeFormatter, and a matcher that finds numbers in free text — plus the
-`ShortNumberInfo` side-library (short / emergency numbers). The ABI is
+`ShortNumberInfo` side-library (short / emergency numbers) and the `TimeZones`
+and `Carrier` mappers (IANA time zones and English carrier names). The ABI is
 scalar-only (`const char*` and `int`); there is no handle and no callbacks. Two
 constructs thread a *string* rather than an opaque handle: a parsed number
 and the AsYouType state are each a caller-owned string you get back and free.
@@ -37,7 +38,7 @@ aeb core/.build.ae
 Then:
 
 ```sh
-zig build test        # the 40-check v3 conformance suite
+zig build test        # the 44-check v5 conformance suite
 zig build example     # build and run the demo
 ```
 
@@ -150,6 +151,27 @@ const ex = try pn.shortExampleNumber(allocator, "US");   // "112"
 defer allocator.free(ex);
 ```
 
+### Time zones and carrier
+
+Both take a raw `(region, input)` and let the engine parse to E.164 itself.
+`timeZonesForNumber` returns an owned slice of IANA ids (free it with
+`freeTimeZones`) — a number with no known zones comes back as
+`&.{"Etc/Unknown"}`, never empty. Carrier names are English only, and `""`
+when no carrier is known.
+
+```zig
+const zones = try pn.timeZonesForNumber(allocator, "US", "2015550123");
+defer pn.freeTimeZones(allocator, zones);           // &.{"America/New_York"}
+
+const n = try pn.timeZoneCount(allocator, "US", "2015550123");   // 1
+
+const unk = try pn.unknownTimeZone(allocator);      // "Etc/Unknown"
+defer allocator.free(unk);
+
+const carrier = try pn.carrierNameForNumber(allocator, "GB", "7106000000");  // "O2"
+defer allocator.free(carrier);
+```
+
 ### The surface
 
 ```zig
@@ -217,6 +239,16 @@ shortIsCarrierSpecific(alloc, region, input) !bool
 shortIsSmsService(alloc, region, input) !bool
 shortExpectedCost(alloc, region, input) !ShortNumberCost   // .toll_free | …
 shortExampleNumber(alloc, region) ![]u8
+
+// time zones (PhoneNumberToTimeZonesMapper)
+timeZonesForNumber(alloc, region, input) ![][]u8   // caller frees via freeTimeZones; &.{"Etc/Unknown"} if none
+freeTimeZones(alloc, list)
+timeZoneCount(alloc, region, input) !usize          // 0 == only the unknown zone
+unknownTimeZone(alloc) ![]u8                         // "Etc/Unknown"
+
+// carrier (PhoneNumberToCarrierMapper, English names)
+carrierNameForNumber(alloc, region, input) ![]u8         // "" if none known
+carrierNameForValidNumber(alloc, region, input) ![]u8    // "" unless the number is valid
 ```
 
 The constant groups are exposed as non-exhaustive enums — `Format`,
@@ -249,7 +281,7 @@ not a silent truncation: Zig slices carry NULs happily and C strings do not.
 
 ## Conformance
 
-The 40-check v3 suite (`docs/conformance.md`) lives in `src/conformance.zig`,
+The 44-check v5 suite (`docs/conformance.md`) lives in `src/conformance.zig`,
 pulled into `zig build test` by a `test` block at the bottom of `src/root.zig`.
 It samples every value shape that crosses the FFI — parse accessors, all four
 format styles, the AsYouTypeFormatter, and the matcher — plus a few Zig-specific

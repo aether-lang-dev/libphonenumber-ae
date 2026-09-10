@@ -61,7 +61,7 @@ phonenumber_ae.number_type("US", "2015550123")           // -> FixedLine
 phonenumber_ae.format("US", "2015550123", National)      // -> "(201) 555-0123"
 phonenumber_ae.format_e164("US", "2015550123")           // -> "+12015550123"
 phonenumber_ae.regions()                                 // -> ["AC", "AD", ...]
-phonenumber_ae.abi_version()                             // -> 3
+phonenumber_ae.abi_version()                             // -> 5
 ```
 
 ### Parsing
@@ -114,7 +114,22 @@ phonenumber_ae.short_expected_cost("US", "911")   // -> CostTollFree
 phonenumber_ae.short_example_number("US")         // -> "112"
 ```
 
-### The surface (v3 — full PhoneNumberUtil parity + ShortNumberInfo)
+### Time zones and carrier
+
+The engine also maps a number to its IANA time zones and (in English) its
+carrier. Both take a region plus the raw input, exactly like the calls above:
+
+```gleam
+phonenumber_ae.time_zones_for_number("US", "2015550123")   // -> ["America/New_York"]
+phonenumber_ae.time_zones_for_number("GB", "2070313000")   // -> ["Europe/London"]
+phonenumber_ae.unknown_time_zone()                         // -> "Etc/Unknown"
+phonenumber_ae.carrier_name_for_number("GB", "7106000000") // -> "O2"
+```
+
+`time_zones_for_number/2` always returns a non-empty list — a number the engine
+knows no zone for comes back as `["Etc/Unknown"]`, not `[]`.
+
+### The surface (v5 — full PhoneNumberUtil parity + ShortNumberInfo + TimeZones + Carrier)
 
 - **Metadata**: `country_code/1`, `example_number/1`,
   `example_number_for_type/2`, `invalid_example_number/1`, `possible_lengths/1`,
@@ -146,12 +161,16 @@ phonenumber_ae.short_example_number("US")         // -> "112"
   `short_expected_cost/2` (a `ShortNumberCost` — `CostTollFree` |
   `CostStandardRate` | `CostPremiumRate` | `CostUnknown`;
   `short_expected_cost_code/2` for the raw `Int`), `short_example_number/1`.
-- `abi_version/0` (returns `3`), `abi_version_string/0`.
+- **Time zones**: `time_zones_for_number/2` (a non-empty list of IANA zone
+  ids), `time_zone_count/2`, `unknown_time_zone/0` (`"Etc/Unknown"`).
+- **Carrier**: `carrier_name_for_number/2`, `carrier_name_for_valid_number/2`
+  (English name, or `""`).
+- `abi_version/0` (returns `5`), `abi_version_string/0`.
 
-> **v3 note.** ShortNumberInfo (the `short_*` / `*_emergency_number` calls
-> above) is new in v3. The v2 format-style selectors are unchanged: `E164` is
-> `0` (it was `2` in v1). Callers that use the `FormatStyle` constructors never
-> see the number.
+> **v5 note.** The time-zone and carrier calls (`time_zones_for_number/2`,
+> `carrier_name_for_number/2`, …) are new in v5; ShortNumberInfo arrived in v3.
+> The v2 format-style selectors are unchanged: `E164` is `0` (it was `2` in v1).
+> Callers that use the `FormatStyle` constructors never see the number.
 
 ### No handles
 
@@ -161,6 +180,6 @@ themselves caller-owned strings, wrapped by the opaque `ParsedNumber` and
 
 ## Conformance
 
-`gleam/.tests.ae` runs the 40-check binding conformance suite
-(`docs/conformance.md`, v3) with gleeunit. It samples each *kind* of value
+`gleam/.tests.ae` runs the 44-check binding conformance suite
+(`docs/conformance.md`, v5) with gleeunit. It samples each *kind* of value
 crossing the FFI — it proves the marshalling, not the library.

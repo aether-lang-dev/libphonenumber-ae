@@ -3,6 +3,7 @@
 package org.libphonenumber.ae.kotlin
 
 import org.libphonenumber.ae.AsYouTypeFormatter
+import org.libphonenumber.ae.Carrier
 import org.libphonenumber.ae.Format
 import org.libphonenumber.ae.Leniency
 import org.libphonenumber.ae.MatchType
@@ -12,11 +13,12 @@ import org.libphonenumber.ae.ParsedNumber
 import org.libphonenumber.ae.PhoneNumbers
 import org.libphonenumber.ae.ShortNumberCost
 import org.libphonenumber.ae.ShortNumberInfo
+import org.libphonenumber.ae.TimeZones
 import org.libphonenumber.ae.ValidationResult
 
 /**
- * Idiomatic Kotlin over the Java binding (ABI v3, full PhoneNumberUtil parity
- * plus ShortNumberInfo).
+ * Idiomatic Kotlin over the Java binding (ABI v5, full PhoneNumberUtil parity
+ * plus ShortNumberInfo, the timezone mapper and the carrier mapper).
  *
  * There is **no second FFI here**. The one JVM binding to the shared Aether
  * engine is `java/aether/` (FFM / Panama); everything in this file is ordinary
@@ -162,6 +164,34 @@ fun shortExpectedCost(region: String, input: String): ShortNumberCost =
     ShortNumberInfo.expectedCost(region, input)
 
 fun shortExampleNumber(region: String): String = ShortNumberInfo.exampleNumber(region)
+
+// ---- timezones ----
+//
+// A longest-prefix match over the number's E.164 digits. These reach the Java
+// TimeZones mapper.
+
+/** The IANA timezone ids for a number; empty-ish maps to `["Etc/Unknown"]`. */
+fun timeZonesForNumber(region: String, input: String): List<String> =
+    TimeZones.timeZonesForNumber(region, input)
+
+fun timeZoneCount(region: String, input: String): Int =
+    TimeZones.timeZoneCount(region, input)
+
+/** The unknown-zone sentinel, `"Etc/Unknown"`. */
+fun unknownTimeZone(): String = TimeZones.unknownTimeZone()
+
+// ---- carrier ----
+//
+// English carrier names by longest-prefix match over the E.164 digits. These
+// reach the Java Carrier mapper.
+
+/** The carrier name for a number (English), or `""` if none is known. */
+fun carrierNameForNumber(region: String, input: String): String =
+    Carrier.carrierNameForNumber(region, input)
+
+/** The carrier name only when the number is valid, else `""`. */
+fun carrierNameForValidNumber(region: String, input: String): String =
+    Carrier.carrierNameForValidNumber(region, input)
 
 // ---- version ----
 

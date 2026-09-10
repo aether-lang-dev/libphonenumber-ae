@@ -1,4 +1,4 @@
-%%% The binding conformance suite (docs/conformance.md, v3), as EUnit.
+%%% The binding conformance suite (docs/conformance.md, v5), as EUnit.
 %%%
 %%% Proves the Erlang binding marshals every value shape across the FFI. It is
 %%% NOT a phone-number test suite — the behavioural cases live in the engine's
@@ -12,7 +12,7 @@
 -include_lib("eunit/include/eunit.hrl").
 
 %%------------------------------------------------------------------
-%% The 40 checks (docs/conformance.md, v3)
+%% The 44 checks (docs/conformance.md, v5)
 %%------------------------------------------------------------------
 
 t01_country_code_us_test() ->
@@ -138,7 +138,7 @@ t33_matcher_raw_test() ->
     ?assertEqual(<<"201-555-0123">>, Raw).
 
 t34_abi_version_test() ->
-    ?assertEqual(3, phonenumber_ae:abi_version()).
+    ?assertEqual(5, phonenumber_ae:abi_version()).
 
 %%------------------------------------------------------------------
 %% ShortNumberInfo (docs/conformance.md #35–40, v3)
@@ -166,7 +166,26 @@ t40_short_example_test() ->
     ?assertEqual(<<"112">>, phonenumber_ae:short_example_number(<<"US">>)).
 
 %%------------------------------------------------------------------
-%% Extras — marshalling corners the 34 do not reach
+%% TimeZones + Carrier (docs/conformance.md #41–44, v5)
+%%------------------------------------------------------------------
+
+t41_tz_us_test() ->
+    ?assertEqual([<<"America/New_York">>],
+                 phonenumber_ae:time_zones_for_number(<<"US">>, <<"2015550123">>)).
+
+t42_tz_gb_test() ->
+    ?assertEqual([<<"Europe/London">>],
+                 phonenumber_ae:time_zones_for_number(<<"GB">>, <<"2070313000">>)).
+
+t43_tz_unknown_test() ->
+    ?assertEqual(<<"Etc/Unknown">>, phonenumber_ae:unknown_time_zone()).
+
+t44_carrier_test() ->
+    ?assertEqual(<<"O2">>,
+                 phonenumber_ae:carrier_name_for_number(<<"GB">>, <<"7106000000">>)).
+
+%%------------------------------------------------------------------
+%% Extras — marshalling corners the 44 do not reach
 %%------------------------------------------------------------------
 
 %% The NIF takes iodata, not just binaries — a caller with a plain string list

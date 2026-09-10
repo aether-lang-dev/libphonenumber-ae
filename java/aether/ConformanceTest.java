@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The 40-check binding conformance suite (docs/conformance.md, v3).
+ * The 44-check binding conformance suite (docs/conformance.md, v5).
  *
  * <p>Proves the Java binding marshals every value shape across the FFI. It is
  * NOT a phone-number test suite — the behavioural cases live in the engine's
@@ -31,7 +31,7 @@ public final class ConformanceTest {
     private static final List<String> failures = new ArrayList<>();
 
     public static void main(String[] args) {
-        // ---- the 40 required checks (docs/conformance.md v3) ----
+        // ---- the 44 required checks (docs/conformance.md v5) ----
         check("01 country_code US", () ->
                 assertEquals("1", PhoneNumbers.countryCode("US")));
         check("02 country_code GB", () ->
@@ -143,7 +143,7 @@ public final class ConformanceTest {
             assertEquals("201-555-0123", ms.get(0).raw());
         });
         check("34 abi_version", () ->
-                assertEquals(3, PhoneNumbers.abiVersion()));
+                assertEquals(5, PhoneNumbers.abiVersion()));
         check("35 is_emergency_number US 911", () ->
                 assertTrue("911 emergency in US", ShortNumberInfo.isEmergencyNumber("US", "911")));
         check("36 is_emergency_number US 999", () ->
@@ -160,6 +160,16 @@ public final class ConformanceTest {
         });
         check("40 short_example_number US", () ->
                 assertEquals("112", ShortNumberInfo.exampleNumber("US")));
+        check("41 time_zones_for_number US", () ->
+                assertEquals(List.of("America/New_York"),
+                        TimeZones.timeZonesForNumber("US", "2015550123")));
+        check("42 time_zones_for_number GB", () ->
+                assertEquals(List.of("Europe/London"),
+                        TimeZones.timeZonesForNumber("GB", "2070313000")));
+        check("43 unknown_time_zone", () ->
+                assertEquals("Etc/Unknown", TimeZones.unknownTimeZone()));
+        check("44 carrier_name_for_number GB", () ->
+                assertEquals("O2", Carrier.carrierNameForNumber("GB", "7106000000")));
 
         // ---- extras: the convenience / value-object surface ----
         check("format helpers agree with format()", () -> {
@@ -181,14 +191,20 @@ public final class ConformanceTest {
         });
         check("ShortNumberCost.of tolerates an unknown code", () ->
                 assertEquals(ShortNumberCost.UNKNOWN, ShortNumberCost.of(9999)));
+        check("PhoneNumbers delegates the timezone + carrier surface", () -> {
+            assertEquals(List.of("America/New_York"),
+                    PhoneNumbers.timeZonesForNumber("US", "2015550123"));
+            assertEquals("Etc/Unknown", PhoneNumbers.unknownTimeZone());
+            assertEquals("O2", PhoneNumbers.carrierNameForNumber("GB", "7106000000"));
+        });
 
         // ---- report ----
         System.out.println();
         if (failures.isEmpty()) {
-            System.out.println("PASS (v3, ShortNumberInfo) — " + passed + " checks");
+            System.out.println("PASS (v5, timezones + carrier) — " + passed + " checks");
             System.exit(0);
         }
-        System.out.println("FAIL (v3) — " + failures.size() + " of "
+        System.out.println("FAIL (v5) — " + failures.size() + " of "
                 + (passed + failures.size()) + " checks failed:");
         for (String f : failures) System.out.println("  " + f);
         System.exit(1);

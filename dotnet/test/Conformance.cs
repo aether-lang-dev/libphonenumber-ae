@@ -1,4 +1,4 @@
-// The 40-check binding conformance suite (docs/conformance.md, v3).
+// The 44-check binding conformance suite (docs/conformance.md, v5).
 //
 // Proves the .NET binding marshals every value shape across the P/Invoke
 // boundary — a parsed number and its accessors, an AsYouType formatter, the
@@ -63,9 +63,18 @@ internal static class Conformance
         if (got) throw new Exception($"{what}: expected false");
     }
 
+    private static void EqList(IReadOnlyList<string> got, IReadOnlyList<string> want, string what = "list")
+    {
+        if (got.Count != want.Count)
+            throw new Exception($"{what}: length got {got.Count}, want {want.Count}");
+        for (int i = 0; i < want.Count; i++)
+            if (!string.Equals(got[i], want[i], StringComparison.Ordinal))
+                throw new Exception($"{what}[{i}]:\n         got  \"{got[i]}\"\n         want \"{want[i]}\"");
+    }
+
     public static int Main()
     {
-        Console.WriteLine("=== phonenumber_ae .NET binding conformance (v3) ===");
+        Console.WriteLine("=== phonenumber_ae .NET binding conformance (v5) ===");
         Console.WriteLine($"engine: {PhoneNumber.NativeLibraryPath ?? "(default probing)"} " +
                           $"(ABI v{PhoneNumber.AbiVersion})");
 
@@ -189,7 +198,7 @@ internal static class Conformance
             Eq(matches[0].Raw, "201-555-0123", "raw");
         });
 
-        Check("34 abi_version == 3", () => Eq(PhoneNumber.AbiVersion, 3, "abi_version"));
+        Check("34 abi_version == 5", () => Eq(PhoneNumber.AbiVersion, 5, "abi_version"));
 
         Check("35 short is_emergency US 911", () =>
             IsTrue(PhoneNumber.IsEmergencyNumber("US", "911"), "is_emergency_number"));
@@ -209,6 +218,20 @@ internal static class Conformance
 
         Check("40 short example_number US == 112", () =>
             Eq(PhoneNumber.ShortExampleNumber("US"), "112"));
+
+        Check("41 time_zones_for_number US == America/New_York", () =>
+            EqList(PhoneNumber.TimeZonesForNumber("US", "2015550123"),
+                   new[] { "America/New_York" }, "time_zones US"));
+
+        Check("42 time_zones_for_number GB == Europe/London", () =>
+            EqList(PhoneNumber.TimeZonesForNumber("GB", "2070313000"),
+                   new[] { "Europe/London" }, "time_zones GB"));
+
+        Check("43 unknown_time_zone == Etc/Unknown", () =>
+            Eq(PhoneNumber.UnknownTimeZone(), "Etc/Unknown"));
+
+        Check("44 carrier_name_for_number GB 7106000000 == O2", () =>
+            Eq(PhoneNumber.CarrierNameForNumber("GB", "7106000000"), "O2"));
 
         // ---- a few surface extras ----
 
@@ -237,6 +260,15 @@ internal static class Conformance
             Eq(sorted.Count, PhoneNumber.Regions().Count, "same count");
             IsTrue(string.CompareOrdinal(sorted[0], sorted[^1]) <= 0, "ordered");
         });
+
+        Check("time_zone_count agrees with the list length", () =>
+        {
+            Eq(PhoneNumber.TimeZoneCount("US", "2015550123"), 1, "time_zone_count");
+            Eq(PhoneNumber.TimeZonesForNumber("US", "2015550123").Count, 1, "list length");
+        });
+
+        Check("carrier_name_for_valid agrees for a valid number", () =>
+            Eq(PhoneNumber.CarrierNameForValidNumber("GB", "7106000000"), "O2"));
 
         Check("many calls do not leak or crash", () =>
         {

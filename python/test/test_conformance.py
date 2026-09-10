@@ -111,7 +111,7 @@ def test_33_matcher_raw():
     assert matches[0].raw == "201-555-0123"
 
 def test_34_abi_version():
-    assert pn.abi_version() == 3
+    assert pn.abi_version() == 5
 
 
 def test_35_short_emergency_us():
@@ -135,4 +135,20 @@ def test_39_short_cost():
 
 
 def test_40_short_example():
-    assert pn.short_example_number("US") == "112" 
+    assert pn.short_example_number("US") == "112"
+
+
+def test_41_tz_us():
+    assert pn.time_zones_for_number("US", "2015550123") == ["America/New_York"]
+
+
+def test_42_tz_gb():
+    assert pn.time_zones_for_number("GB", "2070313000") == ["Europe/London"]
+
+
+def test_43_tz_unknown():
+    assert pn.unknown_time_zone() == "Etc/Unknown"
+
+
+def test_44_carrier():
+    assert pn.carrier_name_for_number("GB", "7106000000") == "O2" 

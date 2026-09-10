@@ -1,5 +1,5 @@
 /* lua/src/phonenumber_ae.c — the Lua 5.4 C extension over the phonenumber
- * C ABI (core/embed.ae), ABI v3.
+ * C ABI (core/embed.ae), ABI v5.
  *
  * This file is the ONLY place in the Lua binding that knows about the C ABI.
  * Everything above it (lua/src/phonenumber_ae.lua) is idiomatic Lua over these
@@ -12,7 +12,8 @@
  * LIBPHONENUMBER_AE_LIB resolution order as every other binding applies and one
  * .so serves them all.
  *
- * v3 is full PhoneNumberUtil parity plus the ShortNumberInfo side-library: 58
+ * v5 is full PhoneNumberUtil parity plus the ShortNumberInfo, TimeZones and
+ * Carrier side-libraries: 64
  * ABI symbols. Signatures are still scalar-only (const char* / int). There are
  * still no opaque handles — a parsed
  * number and an AsYouType state are themselves caller-owned STRINGS that come
@@ -48,6 +49,7 @@
 /* ---- the ABI, dlsym'd once ---- */
 
 typedef int   (*fn_int_void)(void);
+typedef char* (*fn_str_void)(void);
 typedef void  (*fn_free_string)(char*);
 typedef char* (*fn_str_str)(const char*);
 typedef char* (*fn_str_str2)(const char*, const char*);
@@ -132,6 +134,14 @@ typedef struct {
     fn_int_str2    short_is_sms_service;
     fn_int_str2    short_expected_cost;
     fn_str_str     short_example_number;
+    /* PhoneNumberToTimeZonesMapper */
+    fn_int_str2    tz_count;
+    fn_str_str_int tz_at;
+    fn_str_str2    tz_all;
+    fn_str_void    tz_unknown;
+    /* PhoneNumberToCarrierMapper */
+    fn_str_str2    carrier_name;
+    fn_str_str2    carrier_name_for_valid;
 } Engine;
 
 static Engine ENGINE;                 /* process-wide; loaded once */
@@ -216,6 +226,14 @@ static int load_symbols(lua_State* L, void* lib, const char* path) {
     SYM(short_is_sms_service,           "aether_pn_embed_short_is_sms_service");
     SYM(short_expected_cost,            "aether_pn_embed_short_expected_cost");
     SYM(short_example_number,           "aether_pn_embed_short_example_number");
+    /* PhoneNumberToTimeZonesMapper */
+    SYM(tz_count,                       "aether_pn_embed_tz_count");
+    SYM(tz_at,                          "aether_pn_embed_tz_at");
+    SYM(tz_all,                         "aether_pn_embed_tz_all");
+    SYM(tz_unknown,                     "aether_pn_embed_tz_unknown");
+    /* PhoneNumberToCarrierMapper */
+    SYM(carrier_name,                   "aether_pn_embed_carrier_name");
+    SYM(carrier_name_for_valid,         "aether_pn_embed_carrier_name_for_valid");
 #undef SYM
 
     ENGINE.handle = lib;
@@ -694,6 +712,55 @@ static int l_short_example_number(lua_State* L) {
     return 1;
 }
 
+/* ---- PhoneNumberToTimeZonesMapper (timezone lookup) ---- */
+/* Longest-prefix match over the number's E.164 digits: pass a raw (region,
+ * input) and the engine parses to E.164 itself. Unknown zone is "Etc/Unknown". */
+
+static int l_tz_count(lua_State* L) {
+    engine_load(L, NULL);
+    lua_pushinteger(L, ENGINE.tz_count(luaL_checkstring(L, 1),
+                                       luaL_checkstring(L, 2)));
+    return 1;
+}
+
+static int l_tz_at(lua_State* L) {
+    engine_load(L, NULL);
+    /* idx is 0-based at the ABI; the Lua layer builds a 1-based list itself. */
+    push_owned(L, ENGINE.tz_at(luaL_checkstring(L, 1),
+                               luaL_checkstring(L, 2),
+                               (int)luaL_checkinteger(L, 3)));
+    return 1;
+}
+
+static int l_tz_all(lua_State* L) {
+    engine_load(L, NULL);
+    push_owned(L, ENGINE.tz_all(luaL_checkstring(L, 1),
+                                luaL_checkstring(L, 2)));
+    return 1;
+}
+
+static int l_tz_unknown(lua_State* L) {
+    engine_load(L, NULL);
+    push_owned(L, ENGINE.tz_unknown());
+    return 1;
+}
+
+/* ---- PhoneNumberToCarrierMapper (English carrier names) ---- */
+
+static int l_carrier_name(lua_State* L) {
+    engine_load(L, NULL);
+    push_owned(L, ENGINE.carrier_name(luaL_checkstring(L, 1),
+                                      luaL_checkstring(L, 2)));
+    return 1;
+}
+
+static int l_carrier_name_for_valid(lua_State* L) {
+    engine_load(L, NULL);
+    push_owned(L, ENGINE.carrier_name_for_valid(luaL_checkstring(L, 1),
+                                                luaL_checkstring(L, 2)));
+    return 1;
+}
+
 /* ---- module table ---- */
 
 static const luaL_Reg MODULE[] = {
@@ -764,6 +831,14 @@ static const luaL_Reg MODULE[] = {
     {"short_is_sms_service",          l_short_is_sms_service},
     {"short_expected_cost",           l_short_expected_cost},
     {"short_example_number",          l_short_example_number},
+    /* PhoneNumberToTimeZonesMapper */
+    {"tz_count",                      l_tz_count},
+    {"tz_at",                         l_tz_at},
+    {"tz_all",                        l_tz_all},
+    {"tz_unknown",                    l_tz_unknown},
+    /* PhoneNumberToCarrierMapper */
+    {"carrier_name",                  l_carrier_name},
+    {"carrier_name_for_valid",        l_carrier_name_for_valid},
     {NULL, NULL}
 };
 

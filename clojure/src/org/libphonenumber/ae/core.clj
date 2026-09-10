@@ -1,6 +1,6 @@
 (ns org.libphonenumber.ae.core
-  "Idiomatic Clojure over the Java binding (ABI v3, full PhoneNumberUtil parity
-  plus ShortNumberInfo).
+  "Idiomatic Clojure over the Java binding (ABI v5, full PhoneNumberUtil parity
+  plus ShortNumberInfo, the timezone mapper and the carrier mapper).
 
   There is **no second FFI here**. The one JVM binding to the shared Aether
   engine is `java/aether/` (FFM / Panama), and everything in this namespace is
@@ -21,6 +21,7 @@
 
   The engine carries the logic; this namespace carries none."
   (:import (org.libphonenumber.ae AsYouTypeFormatter
+                                  Carrier
                                   CountryCodeSource
                                   Format
                                   Leniency
@@ -31,6 +32,7 @@
                                   PhoneNumbers
                                   ShortNumberCost
                                   ShortNumberInfo
+                                  TimeZones
                                   ValidationResult)))
 
 (set! *warn-on-reflection* true)
@@ -335,9 +337,45 @@
   [^String region]
   (ShortNumberInfo/exampleNumber region))
 
+;; ---- timezones -----------------------------------------------------------
+;;
+;; A longest-prefix match over the number's E.164 digits. These reach the Java
+;; TimeZones mapper.
+
+(defn time-zones-for-number
+  "The IANA timezone ids for a number, as a vector. A number with no known zone
+  maps to a single-element vector of the unknown zone (\"Etc/Unknown\")."
+  [^String region ^String input]
+  (vec (TimeZones/timeZonesForNumber region input)))
+
+(defn time-zone-count
+  "The number of zones for the number (0 = only the unknown zone)."
+  [^String region ^String input]
+  (TimeZones/timeZoneCount region input))
+
+(defn unknown-time-zone
+  "The unknown-zone sentinel, \"Etc/Unknown\"."
+  []
+  (TimeZones/unknownTimeZone))
+
+;; ---- carrier -------------------------------------------------------------
+;;
+;; English carrier names by longest-prefix match over the E.164 digits. These
+;; reach the Java Carrier mapper.
+
+(defn carrier-name-for-number
+  "The carrier name for a number (English), or \"\" if none is known."
+  [^String region ^String input]
+  (Carrier/carrierNameForNumber region input))
+
+(defn carrier-name-for-valid-number
+  "The carrier name only when the number is valid, else \"\"."
+  [^String region ^String input]
+  (Carrier/carrierNameForValidNumber region input))
+
 ;; ---- version -------------------------------------------------------------
 
 (defn abi-version
-  "The ABI revision the loaded engine reports (3 for this build)."
+  "The ABI revision the loaded engine reports (5 for this build)."
   []
   (PhoneNumbers/abiVersion))

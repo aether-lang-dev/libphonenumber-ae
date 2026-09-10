@@ -6,8 +6,9 @@ import java.util.List;
 
 /**
  * Validate, parse and format international phone numbers — the idiomatic Java
- * entry point over the shared Aether engine (ABI v3, full
- * {@code PhoneNumberUtil} parity plus {@code ShortNumberInfo}).
+ * entry point over the shared Aether engine (ABI v5, full
+ * {@code PhoneNumberUtil} parity plus {@code ShortNumberInfo}, the timezone
+ * mapper and the carrier mapper).
  *
  * <pre>{@code
  * ParsedNumber n = PhoneNumbers.parse("+1 650 253 0000", "US");
@@ -325,9 +326,44 @@ public final class PhoneNumbers {
         return ShortNumberInfo.exampleNumber(region);
     }
 
+    // ---- timezones --------------------------------------------------------
+    //
+    // A longest-prefix match over the number's E.164 digits. These delegate to
+    // {@link TimeZones}, which also stands on its own.
+
+    /** The IANA timezone ids for a number (empty-ish maps to {@code ["Etc/Unknown"]}). See {@link TimeZones}. */
+    public static List<String> timeZonesForNumber(String region, String input) {
+        return TimeZones.timeZonesForNumber(region, input);
+    }
+
+    /** The number of zones for the number ({@code 0} = only the unknown zone). */
+    public static int timeZoneCount(String region, String input) {
+        return TimeZones.timeZoneCount(region, input);
+    }
+
+    /** The unknown-zone sentinel, {@code "Etc/Unknown"}. */
+    public static String unknownTimeZone() {
+        return TimeZones.unknownTimeZone();
+    }
+
+    // ---- carrier ----------------------------------------------------------
+    //
+    // English carrier names by longest-prefix match over the E.164 digits.
+    // These delegate to {@link Carrier}, which also stands on its own.
+
+    /** The carrier name for a number (English), or {@code ""}. See {@link Carrier}. */
+    public static String carrierNameForNumber(String region, String input) {
+        return Carrier.carrierNameForNumber(region, input);
+    }
+
+    /** The carrier name only when the number is valid, else {@code ""}. */
+    public static String carrierNameForValidNumber(String region, String input) {
+        return Carrier.carrierNameForValidNumber(region, input);
+    }
+
     // ---- version ----------------------------------------------------------
 
-    /** The ABI revision the loaded engine reports ({@code 3} for this build). */
+    /** The ABI revision the loaded engine reports ({@code 5} for this build). */
     public static int abiVersion() {
         Native a = api();
         try {

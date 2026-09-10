@@ -304,3 +304,34 @@ def short_expected_cost(region, number):
 
 def short_example_number(region):
     return _s("aether_pn_embed_short_example_number", _enc(region))
+
+
+# ---- PhoneNumberToTimeZonesMapper (timezone lookup) ----
+
+def time_zones_for_number(region, number):
+    """The IANA timezone ids for a number, as a list (empty-ish -> ['Etc/Unknown'])."""
+    lib = _lib()
+    n = lib.aether_pn_embed_tz_count(_enc(region), _enc(number))
+    if n == 0:
+        return [unknown_time_zone()]
+    return [_s("aether_pn_embed_tz_at", _enc(region), _enc(number), i) for i in range(n)]
+
+
+def time_zone_count(region, number):
+    return _lib().aether_pn_embed_tz_count(_enc(region), _enc(number))
+
+
+def unknown_time_zone():
+    return _s("aether_pn_embed_tz_unknown")
+
+
+# ---- PhoneNumberToCarrierMapper (English carrier names) ----
+
+def carrier_name_for_number(region, number):
+    """The carrier name for a number (English), or '' if none is known."""
+    return _s("aether_pn_embed_carrier_name", _enc(region), _enc(number))
+
+
+def carrier_name_for_valid_number(region, number):
+    """The carrier name only when the number is valid, else ''."""
+    return _s("aether_pn_embed_carrier_name_for_valid", _enc(region), _enc(number))

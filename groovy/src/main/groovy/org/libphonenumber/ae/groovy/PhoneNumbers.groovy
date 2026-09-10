@@ -1,6 +1,7 @@
 package org.libphonenumber.ae.groovy
 
 import org.libphonenumber.ae.AsYouTypeFormatter
+import org.libphonenumber.ae.Carrier
 import org.libphonenumber.ae.Format
 import org.libphonenumber.ae.Leniency
 import org.libphonenumber.ae.MatchType
@@ -9,11 +10,12 @@ import org.libphonenumber.ae.NumberType
 import org.libphonenumber.ae.ParsedNumber
 import org.libphonenumber.ae.ShortNumberCost
 import org.libphonenumber.ae.ShortNumberInfo
+import org.libphonenumber.ae.TimeZones
 import org.libphonenumber.ae.ValidationResult
 
 /**
- * Idiomatic Groovy over the Java binding (ABI v3, full PhoneNumberUtil parity
- * plus ShortNumberInfo).
+ * Idiomatic Groovy over the Java binding (ABI v5, full PhoneNumberUtil parity
+ * plus ShortNumberInfo, the timezone mapper and the carrier mapper).
  *
  * There is <b>no second FFI here</b>. The one JVM binding to the shared Aether
  * engine is {@code java/aether/} (FFM / Panama); everything in this file is
@@ -204,6 +206,36 @@ class PhoneNumbers {
 
     static String shortExampleNumber(String region) {
         ShortNumberInfo.exampleNumber(region)
+    }
+
+    // ---- timezones ----
+    //
+    // A longest-prefix match over the number's E.164 digits. These reach the
+    // Java TimeZones mapper.
+
+    static List<String> timeZonesForNumber(String region, String input) {
+        TimeZones.timeZonesForNumber(region, input)
+    }
+
+    static int timeZoneCount(String region, String input) {
+        TimeZones.timeZoneCount(region, input)
+    }
+
+    static String unknownTimeZone() {
+        TimeZones.unknownTimeZone()
+    }
+
+    // ---- carrier ----
+    //
+    // English carrier names by longest-prefix match over the E.164 digits.
+    // These reach the Java Carrier mapper.
+
+    static String carrierNameForNumber(String region, String input) {
+        Carrier.carrierNameForNumber(region, input)
+    }
+
+    static String carrierNameForValidNumber(String region, String input) {
+        Carrier.carrierNameForValidNumber(region, input)
     }
 
     // ---- version ----

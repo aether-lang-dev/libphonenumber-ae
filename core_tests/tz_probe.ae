@@ -1,0 +1,34 @@
+// core_tests/tz_probe — PhoneNumberToTimeZonesMapper engine gate (pure Aether).
+//
+// Longest-prefix timezone lookup over the E.164 digits. Run:
+//     ae run core_tests/tz_probe.ae
+
+import std.string
+import core.timezone
+
+fn fail(msg: string) { println("FAIL: ${msg}"); exit(1) }
+fn eq_s(label: string, got: string, want: string) {
+    if got != want { fail("${label}: got '${got}', want '${want}'") }
+}
+fn eq_i(label: string, got: int, want: int) {
+    if got != want { fail("${label}: got ${got}, want ${want}") }
+}
+
+main() {
+    // longest-prefix: 1201 beats the generic 1 -> America/New_York
+    eq_s("US NY timezone", timezone.time_zones_for_e164("12015550123"), "America/New_York")
+    eq_i("US NY count", timezone.time_zone_count_for_e164("12015550123"), 1)
+    eq_s("US NY tz[0]", timezone.time_zone_at_for_e164("12015550123", 0), "America/New_York")
+
+    // GB -> Europe/London
+    eq_s("GB timezone", timezone.time_zones_for_e164("442070313000"), "Europe/London")
+
+    // unknown sentinel + unknown-cc fallback
+    eq_s("unknown zone", timezone.unknown_time_zone(), "Etc/Unknown")
+    eq_s("no-match falls back", timezone.time_zones_for_e164("9990000000"), "Etc/Unknown")
+    eq_i("no-match count 0", timezone.time_zone_count_for_e164("9990000000"), 0)
+    eq_s("out-of-range -> unknown", timezone.time_zone_at_for_e164("12015550123", 5), "Etc/Unknown")
+
+    println("tz_probe: PASS — PhoneNumberToTimeZonesMapper (longest-prefix lookup)")
+    return 0
+}

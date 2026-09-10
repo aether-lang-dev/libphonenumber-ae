@@ -2,7 +2,7 @@
 
 -- |
 -- Module      : PhoneNumber.Native
--- Description : The 1:1 symbol table for the phonenumber C ABI (v3).
+-- Description : The 1:1 symbol table for the phonenumber C ABI (v5).
 --
 -- This module is the ONLY place in the Haskell binding that knows about the C
 -- ABI. Every symbol the engine exports appears here once, with the exact C
@@ -10,11 +10,13 @@
 -- lives here or anywhere else in this package — the engine is
 -- @core\/phonenumber.ae@, compiled to @libphonenumber_ae.so@.
 --
--- == ABI v3
+-- == ABI v5
 --
--- The ABI is __full @PhoneNumberUtil@ parity plus the @ShortNumberInfo@
--- side-library__ — 58 symbols, ABI version @3@ (the 8 @short_*@ symbols are the
--- v3 addition). Signatures remain scalar-only (@const char*@ and @int@), so nothing here
+-- The ABI is __full @PhoneNumberUtil@ parity plus the @ShortNumberInfo@,
+-- @PhoneNumberToTimeZonesMapper@ and @PhoneNumberToCarrierMapper@
+-- side-libraries__ — 64 symbols, ABI version @5@ (the 4 @tz_*@ and 2
+-- @carrier_*@ symbols are the v5 addition, on top of the 8 @short_*@ from v3).
+-- Signatures remain scalar-only (@const char*@ and @int@), so nothing here
 -- re-enters the Haskell RTS and every import is still @unsafe@. Two symbols are
 -- __stateful in disguise__: 'aether_pn_embed_parse' returns a caller-owned
 -- parsed-number __string__, and the @ayt_*@ formatter threads its state as a
@@ -110,6 +112,16 @@ module PhoneNumber.Native
   , aether_pn_embed_short_is_sms_service
   , aether_pn_embed_short_expected_cost
   , aether_pn_embed_short_example_number
+
+    -- * PhoneNumberToTimeZonesMapper (timezone lookup)
+  , aether_pn_embed_tz_count
+  , aether_pn_embed_tz_at
+  , aether_pn_embed_tz_all
+  , aether_pn_embed_tz_unknown
+
+    -- * PhoneNumberToCarrierMapper (English carrier names)
+  , aether_pn_embed_carrier_name
+  , aether_pn_embed_carrier_name_for_valid
 
     -- * String marshalling helpers
   , takeString
@@ -318,6 +330,28 @@ foreign import ccall unsafe "aether_pn_embed_short_expected_cost"
 
 foreign import ccall unsafe "aether_pn_embed_short_example_number"
   aether_pn_embed_short_example_number :: CString -> IO CString
+
+-- PhoneNumberToTimeZonesMapper (timezone lookup) ---------------------------
+
+foreign import ccall unsafe "aether_pn_embed_tz_count"
+  aether_pn_embed_tz_count :: CString -> CString -> IO CInt
+
+foreign import ccall unsafe "aether_pn_embed_tz_at"
+  aether_pn_embed_tz_at :: CString -> CString -> CInt -> IO CString
+
+foreign import ccall unsafe "aether_pn_embed_tz_all"
+  aether_pn_embed_tz_all :: CString -> CString -> IO CString
+
+foreign import ccall unsafe "aether_pn_embed_tz_unknown"
+  aether_pn_embed_tz_unknown :: IO CString
+
+-- PhoneNumberToCarrierMapper (English carrier names) -----------------------
+
+foreign import ccall unsafe "aether_pn_embed_carrier_name"
+  aether_pn_embed_carrier_name :: CString -> CString -> IO CString
+
+foreign import ccall unsafe "aether_pn_embed_carrier_name_for_valid"
+  aether_pn_embed_carrier_name_for_valid :: CString -> CString -> IO CString
 
 -- ---------------------------------------------------------------------------
 -- String marshalling

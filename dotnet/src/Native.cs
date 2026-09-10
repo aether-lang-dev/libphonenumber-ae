@@ -1,4 +1,4 @@
-// The 1:1 symbol table for the phonenumber C ABI (core/embed.ae) — v3.
+// The 1:1 symbol table for the phonenumber C ABI (core/embed.ae) — v5.
 //
 // This file is the ONLY place in the .NET binding that knows about the C ABI.
 // Everything above it (PhoneNumber.cs) is idiomatic C# over these symbols. No
@@ -362,6 +362,28 @@ public static class Native
 
     [DllImport(Lib, EntryPoint = "aether_pn_embed_short_example_number", CallingConvention = CallingConvention.Cdecl)]
     public static extern IntPtr ShortExampleNumber(byte[] region);
+
+    // -- PhoneNumberToTimeZonesMapper (timezone lookup) --
+
+    [DllImport(Lib, EntryPoint = "aether_pn_embed_tz_count", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int TzCount(byte[] region, byte[] input);
+
+    [DllImport(Lib, EntryPoint = "aether_pn_embed_tz_at", CallingConvention = CallingConvention.Cdecl)]
+    public static extern IntPtr TzAt(byte[] region, byte[] input, int idx);
+
+    [DllImport(Lib, EntryPoint = "aether_pn_embed_tz_all", CallingConvention = CallingConvention.Cdecl)]
+    public static extern IntPtr TzAll(byte[] region, byte[] input);
+
+    [DllImport(Lib, EntryPoint = "aether_pn_embed_tz_unknown", CallingConvention = CallingConvention.Cdecl)]
+    public static extern IntPtr TzUnknown();
+
+    // -- PhoneNumberToCarrierMapper (English carrier names) --
+
+    [DllImport(Lib, EntryPoint = "aether_pn_embed_carrier_name", CallingConvention = CallingConvention.Cdecl)]
+    public static extern IntPtr CarrierName(byte[] region, byte[] input);
+
+    [DllImport(Lib, EntryPoint = "aether_pn_embed_carrier_name_for_valid", CallingConvention = CallingConvention.Cdecl)]
+    public static extern IntPtr CarrierNameForValid(byte[] region, byte[] input);
 
     // ---- string marshalling ----
 

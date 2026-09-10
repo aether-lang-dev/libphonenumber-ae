@@ -1,4 +1,4 @@
-%%% phonenumber_ae_nif — the raw NIF surface (ABI v3).
+%%% phonenumber_ae_nif — the raw NIF surface (ABI v5).
 %%%
 %%% This module exists only to load c_src/phonenumber_ae_nif.c and to give each
 %%% native function a stub. Nothing here is meant to be called directly;
@@ -41,6 +41,10 @@
          short_is_possible/2, short_is_valid/2, short_is_emergency/2,
          short_connects_to_emergency/2, short_is_carrier_specific/2,
          short_is_sms_service/2, short_expected_cost/2, short_example_number/1,
+         %% PhoneNumberToTimeZonesMapper
+         tz_count/2, tz_at/3, tz_all/2, tz_unknown/0,
+         %% PhoneNumberToCarrierMapper
+         carrier_name/2, carrier_name_for_valid/2,
          %% introspection
          abi_version/0]).
 
@@ -267,6 +271,28 @@ short_expected_cost(_Region, _Input) -> not_loaded(?LINE).
 
 -spec short_example_number(iodata()) -> binary().
 short_example_number(_Region) -> not_loaded(?LINE).
+
+%% ---- PhoneNumberToTimeZonesMapper ----
+
+-spec tz_count(iodata(), iodata()) -> integer().
+tz_count(_Region, _Input) -> not_loaded(?LINE).
+
+-spec tz_at(iodata(), iodata(), integer()) -> binary().
+tz_at(_Region, _Input, _Idx) -> not_loaded(?LINE).
+
+-spec tz_all(iodata(), iodata()) -> binary().
+tz_all(_Region, _Input) -> not_loaded(?LINE).
+
+-spec tz_unknown() -> binary().
+tz_unknown() -> not_loaded(?LINE).
+
+%% ---- PhoneNumberToCarrierMapper ----
+
+-spec carrier_name(iodata(), iodata()) -> binary().
+carrier_name(_Region, _Input) -> not_loaded(?LINE).
+
+-spec carrier_name_for_valid(iodata(), iodata()) -> binary().
+carrier_name_for_valid(_Region, _Input) -> not_loaded(?LINE).
 
 %% ---- introspection ----
 

@@ -9,7 +9,8 @@
 ## `aether_pn_embed_<name>`. Everything below is marshalling: Nim values in, C
 ## scalars and `cstring`s out, and back.
 ##
-## ABI v3 (full `PhoneNumberUtil` parity, plus the ShortNumberInfo surface). The
+## ABI v5 (full `PhoneNumberUtil` parity, plus the ShortNumberInfo, TimeZones
+## and Carrier surfaces). The
 ## ABI has **no opaque handle**: a
 ## parsed number and an AsYouType state are themselves caller-owned *strings* —
 ## you get one back, pass it to accessor calls, and free it like any other
@@ -179,7 +180,7 @@ const
 #
 # Declared in the order core/embed.ae / docs/abi.md declare them, so the two can
 # be diffed by eye. Every integer is `cint`; every returned string is `cstring`
-# and is caller-owned (see the ownership rule at the top). All 58 symbols.
+# and is caller-owned (see the ownership rule at the top). All 64 symbols.
 
 # ---- lifecycle / metadata ----
 proc pnAbiVersion(): cint {.importc: "aether_pn_embed_abi_version", cdecl.}
@@ -309,6 +310,22 @@ proc pnShortExpectedCost(region, input: cstring): cint
   {.importc: "aether_pn_embed_short_expected_cost", cdecl.}
 proc pnShortExampleNumber(region: cstring): cstring
   {.importc: "aether_pn_embed_short_example_number", cdecl.}
+
+# ---- PhoneNumberToTimeZonesMapper (timezone lookup) ----
+proc pnTzCount(region, input: cstring): cint
+  {.importc: "aether_pn_embed_tz_count", cdecl.}
+proc pnTzAt(region, input: cstring, idx: cint): cstring
+  {.importc: "aether_pn_embed_tz_at", cdecl.}
+proc pnTzAll(region, input: cstring): cstring
+  {.importc: "aether_pn_embed_tz_all", cdecl.}
+proc pnTzUnknown(): cstring
+  {.importc: "aether_pn_embed_tz_unknown", cdecl.}
+
+# ---- PhoneNumberToCarrierMapper (English carrier names) ----
+proc pnCarrierName(region, input: cstring): cstring
+  {.importc: "aether_pn_embed_carrier_name", cdecl.}
+proc pnCarrierNameForValid(region, input: cstring): cstring
+  {.importc: "aether_pn_embed_carrier_name_for_valid", cdecl.}
 
 # ---------------------------------------------------------------------------
 # String marshalling — the one place a returned pointer is allowed to live.
@@ -554,7 +571,8 @@ proc isAlphaNumber*(s: string): bool =
   pnIsAlphaNumber(s.cstring) != 0
 
 proc abiVersion*(): int =
-  ## The ABI revision the linked engine reports (v3 — adds ShortNumberInfo).
+  ## The ABI revision the linked engine reports (v5 — adds the TimeZones and
+  ## Carrier surfaces on top of ShortNumberInfo).
   int(pnAbiVersion())
 
 # ---------------------------------------------------------------------------
@@ -653,3 +671,45 @@ proc shortExpectedCostInt*(region, input: string): int =
 proc shortExampleNumber*(region: string): string =
   ## An example short number for the region, or "".
   takeString(pnShortExampleNumber(region.cstring))
+
+# ---------------------------------------------------------------------------
+# PhoneNumberToTimeZonesMapper (timezone lookup)
+# ---------------------------------------------------------------------------
+#
+# Longest-prefix match over the number's E.164 digits. Pass a raw (region,
+# input) like everywhere else; the engine parses to E.164 itself. The
+# unknown-zone sentinel is "Etc/Unknown".
+
+proc unknownTimeZone*(): string =
+  ## The unknown-timezone sentinel, "Etc/Unknown".
+  takeString(pnTzUnknown())
+
+proc timeZoneCount*(region, input: string): int =
+  ## How many timezones the number maps to (0 means only the unknown zone).
+  int(pnTzCount(region.cstring, input.cstring))
+
+proc timeZonesForNumber*(region, input: string): seq[string] =
+  ## The IANA timezone ids for a number, as a sequence. A number with no known
+  ## zones maps to a single-element sequence holding the unknown zone, matching
+  ## the other bindings.
+  let n = pnTzCount(region.cstring, input.cstring)
+  if n == 0:
+    return @[unknownTimeZone()]
+  result = newSeqOfCap[string](int(n))
+  for i in 0 ..< n:
+    result.add takeString(pnTzAt(region.cstring, input.cstring, i))
+
+# ---------------------------------------------------------------------------
+# PhoneNumberToCarrierMapper (English carrier names)
+# ---------------------------------------------------------------------------
+#
+# Longest-prefix match over the E.164 digits; English names only. "" when no
+# carrier is known for the number.
+
+proc carrierNameForNumber*(region, input: string): string =
+  ## The carrier name for a number (English), or "" if none is known.
+  takeString(pnCarrierName(region.cstring, input.cstring))
+
+proc carrierNameForValidNumber*(region, input: string): string =
+  ## The carrier name only when the number is valid, else "".
+  takeString(pnCarrierNameForValid(region.cstring, input.cstring))

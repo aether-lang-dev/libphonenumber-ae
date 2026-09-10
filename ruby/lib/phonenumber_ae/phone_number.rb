@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Idiomatic Ruby surface over the phonenumber engine (ABI v3).
+# Idiomatic Ruby surface over the phonenumber engine (ABI v5).
 #
 # Carries no phone-number logic — see the monorepo's one rule in LLM.md. Every
 # method here marshals to an `aether_pn_embed_*` call in `native.rb`.
@@ -436,6 +436,63 @@ module PhoneNumberAe
     def example_number(region)
       PhoneNumberAe.send(:_s, "aether_pn_embed_short_example_number",
                          PhoneNumberAe.send(:_enc, region))
+    end
+  end
+
+  # ---- PhoneNumberToTimeZonesMapper (timezone lookup) ----
+
+  # Maps a number to the IANA time-zone ids its area covers. The engine parses
+  # the raw (region, input) to E.164 itself; the unknown-zone sentinel is
+  # "Etc/Unknown".
+  module TimeZones
+    module_function
+
+    # The IANA time-zone ids for a number, as an array. A number with no known
+    # zone maps to a single-element array of the unknown zone (["Etc/Unknown"]).
+    def time_zones_for_number(region, number)
+      lib = PhoneNumberAe.send(:_lib)
+      r = PhoneNumberAe.send(:_enc, region)
+      i = PhoneNumberAe.send(:_enc, number)
+      n = lib.call("aether_pn_embed_tz_count", r, i)
+      return [unknown_time_zone] if n.zero?
+
+      (0...n).map do |idx|
+        lib.take_string(lib.call("aether_pn_embed_tz_at", r, i, idx))
+      end
+    end
+
+    # The number of time zones a number maps to (0 = only the unknown zone).
+    def time_zone_count(region, number)
+      PhoneNumberAe.send(:_lib).call("aether_pn_embed_tz_count",
+                                     PhoneNumberAe.send(:_enc, region),
+                                     PhoneNumberAe.send(:_enc, number))
+    end
+
+    # The unknown-zone sentinel, "Etc/Unknown".
+    def unknown_time_zone
+      PhoneNumberAe.send(:_s, "aether_pn_embed_tz_unknown")
+    end
+  end
+
+  # ---- PhoneNumberToCarrierMapper (English carrier names) ----
+
+  # Maps a number to the English name of the carrier that originally received
+  # its number range. The engine parses the raw (region, input) to E.164 itself.
+  module Carrier
+    module_function
+
+    # The carrier name for a number (English), or "" if none is known.
+    def carrier_name_for_number(region, number)
+      PhoneNumberAe.send(:_s, "aether_pn_embed_carrier_name",
+                         PhoneNumberAe.send(:_enc, region),
+                         PhoneNumberAe.send(:_enc, number))
+    end
+
+    # The carrier name only when the number is valid, else "".
+    def carrier_name_for_valid_number(region, number)
+      PhoneNumberAe.send(:_s, "aether_pn_embed_carrier_name_for_valid",
+                         PhoneNumberAe.send(:_enc, region),
+                         PhoneNumberAe.send(:_enc, number))
     end
   end
 end

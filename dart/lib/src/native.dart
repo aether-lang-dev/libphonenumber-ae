@@ -1,4 +1,4 @@
-/// The 1:1 symbol table for the phonenumber C ABI (`core/embed.ae`), v3.
+/// The 1:1 symbol table for the phonenumber C ABI (`core/embed.ae`), v5.
 ///
 /// This library is the ONLY place in the Dart binding that knows about the C
 /// ABI. Everything above it (`phonenumber.dart`) is idiomatic Dart over these
@@ -19,8 +19,9 @@
 ///
 /// ## No opaque handles
 ///
-/// v3 adds the ShortNumberInfo side-library (8 symbols) on top of the full
-/// PhoneNumberUtil-parity ABI (now 58 symbols), but every signature is still
+/// v5 adds the PhoneNumberToTimeZonesMapper (4 symbols) and the
+/// PhoneNumberToCarrierMapper (2 symbols) side-libraries on top of the v3
+/// ShortNumberInfo ABI (now 64 symbols), but every signature is still
 /// scalar-only (`const char*` and `int`). A parsed number and an AsYouType
 /// state are themselves caller-owned *strings*: you get one back, pass it to
 /// the accessor calls, and free it like any other returned string. There are
@@ -114,6 +115,7 @@ typedef _Int1IntC = ffi.Int Function(_Utf8, ffi.Int);
 typedef _Str2IntC = _Utf8 Function(_Utf8, _Utf8, ffi.Int);
 typedef _CountC = ffi.Int Function();
 typedef _AtC = _Utf8 Function(ffi.Int);
+typedef _Str0C = _Utf8 Function();
 typedef _Int2IntC = ffi.Int Function(_Utf8, _Utf8, ffi.Int);
 typedef _MatcherIntC = ffi.Int Function(_Utf8, _Utf8, ffi.Int, ffi.Int);
 typedef _MatcherStrC = _Utf8 Function(_Utf8, _Utf8, ffi.Int, ffi.Int);
@@ -131,6 +133,7 @@ typedef _Int1Int = int Function(_Utf8, int);
 typedef _Str2Int = _Utf8 Function(_Utf8, _Utf8, int);
 typedef _Count = int Function();
 typedef _At = _Utf8 Function(int);
+typedef _Str0 = _Utf8 Function();
 typedef _Int2Int = int Function(_Utf8, _Utf8, int);
 typedef _MatcherInt = int Function(_Utf8, _Utf8, int, int);
 typedef _MatcherStr = _Utf8 Function(_Utf8, _Utf8, int, int);
@@ -296,7 +299,21 @@ class Api {
         shortExpectedCost = lib.lookupFunction<_Int2C, _Int2>(
             'aether_pn_embed_short_expected_cost'),
         shortExampleNumber = lib.lookupFunction<_Str1C, _Str1>(
-            'aether_pn_embed_short_example_number');
+            'aether_pn_embed_short_example_number'),
+        // ---- PhoneNumberToTimeZonesMapper ----
+        tzCount = lib.lookupFunction<_Int2C, _Int2>(
+            'aether_pn_embed_tz_count'),
+        tzAt = lib.lookupFunction<_Str2IntC, _Str2Int>(
+            'aether_pn_embed_tz_at'),
+        tzAll = lib.lookupFunction<_Str2C, _Str2>(
+            'aether_pn_embed_tz_all'),
+        tzUnknown = lib.lookupFunction<_Str0C, _Str0>(
+            'aether_pn_embed_tz_unknown'),
+        // ---- PhoneNumberToCarrierMapper ----
+        carrierName = lib.lookupFunction<_Str2C, _Str2>(
+            'aether_pn_embed_carrier_name'),
+        carrierNameForValid = lib.lookupFunction<_Str2C, _Str2>(
+            'aether_pn_embed_carrier_name_for_valid');
 
   final ffi.DynamicLibrary lib;
 
@@ -377,6 +394,16 @@ class Api {
   final _Int2 shortIsSmsService;
   final _Int2 shortExpectedCost;
   final _Str1 shortExampleNumber;
+
+  // TimeZones
+  final _Int2 tzCount;
+  final _Str2Int tzAt;
+  final _Str2 tzAll;
+  final _Str0 tzUnknown;
+
+  // Carrier
+  final _Str2 carrierName;
+  final _Str2 carrierNameForValid;
 
   static Api? _cached;
 

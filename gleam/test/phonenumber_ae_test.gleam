@@ -1,4 +1,4 @@
-//// The binding conformance suite (docs/conformance.md, v3).
+//// The binding conformance suite (docs/conformance.md, v5).
 ////
 //// Proves the Gleam surface marshals every value shape across the FFI. It is
 //// NOT a phone-number test suite — the behavioural cases live in the engine's
@@ -222,10 +222,10 @@ pub fn t33_matcher_raw_test() {
 
 pub fn t34_abi_version_test() {
   phonenumber_ae.abi_version()
-  |> should.equal(3)
+  |> should.equal(5)
 }
 
-// ---- ShortNumberInfo (docs/conformance.md #35–40, v3) ----
+// ---- ShortNumberInfo (docs/conformance.md #35–40, v5) ----
 
 pub fn t35_short_emergency_us_test() {
   phonenumber_ae.is_emergency_number("US", "911")
@@ -260,7 +260,29 @@ pub fn t40_short_example_test() {
   |> should.equal("112")
 }
 
-// ---- extras: the marshalling corners the 40 do not reach ----
+// ---- TimeZones + Carrier (docs/conformance.md #41–44, v5) ----
+
+pub fn t41_tz_us_test() {
+  phonenumber_ae.time_zones_for_number("US", "2015550123")
+  |> should.equal(["America/New_York"])
+}
+
+pub fn t42_tz_gb_test() {
+  phonenumber_ae.time_zones_for_number("GB", "2070313000")
+  |> should.equal(["Europe/London"])
+}
+
+pub fn t43_tz_unknown_test() {
+  phonenumber_ae.unknown_time_zone()
+  |> should.equal("Etc/Unknown")
+}
+
+pub fn t44_carrier_test() {
+  phonenumber_ae.carrier_name_for_number("GB", "7106000000")
+  |> should.equal("O2")
+}
+
+// ---- extras: the marshalling corners the 44 do not reach ----
 
 pub fn format_helpers_test() {
   phonenumber_ae.format_national("US", "2015550123")

@@ -1,5 +1,5 @@
 (ns org.libphonenumber.ae.conformance-test
-  "The 40-check binding conformance suite (docs/conformance.md, v3), in Clojure.
+  "The 44-check binding conformance suite (docs/conformance.md, v5), in Clojure.
 
   Proves the **Clojure layer** reaches the same engine behaviour the Java and
   Python suites see. Since that layer sits on the Java binding rather than on
@@ -116,7 +116,7 @@
   (is (= "201-555-0123" (:raw (first (pn/find-numbers "call 201-555-0123 now" "US" :valid))))))
 
 (deftest test-34-abi-version
-  (is (= 3 (pn/abi-version))))
+  (is (= 5 (pn/abi-version))))
 
 (deftest test-35-emergency-us-911
   (is (true? (pn/emergency-number? "US" "911"))))
@@ -135,6 +135,18 @@
 
 (deftest test-40-short-example-us
   (is (= "112" (pn/short-example-number "US"))))
+
+(deftest test-41-tz-us
+  (is (= ["America/New_York"] (pn/time-zones-for-number "US" "2015550123"))))
+
+(deftest test-42-tz-gb
+  (is (= ["Europe/London"] (pn/time-zones-for-number "GB" "2070313000"))))
+
+(deftest test-43-tz-unknown
+  (is (= "Etc/Unknown" (pn/unknown-time-zone))))
+
+(deftest test-44-carrier
+  (is (= "O2" (pn/carrier-name-for-number "GB" "7106000000"))))
 
 ;; ---- extras specific to the Clojure layer --------------------------------
 

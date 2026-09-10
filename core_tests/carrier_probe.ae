@@ -1,0 +1,24 @@
+// core_tests/carrier_probe — PhoneNumberToCarrierMapper engine gate (pure Aether).
+//
+// Longest-prefix carrier-name lookup over the E.164 digits (English names).
+// Run: ae run core_tests/carrier_probe.ae
+
+import std.string
+import core.carrier
+
+fn fail(msg: string) { println("FAIL: ${msg}"); exit(1) }
+fn eq_s(label: string, got: string, want: string) {
+    if got != want { fail("${label}: got '${got}', want '${want}'") }
+}
+
+main() {
+    // GB 447106 -> O2 (from resources/carrier/en/44.txt: "447106|O2")
+    eq_s("GB 447106 carrier", carrier.carrier_name_for_e164("447106000000"), "O2")
+    // GB 44770 -> O2 (longest prefix of 447700900123 present is 44770)
+    eq_s("GB 44770 longest-prefix", carrier.carrier_name_for_e164("447700900123"), "O2")
+    // an unknown country code -> no carrier
+    eq_s("unknown -> empty", carrier.carrier_name_for_e164("9990000000"), "")
+
+    println("carrier_probe: PASS — PhoneNumberToCarrierMapper (longest-prefix name lookup)")
+    return 0
+}

@@ -3,7 +3,7 @@
 %%% A thin Erlang binding over the monorepo's ONE shared native engine
 %%% (core/native/libphonenumber_ae.so, compiled from Google libphonenumber's
 %%% own metadata as pure Aether). No phone-number logic lives here: every
-%%% function marshals to an `aether_pn_embed_*` call (ABI v3, docs/abi.md)
+%%% function marshals to an `aether_pn_embed_*` call (ABI v5, docs/abi.md)
 %%% through phonenumber_ae_nif.
 %%%
 %%%     <<"1">>          = phonenumber_ae:country_code(<<"US">>),
@@ -56,6 +56,10 @@
          short_is_carrier_specific/2, short_is_sms_service/2,
          short_expected_cost/2, short_expected_cost_code/2,
          short_example_number/1,
+         %% PhoneNumberToTimeZonesMapper
+         time_zones_for_number/2, time_zone_count/2, unknown_time_zone/0,
+         %% PhoneNumberToCarrierMapper
+         carrier_name_for_number/2, carrier_name_for_valid_number/2,
          %% introspection
          abi_version/0]).
 
@@ -442,10 +446,48 @@ short_example_number(Region) ->
     phonenumber_ae_nif:short_example_number(Region).
 
 %%------------------------------------------------------------------
+%% PhoneNumberToTimeZonesMapper (timezone lookup)
+%%------------------------------------------------------------------
+
+%% The IANA time-zone ids for a number, as a list. When the engine knows no
+%% zone (count 0) the result is a single-element list of the unknown zone,
+%% mirroring the other bindings — never an empty list.
+-spec time_zones_for_number(iodata(), iodata()) -> [binary()].
+time_zones_for_number(Region, Input) ->
+    case phonenumber_ae_nif:tz_count(Region, Input) of
+        0 -> [unknown_time_zone()];
+        N -> [phonenumber_ae_nif:tz_at(Region, Input, I)
+              || I <- lists:seq(0, N - 1)]
+    end.
+
+%% How many time zones the engine maps the number to (0 = only the unknown zone).
+-spec time_zone_count(iodata(), iodata()) -> non_neg_integer().
+time_zone_count(Region, Input) ->
+    phonenumber_ae_nif:tz_count(Region, Input).
+
+%% The engine's sentinel unknown zone, <<"Etc/Unknown">>.
+-spec unknown_time_zone() -> binary().
+unknown_time_zone() -> phonenumber_ae_nif:tz_unknown().
+
+%%------------------------------------------------------------------
+%% PhoneNumberToCarrierMapper (English carrier names)
+%%------------------------------------------------------------------
+
+%% The carrier name for a number (English), or <<>> if none is known.
+-spec carrier_name_for_number(iodata(), iodata()) -> binary().
+carrier_name_for_number(Region, Input) ->
+    phonenumber_ae_nif:carrier_name(Region, Input).
+
+%% The carrier name, but only when the number is valid; else <<>>.
+-spec carrier_name_for_valid_number(iodata(), iodata()) -> binary().
+carrier_name_for_valid_number(Region, Input) ->
+    phonenumber_ae_nif:carrier_name_for_valid(Region, Input).
+
+%%------------------------------------------------------------------
 %% Introspection
 %%------------------------------------------------------------------
 
-%% The engine's ABI revision (3).
+%% The engine's ABI revision (5).
 -spec abi_version() -> non_neg_integer().
 abi_version() -> phonenumber_ae_nif:abi_version().
 

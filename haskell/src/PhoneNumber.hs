@@ -2,7 +2,7 @@
 
 -- |
 -- Module      : PhoneNumber
--- Description : Validate, parse and format international phone numbers (ABI v3).
+-- Description : Validate, parse and format international phone numbers (ABI v5).
 --
 -- A thin binding over the monorepo's ONE shared native engine —
 -- @core\/native\/libphonenumber_ae.so@, compiled from pure Aether over Google
@@ -11,10 +11,12 @@
 -- described in @core\/embed.ae@. One engine, one set of behaviours, N language
 -- surfaces.
 --
--- == ABI v3
+-- == ABI v5
 --
 -- The ABI is full @PhoneNumberUtil@ parity plus the @ShortNumberInfo@
--- side-library (short \/ emergency numbers). A parsed number is a
+-- side-library (short \/ emergency numbers), the @PhoneNumberToTimeZonesMapper@
+-- (IANA time zones) and the @PhoneNumberToCarrierMapper@ (English carrier
+-- names). A parsed number is a
 -- caller-owned string you carry in a 'ParsedNumber' and read fields from on
 -- demand; the 'AsYouTypeFormatter' threads its state through the same
 -- caller-owned-string mechanism, wrapped here behind an 'IORef'; and
@@ -122,6 +124,15 @@ module PhoneNumber
   , shortExpectedCost
   , shortExpectedCostInt
   , shortExampleNumber
+
+    -- * PhoneNumberToTimeZonesMapper (timezone lookup)
+  , timeZonesForNumber
+  , timeZoneCount
+  , unknownTimeZone
+
+    -- * PhoneNumberToCarrierMapper (English carrier names)
+  , carrierNameForNumber
+  , carrierNameForValidNumber
 
     -- * Enumerations
   , NumberType (..)
@@ -706,10 +717,55 @@ shortExampleNumber :: B.ByteString -> IO B.ByteString
 shortExampleNumber = str1 N.aether_pn_embed_short_example_number
 
 -- ---------------------------------------------------------------------------
+-- PhoneNumberToTimeZonesMapper (timezone lookup)
+-- ---------------------------------------------------------------------------
+--
+-- Longest-prefix match over the number's E.164 digits. Pass a raw
+-- @(region, input)@ like everywhere else; the engine parses to E.164 itself.
+-- The unknown-zone sentinel is @\"Etc/Unknown\"@.
+
+-- | The IANA timezone ids for a number, as a list. A number with no known
+-- zones maps to a single-element list holding the unknown zone
+-- (@[\"Etc/Unknown\"]@), never the empty list — matching the other bindings.
+timeZonesForNumber :: B.ByteString -> B.ByteString -> IO [B.ByteString]
+timeZonesForNumber region input =
+  N.withUtf8 region $ \r ->
+    N.withUtf8 input $ \i -> do
+      n <- N.aether_pn_embed_tz_count r i
+      if n == 0
+        then (: []) <$> unknownTimeZone
+        else mapM (\idx -> N.takeString =<< N.aether_pn_embed_tz_at r i (fromIntegral idx))
+                  [0 .. fromIntegral n - 1 :: Int]
+
+-- | How many timezones the number maps to (@0@ means only the unknown zone).
+timeZoneCount :: B.ByteString -> B.ByteString -> IO Int
+timeZoneCount region input = fromIntegral <$> int2 N.aether_pn_embed_tz_count region input
+
+-- | The unknown-timezone sentinel, @\"Etc/Unknown\"@.
+unknownTimeZone :: IO B.ByteString
+unknownTimeZone = N.takeString =<< N.aether_pn_embed_tz_unknown
+
+-- ---------------------------------------------------------------------------
+-- PhoneNumberToCarrierMapper (English carrier names)
+-- ---------------------------------------------------------------------------
+--
+-- Longest-prefix match over the E.164 digits; English names only. @\"\"@ when
+-- no carrier is known for the number.
+
+-- | The carrier name for a number (English), or @\"\"@ if none is known.
+carrierNameForNumber :: B.ByteString -> B.ByteString -> IO B.ByteString
+carrierNameForNumber region input = str2 N.aether_pn_embed_carrier_name region input
+
+-- | The carrier name only when the number is valid, else @\"\"@.
+carrierNameForValidNumber :: B.ByteString -> B.ByteString -> IO B.ByteString
+carrierNameForValidNumber region input = str2 N.aether_pn_embed_carrier_name_for_valid region input
+
+-- ---------------------------------------------------------------------------
 -- Introspection
 -- ---------------------------------------------------------------------------
 
--- | The engine's ABI revision (@3@ for this binding — adds ShortNumberInfo).
+-- | The engine's ABI revision (@5@ for this binding — adds ShortNumberInfo,
+-- the TimeZones mapper and the Carrier mapper).
 abiVersion :: IO Int
 abiVersion = fromIntegral <$> N.aether_pn_embed_abi_version
 

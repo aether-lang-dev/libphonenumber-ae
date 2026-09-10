@@ -52,7 +52,7 @@ aeb(cap) {
             println("elixir: conformance suite reported failures")
             return 1
         }
-        println("elixir: PASS — 40-check conformance (v3 ABI, incl. ShortNumberInfo)")
+        println("elixir: PASS — 44-check conformance (v5 ABI, incl. ShortNumberInfo, timezones + carrier)")
         return 0
     }
 }

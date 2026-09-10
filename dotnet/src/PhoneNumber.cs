@@ -1,4 +1,4 @@
-// The idiomatic C# surface over the phonenumber engine (ABI v3).
+// The idiomatic C# surface over the phonenumber engine (ABI v5).
 //
 // Carries no phone-number logic — every member here marshals to an
 // aether_pn_embed_* call in Native.cs. The stateless calls hang off the static
@@ -398,6 +398,63 @@ public static class PhoneNumber
     {
         Init();
         return Native.TakeString(Native.ShortExampleNumber(Native.Encode(region)));
+    }
+
+    // ---- time zones (PhoneNumberToTimeZonesMapper) ----
+    //
+    // Longest-prefix match over the number's E.164 digits: pass a raw
+    // (region, input) like everywhere else and the engine parses to E.164
+    // itself. The unknown-zone sentinel is "Etc/Unknown".
+
+    /// <summary>The unknown-timezone sentinel, "Etc/Unknown".</summary>
+    public static string UnknownTimeZone()
+    {
+        Init();
+        return Native.TakeString(Native.TzUnknown());
+    }
+
+    /// <summary>How many timezones the number maps to (0 means only the unknown zone).</summary>
+    public static int TimeZoneCount(string region, string input)
+    {
+        Init();
+        return Native.TzCount(Native.Encode(region), Native.Encode(input));
+    }
+
+    /// <summary>
+    /// The IANA timezone ids for a number. A number with no known zones comes
+    /// back as a single-element list holding the unknown zone, never empty —
+    /// matching the other bindings.
+    /// </summary>
+    public static IReadOnlyList<string> TimeZonesForNumber(string region, string input)
+    {
+        Init();
+        var r = Native.Encode(region);
+        var i = Native.Encode(input);
+        int n = Native.TzCount(r, i);
+        if (n == 0) return new List<string> { UnknownTimeZone() };
+        var list = new List<string>(n);
+        for (int idx = 0; idx < n; idx++)
+            list.Add(Native.TakeString(Native.TzAt(r, i, idx)));
+        return list;
+    }
+
+    // ---- carrier (PhoneNumberToCarrierMapper, English names) ----
+    //
+    // Longest-prefix match over the E.164 digits; English names only.
+    // "" when no carrier is known for the number.
+
+    /// <summary>The carrier name for a number (English), or "" if none is known.</summary>
+    public static string CarrierNameForNumber(string region, string input)
+    {
+        Init();
+        return Native.TakeString(Native.CarrierName(Native.Encode(region), Native.Encode(input)));
+    }
+
+    /// <summary>The carrier name only when the number is valid, else "".</summary>
+    public static string CarrierNameForValidNumber(string region, string input)
+    {
+        Init();
+        return Native.TakeString(Native.CarrierNameForValid(Native.Encode(region), Native.Encode(input)));
     }
 }
 

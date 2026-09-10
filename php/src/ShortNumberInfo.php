@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Short- and emergency-number queries over the phonenumber engine (ABI v3).
+ * Short- and emergency-number queries over the phonenumber engine (ABI v5).
  *
  * Mirrors libphonenumber's `ShortNumberInfo`. Carries no phone-number logic —
  * every method marshals to an `aether_pn_embed_short_*` call in {@see Native}.

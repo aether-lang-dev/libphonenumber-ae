@@ -1,4 +1,4 @@
-/* erlang/c_src/phonenumber_ae_nif.c — the canonical BEAM binding (ABI v3).
+/* erlang/c_src/phonenumber_ae_nif.c — the canonical BEAM binding (ABI v5).
  *
  * ONE NIF, shared by all three BEAM languages. Erlang loads it directly;
  * Elixir `defdelegate`s to it; Gleam reaches it with `@external(erlang, ...)`.
@@ -8,7 +8,8 @@
  *
  * NO PHONE-NUMBER LOGIC LIVES HERE. Every function marshals BEAM terms to an
  * `aether_pn_embed_*` call across the flat C ABI described in core/embed.ae
- * (docs/abi.md — 58 symbols, full PhoneNumberUtil parity plus ShortNumberInfo).
+ * (docs/abi.md — 64 symbols, full PhoneNumberUtil parity plus ShortNumberInfo,
+ * TimeZones and Carrier).
  *
  * ## The ONE ownership rule
  *
@@ -121,6 +122,14 @@ static int   (*pn_short_is_carrier_specific)(const char *, const char *);
 static int   (*pn_short_is_sms_service)(const char *, const char *);
 static int   (*pn_short_expected_cost)(const char *, const char *);
 static char *(*pn_short_example_number)(const char *);
+/* PhoneNumberToTimeZonesMapper */
+static int   (*pn_tz_count)(const char *, const char *);
+static char *(*pn_tz_at)(const char *, const char *, int);
+static char *(*pn_tz_all)(const char *, const char *);
+static char *(*pn_tz_unknown)(void);
+/* PhoneNumberToCarrierMapper */
+static char *(*pn_carrier_name)(const char *, const char *);
+static char *(*pn_carrier_name_for_valid)(const char *, const char *);
 
 static void *pn_lib = NULL;
 
@@ -509,6 +518,47 @@ static ERL_NIF_TERM nif_short_expected_cost(ErlNifEnv *env, int argc, const ERL_
 static ERL_NIF_TERM nif_short_example_number(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 { (void)argc; return do_str_str(env, argv, pn_short_example_number); }
 
+/* ---- PhoneNumberToTimeZonesMapper (timezone lookup) ---- */
+
+static ERL_NIF_TERM nif_tz_count(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{ (void)argc; return do_ss_int(env, argv, pn_tz_count); }
+
+/* (string, string, int) -> string, for tz_at. */
+static ERL_NIF_TERM nif_tz_at(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+    char *region, *input, *out;
+    int idx;
+    (void)argc;
+
+    region = term_to_cstr(env, argv[0]);
+    if (!region) return enif_make_badarg(env);
+    input = term_to_cstr(env, argv[1]);
+    if (!input) { enif_free(region); return enif_make_badarg(env); }
+    if (!enif_get_int(env, argv[2], &idx)) {
+        enif_free(region);
+        enif_free(input);
+        return enif_make_badarg(env);
+    }
+    out = pn_tz_at(region, input, idx);
+    enif_free(region);
+    enif_free(input);
+    return take_binary(env, out);
+}
+
+static ERL_NIF_TERM nif_tz_all(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{ (void)argc; return do_ss_str(env, argv, pn_tz_all); }
+
+static ERL_NIF_TERM nif_tz_unknown(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{ (void)argc; (void)argv; return take_binary(env, pn_tz_unknown()); }
+
+/* ---- PhoneNumberToCarrierMapper (English carrier names) ---- */
+
+static ERL_NIF_TERM nif_carrier_name(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{ (void)argc; return do_ss_str(env, argv, pn_carrier_name); }
+
+static ERL_NIF_TERM nif_carrier_name_for_valid(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{ (void)argc; return do_ss_str(env, argv, pn_carrier_name_for_valid); }
+
 /* ---- region enumeration ---- */
 
 static ERL_NIF_TERM nif_region_count(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
@@ -644,6 +694,14 @@ static int resolve_all(char *errbuf, size_t errlen)
     RESOLVE(pn_short_is_sms_service, "aether_pn_embed_short_is_sms_service");
     RESOLVE(pn_short_expected_cost, "aether_pn_embed_short_expected_cost");
     RESOLVE(pn_short_example_number, "aether_pn_embed_short_example_number");
+    /* PhoneNumberToTimeZonesMapper */
+    RESOLVE(pn_tz_count, "aether_pn_embed_tz_count");
+    RESOLVE(pn_tz_at, "aether_pn_embed_tz_at");
+    RESOLVE(pn_tz_all, "aether_pn_embed_tz_all");
+    RESOLVE(pn_tz_unknown, "aether_pn_embed_tz_unknown");
+    /* PhoneNumberToCarrierMapper */
+    RESOLVE(pn_carrier_name, "aether_pn_embed_carrier_name");
+    RESOLVE(pn_carrier_name_for_valid, "aether_pn_embed_carrier_name_for_valid");
     return 1;
 }
 
@@ -776,6 +834,14 @@ static ErlNifFunc nif_funcs[] = {
     {"short_is_sms_service",          2, nif_short_is_sms_service,          0},
     {"short_expected_cost",           2, nif_short_expected_cost,           0},
     {"short_example_number",          1, nif_short_example_number,          0},
+    /* PhoneNumberToTimeZonesMapper */
+    {"tz_count",                      2, nif_tz_count,                      0},
+    {"tz_at",                         3, nif_tz_at,                         0},
+    {"tz_all",                        2, nif_tz_all,                        0},
+    {"tz_unknown",                    0, nif_tz_unknown,                    0},
+    /* PhoneNumberToCarrierMapper */
+    {"carrier_name",                  2, nif_carrier_name,                  0},
+    {"carrier_name_for_valid",        2, nif_carrier_name_for_valid,        0},
     /* introspection */
     {"abi_version",                   0, nif_abi_version,                   0}
 };

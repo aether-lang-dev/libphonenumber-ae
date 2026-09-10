@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# The binding conformance suite (docs/conformance.md, v3).
+# The binding conformance suite (docs/conformance.md, v5).
 #
 # Proves the Ruby binding marshals every value shape across the FFI. It is NOT
 # a phone-number test suite — the behavioural cases live in the engine's own
@@ -154,7 +154,7 @@ RSpec.describe PhoneNumberAe do
   end
 
   it "34 abi version" do
-    expect(PhoneNumberAe.abi_version).to eq(3)
+    expect(PhoneNumberAe.abi_version).to eq(5)
   end
 
   it "35 short is_emergency_number US 911" do
@@ -179,5 +179,21 @@ RSpec.describe PhoneNumberAe do
 
   it "40 short example_number US" do
     expect(PhoneNumberAe::ShortNumber.example_number("US")).to eq("112")
+  end
+
+  it "41 time_zones_for_number US" do
+    expect(PhoneNumberAe::TimeZones.time_zones_for_number("US", "2015550123")).to eq(["America/New_York"])
+  end
+
+  it "42 time_zones_for_number GB" do
+    expect(PhoneNumberAe::TimeZones.time_zones_for_number("GB", "2070313000")).to eq(["Europe/London"])
+  end
+
+  it "43 unknown_time_zone" do
+    expect(PhoneNumberAe::TimeZones.unknown_time_zone).to eq("Etc/Unknown")
+  end
+
+  it "44 carrier_name_for_number GB" do
+    expect(PhoneNumberAe::Carrier.carrier_name_for_number("GB", "7106000000")).to eq("O2")
   end
 end

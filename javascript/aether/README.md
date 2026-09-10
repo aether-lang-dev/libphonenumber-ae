@@ -10,8 +10,8 @@ This package is **marshalling only**. The engine itself — Google
 libphonenumber's metadata, parse, `isPossible`/`isValid`, number typing,
 formatting, the as-you-type formatter and the free-text matcher — is the
 pure-Aether engine in `core/phonenumber.ae`, shared by every language binding in
-this monorepo and reached through the full **v3** `aether_pn_embed_*` C ABI
-(`core/embed.ae`, 58 symbols, `docs/abi.md`). Cross-language behaviour is
+this monorepo and reached through the full **v5** `aether_pn_embed_*` C ABI
+(`core/embed.ae`, 64 symbols, `docs/abi.md`). Cross-language behaviour is
 therefore identical by construction, not by test.
 
 ## Install
@@ -69,6 +69,12 @@ pn.ShortNumberInfo.isEmergencyNumber('GB', '999');   // true
 pn.ShortNumberInfo.isValid('US', '911');             // true
 pn.ShortNumberInfo.expectedCost('US', '911') === pn.COST_TOLL_FREE;  // true
 pn.ShortNumberInfo.exampleNumber('US');              // '112'
+
+// Time zones + carrier (v5 — TimeZones, Carrier).
+pn.TimeZones.timeZonesForNumber('US', '2015550123'); // ['America/New_York']
+pn.TimeZones.timeZonesForNumber('GB', '2070313000'); // ['Europe/London']
+pn.TimeZones.unknownTimeZone();                      // 'Etc/Unknown'
+pn.Carrier.carrierNameForNumber('GB', '7106000000'); // 'O2'
 ```
 
 ### Surface
@@ -96,6 +102,11 @@ pn.ShortNumberInfo.exampleNumber('US');              // '112'
 * **`ShortNumberInfo`** — short / emergency numbers: `isPossible`, `isValid`,
   `isEmergencyNumber`, `connectsToEmergencyNumber`, `isCarrierSpecific`,
   `isSmsService`, `expectedCost` (a `COST_*` int), `exampleNumber(region)`.
+* **`TimeZones`** (v5) — IANA time-zone lookup:
+  `timeZonesForNumber(region, input)` (an array; `['Etc/Unknown']` when none),
+  `timeZoneCount(region, input)`, `unknownTimeZone()`.
+* **`Carrier`** (v5) — English carrier names: `carrierNameForNumber(region,
+  input)`, `carrierNameForValidNumber(region, input)` (`''` when none).
 
 ### Constants
 
@@ -135,7 +146,7 @@ or, with the engine built for you:
 aeb javascript/aether/.tests.ae
 ```
 
-The suite is the 40-check v3 conformance contract in `docs/conformance.md`. It
+The suite is the 44-check v5 conformance contract in `docs/conformance.md`. It
 uses `node:test` and `node:assert`, so koffi is the only dependency that has to
 be installed.
 

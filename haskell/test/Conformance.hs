@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 -- |
--- The 40-check binding conformance suite (@docs\/conformance.md@, v3).
+-- The 44-check binding conformance suite (@docs\/conformance.md@, v5).
 --
 -- Proves the Haskell binding marshals every value shape across the FFI. It is
 -- __not__ a phone-number test suite — the behavioural cases live in the
@@ -91,7 +91,7 @@ isFalse what got = unless (not got) $ assertFail (what ++ ": expected False")
 main :: IO ()
 main = do
   hSetEncoding stdout utf8
-  putStrLn "=== phonenumber_ae Haskell binding conformance (v3) ==="
+  putStrLn "=== phonenumber_ae Haskell binding conformance (v5) ==="
   v <- abiVersion
   putStrLn ("engine: ABI v" ++ show v)
 
@@ -109,7 +109,7 @@ main = do
 
 runChecks :: Failures -> IO ()
 runChecks fs = do
-  -- ---- the forty (docs/conformance.md v3) ----
+  -- ---- the forty-four (docs/conformance.md v5) ----
 
   check fs "01 country_code US == 1" $ do
     out <- countryCode "US"
@@ -267,9 +267,9 @@ runChecks fs = do
       (m0 : _) -> eqStr "match raw" (matchRaw m0) "201-555-0123"
       [] -> assertFail "no matches"
 
-  check fs "34 abi_version == 3" $ do
+  check fs "34 abi_version == 5" $ do
     v <- abiVersion
-    eqInt "abi_version" v 3
+    eqInt "abi_version" v 5
 
   check fs "35 short is_emergency US 911" $ do
     ok <- isEmergencyNumber "US" "911"
@@ -295,6 +295,22 @@ runChecks fs = do
     out <- shortExampleNumber "US"
     eqStr "short_example_number" out "112"
 
+  check fs "41 time_zones_for_number US == America/New_York" $ do
+    zs <- timeZonesForNumber "US" "2015550123"
+    eqShow "time_zones US" zs ["America/New_York"]
+
+  check fs "42 time_zones_for_number GB == Europe/London" $ do
+    zs <- timeZonesForNumber "GB" "2070313000"
+    eqShow "time_zones GB" zs ["Europe/London"]
+
+  check fs "43 unknown_time_zone == Etc/Unknown" $ do
+    z <- unknownTimeZone
+    eqStr "unknown_time_zone" z "Etc/Unknown"
+
+  check fs "44 carrier_name_for_number GB 7106000000 == O2" $ do
+    c <- carrierNameForNumber "GB" "7106000000"
+    eqStr "carrier_name" c "O2"
+
   -- ---- a few surface extras ----
 
   check fs "format style aliases agree" $ do
@@ -310,6 +326,16 @@ runChecks fs = do
   check fs "region_at out of range is empty" $ do
     oob <- regionAt 1000000
     eqStr "out of range" oob ""
+
+  check fs "time_zone_count agrees with the list length" $ do
+    n <- timeZoneCount "US" "2015550123"
+    eqInt "time_zone_count" n 1
+    zs <- timeZonesForNumber "US" "2015550123"
+    eqInt "list length" (length zs) 1
+
+  check fs "carrier_name_for_valid agrees for a valid number" $ do
+    c <- carrierNameForValidNumber "GB" "7106000000"
+    eqStr "carrier_name_for_valid" c "O2"
 
   check fs "many round trips do not leak or crash" $ do
     forM_ [1 :: Int .. 3000] $ \_ -> do

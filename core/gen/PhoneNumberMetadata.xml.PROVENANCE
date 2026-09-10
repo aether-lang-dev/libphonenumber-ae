@@ -51,3 +51,22 @@ an example, and the per-category national-number patterns (tollFree, premiumRate
 standardRate, carrierSpecific, smsServices, emergency). Enough for isValid/
 isPossibleShortNumber, getExpectedCost, isEmergencyNumber, connectsToEmergencyNumber,
 isCarrierSpecific, isSmsServiceForRegion. Pristine file, read directly, unmodified.
+
+timezones/map_data.txt (PhoneNumberToTimeZonesMapper side-library)
+------------------------------------------------------------------
+core/gen/generate_tz.ae reads the in-tree resources/timezones/map_data.txt
+(Google's own, Apache-2.0) — one "prefix|tz1&tz2&..." entry per line — and
+compiles it verbatim into core/timezone_metadata.ae (3290 prefix entries). The
+engine does a longest-prefix match over the E.164 digits. Pristine file, read
+directly, unmodified.
+
+carrier/en/<cc>.txt (PhoneNumberToCarrierMapper side-library)
+-------------------------------------------------------------
+core/gen/generate_carrier.ae reads the in-tree resources/carrier/en/<cc>.txt
+files (Google's own, Apache-2.0) — one "prefix|CarrierName" entry per line, the
+prefix being cc-inclusive E.164 digits — and compiles the ENGLISH names into
+core/carrier_metadata.ae as a single newline-joined string blob (~29k entries;
+too many for the compiler's per-function statement cap as list.add calls, fine
+as one string constant). Longest-prefix match. Only the English (en/) slice is
+carried; other languages can be added the same way. Pristine files, read
+directly, unmodified.

@@ -177,6 +177,14 @@ def _declare(lib):
         "aether_pn_embed_short_is_sms_service": ([S, S], I),
         "aether_pn_embed_short_expected_cost": ([S, S], I),
         "aether_pn_embed_short_example_number": ([S], P),
+        # PhoneNumberToTimeZonesMapper
+        "aether_pn_embed_tz_count": ([S, S], I),
+        "aether_pn_embed_tz_at": ([S, S, I], P),
+        "aether_pn_embed_tz_all": ([S, S], P),
+        "aether_pn_embed_tz_unknown": ([], P),
+        # PhoneNumberToCarrierMapper
+        "aether_pn_embed_carrier_name": ([S, S], P),
+        "aether_pn_embed_carrier_name_for_valid": ([S, S], P),
     }
     for name, (argtypes, restype) in sigs.items():
         fn = getattr(lib, name)

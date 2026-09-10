@@ -1,5 +1,5 @@
 "
-The 40-check binding conformance suite (docs/conformance.md, v3), in Pharo.
+The 44-check binding conformance suite (docs/conformance.md, v5), in Pharo.
 
 I prove the Pharo binding marshals every value shape across the FFI. I am NOT a
 phone-number test suite — the behavioural cases live in the engine's own tests
@@ -272,7 +272,7 @@ PhonenumberAeConformanceTest >> test33MatcherRaw [
 { #category : 'tests' }
 PhonenumberAeConformanceTest >> test34AbiVersion [
 
-	self assert: PhonenumberAe abiVersion equals: 3
+	self assert: PhonenumberAe abiVersion equals: 5
 ]
 
 { #category : 'tests - short numbers' }
@@ -316,6 +316,39 @@ PhonenumberAeConformanceTest >> test39ShortCost [
 PhonenumberAeConformanceTest >> test40ShortExample [
 
 	self assert: (PhonenumberAe shortExampleNumber: 'US') equals: '112'
+]
+
+{ #category : 'tests - timezones + carrier' }
+PhonenumberAeConformanceTest >> test41TimeZonesUs [
+	"The list path: a single-zone number comes back as a one-element collection."
+
+	self
+		assert: (PhonenumberAe timeZonesForNumber: '2015550123' region: 'US')
+			asArray
+		equals: #( 'America/New_York' )
+]
+
+{ #category : 'tests - timezones + carrier' }
+PhonenumberAeConformanceTest >> test42TimeZonesGb [
+
+	self
+		assert: (PhonenumberAe timeZonesForNumber: '2070313000' region: 'GB')
+			asArray
+		equals: #( 'Europe/London' )
+]
+
+{ #category : 'tests - timezones + carrier' }
+PhonenumberAeConformanceTest >> test43UnknownTimeZone [
+
+	self assert: PhonenumberAe unknownTimeZone equals: 'Etc/Unknown'
+]
+
+{ #category : 'tests - timezones + carrier' }
+PhonenumberAeConformanceTest >> test44Carrier [
+
+	self
+		assert: (PhonenumberAe carrierNameForNumber: '7106000000' region: 'GB')
+		equals: 'O2'
 ]
 
 { #category : 'tests - extras' }

@@ -1,4 +1,4 @@
-//// Validate, parse and format international phone numbers (ABI v3).
+//// Validate, parse and format international phone numbers (ABI v5).
 ////
 //// This is a thin Gleam surface over the monorepo's **canonical BEAM NIF**,
 //// which lives in `erlang/` and is compiled exactly once. There is no C source
@@ -10,8 +10,8 @@
 //// The engine itself (`core/native/libphonenumber_ae.so`) is pure Aether,
 //// compiled from Google libphonenumber's own metadata. No phone-number logic
 //// lives in this file: everything marshals to an `aether_pn_embed_*` call
-//// across the C ABI in `core/embed.ae` (docs/abi.md — 58 symbols, full
-//// PhoneNumberUtil parity plus ShortNumberInfo).
+//// across the C ABI in `core/embed.ae` (docs/abi.md — 64 symbols, full
+//// PhoneNumberUtil parity plus ShortNumberInfo, TimeZones and Carrier).
 ////
 //// ```gleam
 //// phonenumber_ae.country_code("US")
@@ -449,6 +449,23 @@ fn short_expected_cost_ffi(region: String, input: String) -> Int
 @external(erlang, "phonenumber_ae_nif", "short_example_number")
 fn short_example_number_ffi(region: String) -> String
 
+// PhoneNumberToTimeZonesMapper
+@external(erlang, "phonenumber_ae_nif", "tz_count")
+fn tz_count_ffi(region: String, input: String) -> Int
+
+@external(erlang, "phonenumber_ae_nif", "tz_at")
+fn tz_at_ffi(region: String, input: String, idx: Int) -> String
+
+@external(erlang, "phonenumber_ae_nif", "tz_unknown")
+fn tz_unknown_ffi() -> String
+
+// PhoneNumberToCarrierMapper
+@external(erlang, "phonenumber_ae_nif", "carrier_name")
+fn carrier_name_ffi(region: String, input: String) -> String
+
+@external(erlang, "phonenumber_ae_nif", "carrier_name_for_valid")
+fn carrier_name_for_valid_ffi(region: String, input: String) -> String
+
 // ---- metadata ----
 
 /// The country calling code for a region ("1", "44", …), or "" if unknown.
@@ -810,9 +827,43 @@ pub fn short_example_number(region: String) -> String {
   short_example_number_ffi(region)
 }
 
+// ---- PhoneNumberToTimeZonesMapper (timezone lookup) ----
+
+/// The IANA time-zone ids for a number, as a list. When the engine knows no
+/// zone (count 0) the result is a single-element list of the unknown zone,
+/// mirroring the other bindings — never an empty list.
+pub fn time_zones_for_number(region: String, input: String) -> List(String) {
+  case tz_count_ffi(region, input) {
+    0 -> [unknown_time_zone()]
+    n -> list.map(indices(n), fn(i) { tz_at_ffi(region, input, i) })
+  }
+}
+
+/// How many time zones the number maps to (0 = only the unknown zone).
+pub fn time_zone_count(region: String, input: String) -> Int {
+  tz_count_ffi(region, input)
+}
+
+/// The engine's sentinel unknown zone, "Etc/Unknown".
+pub fn unknown_time_zone() -> String {
+  tz_unknown_ffi()
+}
+
+// ---- PhoneNumberToCarrierMapper (English carrier names) ----
+
+/// The carrier name for a number (English), or "" if none is known.
+pub fn carrier_name_for_number(region: String, input: String) -> String {
+  carrier_name_ffi(region, input)
+}
+
+/// The carrier name, but only when the number is valid; else "".
+pub fn carrier_name_for_valid_number(region: String, input: String) -> String {
+  carrier_name_for_valid_ffi(region, input)
+}
+
 // ---- introspection ----
 
-/// The engine's ABI revision (3).
+/// The engine's ABI revision (5).
 pub fn abi_version() -> Int {
   abi_version_ffi()
 }

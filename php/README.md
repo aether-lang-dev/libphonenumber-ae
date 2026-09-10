@@ -8,11 +8,11 @@ over Google libphonenumber's own metadata. It contains **no phone-number
 logic**: every method marshals to an `aether_pn_embed_*` call. One engine, one
 set of behaviours, N language surfaces.
 
-It speaks the full **v3** `aether_pn_embed_*` C ABI (58 symbols, full
-PhoneNumberUtil parity plus ShortNumberInfo — `docs/abi.md`). Every signature is
-still scalar-only (`const char*` and `int`), and there are still no opaque
-handles: a parsed number and an as-you-type state are themselves caller-owned
-*strings*.
+It speaks the full **v5** `aether_pn_embed_*` C ABI (64 symbols, full
+PhoneNumberUtil parity plus ShortNumberInfo, TimeZones and Carrier —
+`docs/abi.md`). Every signature is still scalar-only (`const char*` and `int`),
+and there are still no opaque handles: a parsed number and an as-you-type state
+are themselves caller-owned *strings*.
 
 | File | Role |
 |---|---|
@@ -22,7 +22,9 @@ handles: a parsed number and an as-you-type state are themselves caller-owned
 | `src/AsYouTypeFormatter.php` | formats a number as it is typed |
 | `src/PhoneNumberMatch.php` | one match `findNumbers()` returns (`start`, `end`, `raw`) |
 | `src/ShortNumberInfo.php` | short / emergency-number queries (the v3 ABI addition) |
-| `tests/conformance.php` | the 40-check v3 conformance suite, as an assertion runner |
+| `src/TimeZones.php` | IANA time-zone lookup (the v5 ABI addition) |
+| `src/Carrier.php` | English carrier-name lookup (the v5 ABI addition) |
+| `tests/conformance.php` | the 44-check v5 conformance suite, as an assertion runner |
 
 Requires **PHP 8.1+** and **ext-ffi**. No Composer dependencies at all — which
 is also what lets it run on a box with no network.
@@ -71,8 +73,10 @@ Library resolution, in order:
 
 ```php
 use PhoneNumberAe\AsYouTypeFormatter;
+use PhoneNumberAe\Carrier;
 use PhoneNumberAe\PhoneNumber;
 use PhoneNumberAe\ShortNumberInfo;
+use PhoneNumberAe\TimeZones;
 
 // Parse into a ParsedNumber and read its fields on demand.
 $num = PhoneNumber::parse('+1 201 555 0123 ext 42', 'US');
@@ -110,6 +114,12 @@ ShortNumberInfo::isEmergencyNumber('GB', '999');   // true
 ShortNumberInfo::isValid('US', '911');             // true
 ShortNumberInfo::expectedCost('US', '911');        // ShortNumberInfo::COST_TOLL_FREE
 ShortNumberInfo::exampleNumber('US');              // '112'
+
+// Time zones + carrier (v5 — TimeZones, Carrier).
+TimeZones::timeZonesForNumber('US', '2015550123'); // ['America/New_York']
+TimeZones::timeZonesForNumber('GB', '2070313000'); // ['Europe/London']
+TimeZones::unknownTimeZone();                      // 'Etc/Unknown'
+Carrier::carrierNameForNumber('GB', '7106000000'); // 'O2'
 ```
 
 ### Surface
@@ -138,6 +148,11 @@ ShortNumberInfo::exampleNumber('US');              // '112'
 * **`ShortNumberInfo`** — short / emergency numbers: `isPossible`, `isValid`,
   `isEmergencyNumber`, `connectsToEmergencyNumber`, `isCarrierSpecific`,
   `isSmsService`, `expectedCost` (a `COST_*` int), `exampleNumber($region)`.
+* **`TimeZones`** (v5) — IANA time-zone lookup:
+  `timeZonesForNumber($region, $input)` (a `list<string>`; `['Etc/Unknown']`
+  when none), `timeZoneCount($region, $input)`, `unknownTimeZone()`.
+* **`Carrier`** (v5) — English carrier names: `carrierNameForNumber($region,
+  $input)`, `carrierNameForValidNumber($region, $input)` (`''` when none).
 
 ### Constants
 
@@ -177,7 +192,7 @@ there is no keepalive list and no borrowed pointers to track.
 
 ## Tests
 
-The 40-check v3 conformance suite (`docs/conformance.md`) lives in
+The 44-check v5 conformance suite (`docs/conformance.md`) lives in
 `tests/conformance.php`, alongside a couple of extras and a 5,000-iteration
 loop over the caller-owned-string contract.
 

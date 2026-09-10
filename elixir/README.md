@@ -60,7 +60,7 @@ PhonenumberAe.number_type("US", "2015550123")          # => :fixed_line
 PhonenumberAe.format("US", "2015550123", :national)    # => "(201) 555-0123"
 PhonenumberAe.format_e164("US", "2015550123")          # => "+12015550123"
 PhonenumberAe.regions()                                # => ["AC", "AD", ...]
-PhonenumberAe.abi_version()                            # => 3
+PhonenumberAe.abi_version()                            # => 5
 ```
 
 ### Parsing
@@ -115,7 +115,22 @@ PhonenumberAe.short_expected_cost("US", "911")    # => :toll_free
 PhonenumberAe.short_example_number("US")          # => "112"
 ```
 
-### The surface (v3 — full PhoneNumberUtil parity + ShortNumberInfo)
+### Time zones and carrier
+
+The engine also maps a number to its IANA time zones and (in English) its
+carrier. Both take a region plus the raw input, exactly like the calls above:
+
+```elixir
+PhonenumberAe.time_zones_for_number("US", "2015550123")   # => ["America/New_York"]
+PhonenumberAe.time_zones_for_number("GB", "2070313000")   # => ["Europe/London"]
+PhonenumberAe.unknown_time_zone()                         # => "Etc/Unknown"
+PhonenumberAe.carrier_name_for_number("GB", "7106000000") # => "O2"
+```
+
+`time_zones_for_number/2` always returns a non-empty list — a number the engine
+knows no zone for comes back as `["Etc/Unknown"]`, not `[]`.
+
+### The surface (v5 — full PhoneNumberUtil parity + ShortNumberInfo + TimeZones + Carrier)
 
 - **Metadata**: `country_code/1`, `example_number/1`,
   `example_number_for_type/2`, `invalid_example_number/1`, `possible_lengths/1`,
@@ -142,11 +157,16 @@ PhonenumberAe.short_example_number("US")          # => "112"
   `short_expected_cost/2` (a ShortNumberCost atom — `:toll_free` |
   `:standard_rate` | `:premium_rate` | `:unknown`; `short_expected_cost_code/2`
   for the raw int), `short_example_number/1`.
-- `abi_version/0` (returns `3`).
+- **Time zones**: `time_zones_for_number/2` (a non-empty list of IANA zone
+  ids), `time_zone_count/2`, `unknown_time_zone/0` (`"Etc/Unknown"`).
+- **Carrier**: `carrier_name_for_number/2`, `carrier_name_for_valid_number/2`
+  (English name, or `""`).
+- `abi_version/0` (returns `5`).
 
-> **v3 note.** ShortNumberInfo (the `short_*` / `*_emergency_number?` calls
-> above) is new in v3. The v2 format-style selectors are unchanged: `:e164` is
-> `0` (it was `2` in v1). Callers that use the style atoms never see the number.
+> **v5 note.** The time-zone and carrier calls (`time_zones_for_number/2`,
+> `carrier_name_for_number/2`, …) are new in v5; ShortNumberInfo arrived in v3.
+> The v2 format-style selectors are unchanged: `:e164` is `0` (it was `2` in
+> v1). Callers that use the style atoms never see the number.
 
 ### No handles
 
@@ -156,7 +176,7 @@ is a direct FFI crossing.
 
 ## Conformance
 
-`elixir/.tests.ae` runs the 40-check binding conformance suite
-(`docs/conformance.md`, v3) as ExUnit. It samples each *kind* of value crossing
+`elixir/.tests.ae` runs the 44-check binding conformance suite
+(`docs/conformance.md`, v5) as ExUnit. It samples each *kind* of value crossing
 the FFI — it proves the marshalling, not the library. The node SKIPs (green)
 when Elixir/Mix or the shared NIF is absent.

@@ -1,4 +1,4 @@
-//! The 1:1 symbol table for the phonenumber C ABI (`core/embed.ae`), **v3**.
+//! The 1:1 symbol table for the phonenumber C ABI (`core/embed.ae`), **v5**.
 //!
 //! This module is the ONLY place in the Rust binding that knows about the C
 //! ABI, and it is the canonical cross-binding reference: every symbol the
@@ -213,6 +213,16 @@ pub struct Api {
     pub short_expected_cost: unsafe extern "C" fn(*const c_char, *const c_char) -> c_int,
     pub short_example_number: unsafe extern "C" fn(*const c_char) -> *mut c_char,
 
+    // ---- PhoneNumberToTimeZonesMapper (timezone lookup) ----
+    pub tz_count: unsafe extern "C" fn(*const c_char, *const c_char) -> c_int,
+    pub tz_at: unsafe extern "C" fn(*const c_char, *const c_char, c_int) -> *mut c_char,
+    pub tz_all: unsafe extern "C" fn(*const c_char, *const c_char) -> *mut c_char,
+    pub tz_unknown: unsafe extern "C" fn() -> *mut c_char,
+
+    // ---- PhoneNumberToCarrierMapper (English carrier names) ----
+    pub carrier_name: unsafe extern "C" fn(*const c_char, *const c_char) -> *mut c_char,
+    pub carrier_name_for_valid: unsafe extern "C" fn(*const c_char, *const c_char) -> *mut c_char,
+
     /// Keeps the `dlopen` handle alive. MUST be the last field — every fn
     /// pointer above points into this library's mapping.
     _lib: Library,
@@ -342,6 +352,14 @@ impl Api {
             short_is_sms_service: sym!(lib, "aether_pn_embed_short_is_sms_service"),
             short_expected_cost: sym!(lib, "aether_pn_embed_short_expected_cost"),
             short_example_number: sym!(lib, "aether_pn_embed_short_example_number"),
+
+            tz_count: sym!(lib, "aether_pn_embed_tz_count"),
+            tz_at: sym!(lib, "aether_pn_embed_tz_at"),
+            tz_all: sym!(lib, "aether_pn_embed_tz_all"),
+            tz_unknown: sym!(lib, "aether_pn_embed_tz_unknown"),
+
+            carrier_name: sym!(lib, "aether_pn_embed_carrier_name"),
+            carrier_name_for_valid: sym!(lib, "aether_pn_embed_carrier_name_for_valid"),
 
             _lib: lib,
         })

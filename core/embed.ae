@@ -28,6 +28,8 @@
 
 import core.phonenumber
 import core.shortnumber
+import core.timezone
+import core.carrier
 import std.string
 import std.list
 
@@ -35,8 +37,54 @@ extern pn_raw_dup(s: string) -> string
 extern pn_raw_free(s: string)
 
 // ABI revision. Bumped to 2 for the full PhoneNumberUtil-parity surface.
-// ABI 3 adds the ShortNumberInfo surface (pn_embed_short_*).
-pn_embed_abi_version() -> int { return 3 }
+// ABI 3 ShortNumberInfo; ABI 4 timezone; ABI 5 carrier mapper (pn_embed_carrier_*).
+pn_embed_abi_version() -> int { return 5 }
+
+// ---- PhoneNumberToCarrierMapper (English carrier names) ----
+// Bindings pass a raw (region, input); we parse to E.164 and longest-prefix
+// match the carrier map. getNameForNumber semantics.
+// getNameForNumber: the carrier name, or "" if none. Caller-owned.
+pn_embed_carrier_name(region: string, input: string) -> string {
+    e164 = e164_digits_for(region, input)
+    if e164 == "" { return pn_raw_dup("") }
+    return pn_raw_dup(carrier.carrier_name_for_e164(e164))
+}
+// getNameForValidNumber: a carrier name only when the number is valid, else "".
+pn_embed_carrier_name_for_valid(region: string, input: string) -> string {
+    if phonenumber.is_valid_number(region, input) == 0 { return pn_raw_dup("") }
+    return pn_embed_carrier_name(region, input)
+}
+
+// ---- PhoneNumberToTimeZonesMapper (timezone lookup) ----
+// Bindings pass a raw (region, input) like everything else; we parse to E.164
+// and do the longest-prefix lookup. getTimeZonesForNumber semantics.
+fn e164_digits_for(region: string, input: string) -> string {
+    pn = phonenumber.parse(input, region)
+    if phonenumber.pn_error(pn) != "" { return "" }
+    return "${phonenumber.pn_country_code(pn)}${phonenumber.pn_national_number(pn)}"
+}
+// Number of timezones for a (region, input) — 0 means only the unknown zone.
+pn_embed_tz_count(region: string, input: string) -> int {
+    e164 = e164_digits_for(region, input)
+    if e164 == "" { return 0 }
+    return timezone.time_zone_count_for_e164(e164)
+}
+// The idx-th timezone id (or the unknown zone out of range). Caller-owned.
+pn_embed_tz_at(region: string, input: string, idx: int) -> string {
+    e164 = e164_digits_for(region, input)
+    if e164 == "" { return pn_raw_dup(timezone.unknown_time_zone()) }
+    return pn_raw_dup(timezone.time_zone_at_for_e164(e164, idx))
+}
+// The '&'-joined timezone list (or the unknown zone). Caller-owned.
+pn_embed_tz_all(region: string, input: string) -> string {
+    e164 = e164_digits_for(region, input)
+    if e164 == "" { return pn_raw_dup(timezone.unknown_time_zone()) }
+    return pn_raw_dup(timezone.time_zones_for_e164(e164))
+}
+// The unknown-timezone sentinel ("Etc/Unknown"). Caller-owned.
+pn_embed_tz_unknown() -> string {
+    return pn_raw_dup(timezone.unknown_time_zone())
+}
 
 // ---- ShortNumberInfo (short / emergency numbers) ----
 // Dialed as-is (no cc, no national prefix): the input is the raw short number

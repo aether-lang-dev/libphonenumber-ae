@@ -1,7 +1,7 @@
 <?php
 
 /**
- * The 1:1 symbol table for the phonenumber C ABI (core/embed.ae), v3.
+ * The 1:1 symbol table for the phonenumber C ABI (core/embed.ae), v5.
  *
  * This file is the ONLY place in the PHP binding that knows about the C ABI.
  * Everything above it (PhoneNumber.php) is idiomatic PHP over these symbols.
@@ -22,8 +22,9 @@
  *
  * ## No opaque handles
  *
- * v3 adds the ShortNumberInfo side-library (8 symbols) on top of the full
- * PhoneNumberUtil-parity ABI (now 58 symbols), but every signature is still
+ * v5 adds the PhoneNumberToTimeZonesMapper (4 symbols) and the
+ * PhoneNumberToCarrierMapper (2 symbols) side-libraries on top of the v3
+ * ShortNumberInfo ABI (now 64 symbols), but every signature is still
  * scalar-only (`const char*` and `int`). A parsed number and an as-you-type
  * state are themselves caller-owned *strings*: you get one back, pass it to the
  * accessor calls, and free it like any other returned string. There is still no
@@ -189,6 +190,16 @@ final class Native
         int    aether_pn_embed_short_is_sms_service(const char* region, const char* input);
         int    aether_pn_embed_short_expected_cost(const char* region, const char* input);
         char*  aether_pn_embed_short_example_number(const char* region);
+
+        /* ---- PhoneNumberToTimeZonesMapper (timezone lookup) ---- */
+        int    aether_pn_embed_tz_count(const char* region, const char* input);
+        char*  aether_pn_embed_tz_at(const char* region, const char* input, int idx);
+        char*  aether_pn_embed_tz_all(const char* region, const char* input);
+        char*  aether_pn_embed_tz_unknown(void);
+
+        /* ---- PhoneNumberToCarrierMapper (English carrier names) ---- */
+        char*  aether_pn_embed_carrier_name(const char* region, const char* input);
+        char*  aether_pn_embed_carrier_name_for_valid(const char* region, const char* input);
         C;
 
     private static ?FFI $ffi = null;

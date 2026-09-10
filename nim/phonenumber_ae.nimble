@@ -22,5 +22,5 @@ requires "nim >= 1.6.0"
 # runnable without nimble, which is how .tests.ae drives it:
 #
 #     nim c -r tests/tconformance.nim
-task test, "Run the v2 (34-check) conformance suite":
+task test, "Run the v5 (44-check) conformance suite":
   exec "nim c -r --hints:off tests/tconformance.nim"

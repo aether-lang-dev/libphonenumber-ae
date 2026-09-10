@@ -1,6 +1,6 @@
 'use strict';
 /**
- * The 40-check binding conformance suite (docs/conformance.md, v3).
+ * The 44-check binding conformance suite (docs/conformance.md, v5).
  *
  * Proves the JavaScript binding marshals every value shape across the FFI. It
  * is NOT a phone-number test suite — the behavioural cases live in the engine's
@@ -156,7 +156,7 @@ test('33 matcher raw', () => {
 });
 
 test('34 abi version', () => {
-  assert.strictEqual(pn.abiVersion(), 3);
+  assert.strictEqual(pn.abiVersion(), 5);
 });
 
 // ---- ShortNumberInfo (v3) ----
@@ -183,6 +183,26 @@ test('39 short expected_cost US 911 is toll-free', () => {
 
 test('40 short example_number US', () => {
   assert.strictEqual(pn.ShortNumberInfo.exampleNumber('US'), '112');
+});
+
+// ---- TimeZones + Carrier (v5) ----
+
+test('41 time_zones_for_number US', () => {
+  assert.deepStrictEqual(
+    pn.TimeZones.timeZonesForNumber('US', '2015550123'), ['America/New_York']);
+});
+
+test('42 time_zones_for_number GB', () => {
+  assert.deepStrictEqual(
+    pn.TimeZones.timeZonesForNumber('GB', '2070313000'), ['Europe/London']);
+});
+
+test('43 unknown_time_zone', () => {
+  assert.strictEqual(pn.TimeZones.unknownTimeZone(), 'Etc/Unknown');
+});
+
+test('44 carrier_name_for_number GB', () => {
+  assert.strictEqual(pn.Carrier.carrierNameForNumber('GB', '7106000000'), 'O2');
 });
 
 // ---- a few extras exercising the idiomatic surface ----

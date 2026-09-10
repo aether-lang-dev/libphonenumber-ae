@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Formats a number as it is typed, digit by digit (ABI v3).
+ * Formats a number as it is typed, digit by digit (ABI v5).
  *
  * The formatter state is a caller-owned ABI string; each {@see inputDigit()}
  * threads a new state and frees the old one through {@see Native::takeString()}.

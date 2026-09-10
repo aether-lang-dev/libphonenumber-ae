@@ -9,8 +9,10 @@ every function marshals to an `aether_pn_embed_*` call across the flat C ABI
 described in `core/embed.ae`. One engine, one set of behaviours, N language
 surfaces.
 
-As of **ABI v3** the surface is full `PhoneNumberUtil` parity plus the
-`ShortNumberInfo` side-library (short / emergency numbers) — 58 symbols. A
+As of **ABI v5** the surface is full `PhoneNumberUtil` parity plus the
+`ShortNumberInfo` side-library (short / emergency numbers), the
+`PhoneNumberToTimeZonesMapper` (IANA time zones) and the
+`PhoneNumberToCarrierMapper` (English carrier names) — 64 symbols. A
 parsed number is a caller-owned string you carry in a `ParsedNumber`; the
 `AsYouTypeFormatter` threads its state through the same caller-owned-string
 mechanism; and `findNumbers` walks free text for numbers.
@@ -40,8 +42,8 @@ mechanism; and `findNumbers` walks free text for numbers.
 haskell/
     phonenumber_ae.cabal         build manifest
     src/PhoneNumber.hs           the public API
-    src/PhoneNumber/Native.hs    the 1:1 C ABI symbol table (all 58 symbols)
-    test/Conformance.hs          the 40-check suite, a plain assertion runner
+    src/PhoneNumber/Native.hs    the 1:1 C ABI symbol table (all 64 symbols)
+    test/Conformance.hs          the 44-check suite, a plain assertion runner
     native/                      where .tests.ae stages the engine .so
 ```
 
@@ -186,6 +188,15 @@ shortIsSmsService         :: ByteString -> ByteString -> IO Bool
 shortExpectedCost         :: ByteString -> ByteString -> IO ShortNumberCost
 shortExampleNumber        :: ByteString -> IO ByteString
 
+-- PhoneNumberToTimeZonesMapper (timezone lookup)
+timeZonesForNumber :: ByteString -> ByteString -> IO [ByteString]  -- ["Etc/Unknown"] if none
+timeZoneCount      :: ByteString -> ByteString -> IO Int           -- 0 == only the unknown zone
+unknownTimeZone    :: IO ByteString                                 -- "Etc/Unknown"
+
+-- PhoneNumberToCarrierMapper (English carrier names)
+carrierNameForNumber      :: ByteString -> ByteString -> IO ByteString  -- "" if none known
+carrierNameForValidNumber :: ByteString -> ByteString -> IO ByteString  -- "" unless the number is valid
+
 abiVersion :: IO Int
 ```
 
@@ -200,6 +211,23 @@ isEmergencyNumber "GB" "999"    -- True
 shortIsValid "US" "911"         -- True
 shortExpectedCost "US" "911"    -- TollFreeCost
 shortExampleNumber "US"         -- "112"
+```
+
+### Time zones and carrier
+
+Both take a raw `(region, input)` and let the engine parse to E.164 itself.
+`timeZonesForNumber` returns a list of IANA ids — a number with no known zones
+comes back as `["Etc/Unknown"]`, never the empty list. Carrier names are
+English only, and `""` when no carrier is known.
+
+```haskell
+timeZonesForNumber "US" "2015550123"      -- ["America/New_York"]
+timeZonesForNumber "GB" "2070313000"      -- ["Europe/London"]
+timeZoneCount "US" "2015550123"           -- 1
+unknownTimeZone                            -- "Etc/Unknown"
+
+carrierNameForNumber "GB" "7106000000"        -- "O2"
+carrierNameForValidNumber "GB" "7106000000"   -- "O2" (only if valid)
 ```
 
 ### Constants
@@ -250,9 +278,10 @@ non-reentrant C calls.
 
 ## Conformance
 
-The 40-check suite (`docs/conformance.md`) lives in `test/Conformance.hs`,
+The 44-check suite (`docs/conformance.md`) lives in `test/Conformance.hs`,
 alongside a few surface extras (the format-style aliases, out-of-range
-`regionAt`, and a 3000-iteration loop over the caller-owned string contract). It
+`regionAt`, timezone-count agreement, `carrierNameForValidNumber`, and a
+3000-iteration loop over the caller-owned string contract). It
 is a plain assertion runner with its own exit code — no hspec, no tasty, no
 Hackage round trip — for the same reason the other bindings' runners are: the
 suite must run with whatever is already on the box.

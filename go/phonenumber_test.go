@@ -1,4 +1,4 @@
-// The 40-check binding conformance suite (docs/conformance.md, v3).
+// The 44-check binding conformance suite (docs/conformance.md, v5).
 //
 // Proves the Go binding marshals every value shape across the FFI. It is NOT a
 // phone-number test suite — the behavioural cases live in the engine's own
@@ -26,6 +26,20 @@ func eqInt(t *testing.T, what string, got, want int) {
 	t.Helper()
 	if got != want {
 		t.Errorf("%s: got %d, want %d", what, got, want)
+	}
+}
+
+func eqStrSlice(t *testing.T, what string, got, want []string) {
+	t.Helper()
+	if len(got) != len(want) {
+		t.Errorf("%s:\n  got  %q\n  want %q", what, got, want)
+		return
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Errorf("%s:\n  got  %q\n  want %q", what, got, want)
+			return
+		}
 	}
 }
 
@@ -201,7 +215,7 @@ func Test33MatcherRaw(t *testing.T) {
 }
 
 func Test34ABIVersion(t *testing.T) {
-	eqInt(t, "ABIVersion()", ABIVersion(), 3)
+	eqInt(t, "ABIVersion()", ABIVersion(), 5)
 }
 
 func Test35ShortEmergencyUS(t *testing.T) {
@@ -228,6 +242,25 @@ func Test39ShortCost(t *testing.T) {
 
 func Test40ShortExample(t *testing.T) {
 	eqStr(t, `ShortExampleNumber("US")`, ShortExampleNumber("US"), "112")
+}
+
+func Test41TimeZonesUS(t *testing.T) {
+	eqStrSlice(t, `TimeZonesForNumber("US", "2015550123")`,
+		TimeZonesForNumber("US", "2015550123"), []string{"America/New_York"})
+}
+
+func Test42TimeZonesGB(t *testing.T) {
+	eqStrSlice(t, `TimeZonesForNumber("GB", "2070313000")`,
+		TimeZonesForNumber("GB", "2070313000"), []string{"Europe/London"})
+}
+
+func Test43UnknownTimeZone(t *testing.T) {
+	eqStr(t, "UnknownTimeZone()", UnknownTimeZone(), "Etc/Unknown")
+}
+
+func Test44CarrierName(t *testing.T) {
+	eqStr(t, `CarrierNameForNumber("GB", "7106000000")`,
+		CarrierNameForNumber("GB", "7106000000"), "O2")
 }
 
 // The Format* convenience wrappers must agree with Format(..., style).

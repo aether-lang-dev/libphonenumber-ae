@@ -6,11 +6,11 @@ This package is a **thin `importc` binding** over the monorepo's one shared
 native engine — `core/native/libphonenumber_ae.so`, compiled from pure Aether
 over Google libphonenumber's own metadata. It contains **no phone-number
 logic**: every proc marshals to an `aether_pn_embed_*` call across the flat C
-ABI (v3, full `PhoneNumberUtil` parity plus the ShortNumberInfo surface)
-described in `core/embed.ae`. One engine, one set of behaviours, N language
-surfaces.
+ABI (v5, full `PhoneNumberUtil` parity plus the ShortNumberInfo, TimeZones and
+Carrier surfaces) described in `core/embed.ae`. One engine, one set of
+behaviours, N language surfaces.
 
-The v3 ABI has **no opaque handle**: a parsed number and an AsYouType state are
+The v5 ABI has **no opaque handle**: a parsed number and an AsYouType state are
 themselves caller-owned *strings* — you get one back, pass it to accessor calls,
 and free it like any other returned string.
 
@@ -98,6 +98,23 @@ echo shortExpectedCost("US", "911")          # costTollFree
 echo shortExampleNumber("US")                # "112"
 ```
 
+### Time zones and carrier
+
+Both take a raw `(region, input)` and let the engine parse to E.164 itself.
+`timeZonesForNumber` returns a `seq[string]` of IANA ids — a number with no
+known zones comes back as `@["Etc/Unknown"]`, never empty. Carrier names are
+English only, and `""` when no carrier is known.
+
+```nim
+echo timeZonesForNumber("US", "2015550123")  # @["America/New_York"]
+echo timeZonesForNumber("GB", "2070313000")  # @["Europe/London"]
+echo timeZoneCount("US", "2015550123")       # 1
+echo unknownTimeZone()                        # "Etc/Unknown"
+
+echo carrierNameForNumber("GB", "7106000000")        # "O2"
+echo carrierNameForValidNumber("GB", "7106000000")   # "O2" (only if valid)
+```
+
 ### The surface
 
 ```nim
@@ -143,7 +160,7 @@ truncateTooLong(region, input): string
 normalizeDigitsOnly(s): string
 convertAlphaCharacters(s): string
 isAlphaNumber(s): bool
-abiVersion(): int                          # 3
+abiVersion(): int                          # 5
 
 # short numbers (ShortNumberInfo)
 shortIsPossible(region, input): bool
@@ -154,6 +171,15 @@ shortIsCarrierSpecific(region, input): bool
 shortIsSmsService(region, input): bool
 shortExpectedCost(region, input): ShortNumberCost   # costTollFree | …
 shortExampleNumber(region): string
+
+# time zones (PhoneNumberToTimeZonesMapper)
+timeZonesForNumber(region, input): seq[string]   # @["Etc/Unknown"] if none
+timeZoneCount(region, input): int                # 0 == only the unknown zone
+unknownTimeZone(): string                         # "Etc/Unknown"
+
+# carrier (PhoneNumberToCarrierMapper, English names)
+carrierNameForNumber(region, input): string       # "" if none known
+carrierNameForValidNumber(region, input): string  # "" unless the number is valid
 
 # AsYouTypeFormatter, findNumbers (above)
 ```
@@ -196,7 +222,7 @@ explicitly. Do not "simplify" one of them to `int`.
 
 ## Conformance
 
-The 40-check conformance suite (`docs/conformance.md`, v3) lives in
+The 44-check conformance suite (`docs/conformance.md`, v5) lives in
 `tests/tconformance.nim`, alongside a few surface extras (the format-style
 aliases, the raw-int overload, out-of-range `regionAt`, AsYouType clear, and a
 several-thousand round-trip loop over `takeString`).

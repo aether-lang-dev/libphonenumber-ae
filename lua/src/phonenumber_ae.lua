@@ -1,4 +1,4 @@
---- Validate, parse and format international phone numbers (ABI v3).
+--- Validate, parse and format international phone numbers (ABI v5).
 ---
 --- The idiomatic Lua surface over the phonenumber engine. Carries no
 --- phone-number logic — every function here marshals to the C extension in
@@ -413,6 +413,50 @@ end
 --- An example short number for the region, or "".
 function M.short_example_number(region)
   return native.short_example_number(region)
+end
+
+-- ---- PhoneNumberToTimeZonesMapper (timezone lookup) ----
+-- Longest-prefix match over the number's E.164 digits: pass a raw (region,
+-- input) like everywhere else and the engine parses to E.164 itself. The
+-- unknown-zone sentinel is "Etc/Unknown".
+
+--- The unknown-timezone sentinel, "Etc/Unknown".
+function M.unknown_time_zone()
+  return native.tz_unknown()
+end
+
+--- How many timezones the number maps to (0 = only the unknown zone).
+function M.time_zone_count(region, input)
+  return native.tz_count(region, input)
+end
+
+--- The IANA timezone ids for a number, as a list (a 1-based table). A number
+--- with no known zones comes back as a single-element list holding the unknown
+--- zone, never empty — matching the other bindings.
+function M.time_zones_for_number(region, input)
+  local n = native.tz_count(region, input)
+  if n == 0 then
+    return { M.unknown_time_zone() }
+  end
+  local out = {}
+  for i = 0, n - 1 do        -- ABI idx is 0-based; build a 1-based list
+    out[i + 1] = native.tz_at(region, input, i)
+  end
+  return out
+end
+
+-- ---- PhoneNumberToCarrierMapper (English carrier names) ----
+-- Longest-prefix match over the E.164 digits; English names only. "" when no
+-- carrier is known for the number.
+
+--- The carrier name for a number (English), or "" if none is known.
+function M.carrier_name_for_number(region, input)
+  return native.carrier_name(region, input)
+end
+
+--- The carrier name only when the number is valid, else "".
+function M.carrier_name_for_valid_number(region, input)
+  return native.carrier_name_for_valid(region, input)
 end
 
 -- ---- lifecycle ----

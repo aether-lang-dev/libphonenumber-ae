@@ -61,7 +61,7 @@ aeb(cap) {
             println("gleam: conformance suite reported failures")
             return 1
         }
-        println("gleam: PASS — 40-check conformance (v3 ABI, incl. ShortNumberInfo)")
+        println("gleam: PASS — 44-check conformance (v5 ABI, incl. ShortNumberInfo, timezones + carrier)")
         return 0
     }
 }

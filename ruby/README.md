@@ -1,7 +1,8 @@
 # phonenumber_ae (Ruby)
 
 A thin Ruby binding over the shared, pure-Aether libphonenumber engine — the
-full **v3 ABI** (full `PhoneNumberUtil` parity plus `ShortNumberInfo`).
+full **v5 ABI** (full `PhoneNumberUtil` parity plus `ShortNumberInfo`, time
+zones and carrier names).
 
 ```ruby
 require "phonenumber_ae"
@@ -54,6 +55,26 @@ PhoneNumberAe::ShortNumber.is_valid("US", "911")             # => true
 PhoneNumberAe::ShortNumber.expected_cost("US", "911")        # => PhoneNumberAe::COST_TOLL_FREE
 PhoneNumberAe::ShortNumber.example_number("US")              # => "112"
 ```
+
+### Time zones
+
+```ruby
+PhoneNumberAe::TimeZones.time_zones_for_number("US", "2015550123")  # => ["America/New_York"]
+PhoneNumberAe::TimeZones.time_zones_for_number("GB", "2070313000")  # => ["Europe/London"]
+PhoneNumberAe::TimeZones.time_zone_count("US", "2015550123")        # => 1
+PhoneNumberAe::TimeZones.unknown_time_zone                          # => "Etc/Unknown"
+```
+
+A number with no known zone maps to a single-element `["Etc/Unknown"]`.
+
+### Carrier names
+
+```ruby
+PhoneNumberAe::Carrier.carrier_name_for_number("GB", "7106000000")        # => "O2"
+PhoneNumberAe::Carrier.carrier_name_for_valid_number("GB", "7106000000")  # => "O2" (or "" if invalid)
+```
+
+Names are English only; `""` means no carrier is known for the number.
 
 This gem is a **thin Fiddle binding** over the monorepo's one shared native
 engine — `libphonenumber_ae.so`, compiled from pure Aether over Google
@@ -122,7 +143,7 @@ truncate_too_long(region, input)
 normalize_digits_only(str)
 convert_alpha_characters(str)
 is_alpha_number(str)                             # => true / false
-abi_version                                      # => 3
+abi_version                                      # => 5
 ```
 
 Short / emergency numbers live in the `PhoneNumberAe::ShortNumber` module
@@ -138,6 +159,17 @@ PhoneNumberAe::ShortNumber.is_carrier_specific(region, input)        # => true /
 PhoneNumberAe::ShortNumber.is_sms_service(region, input)             # => true / false
 PhoneNumberAe::ShortNumber.expected_cost(region, input)              # => a COST_* int
 PhoneNumberAe::ShortNumber.example_number(region)                    # => "112"
+```
+
+Time zones live in the `PhoneNumberAe::TimeZones` module, carrier names in
+`PhoneNumberAe::Carrier`:
+
+```ruby
+PhoneNumberAe::TimeZones.time_zones_for_number(region, input)        # => ["America/New_York", …]
+PhoneNumberAe::TimeZones.time_zone_count(region, input)              # => an Integer (0 = only the unknown zone)
+PhoneNumberAe::TimeZones.unknown_time_zone                           # => "Etc/Unknown"
+PhoneNumberAe::Carrier.carrier_name_for_number(region, input)        # => a name, or ""
+PhoneNumberAe::Carrier.carrier_name_for_valid_number(region, input)  # => a name only if valid, else ""
 ```
 
 Classes: `PhoneNumberAe::ParsedNumber`, `PhoneNumberAe::AsYouTypeFormatter`
@@ -169,7 +201,7 @@ freed the same way.
 
 ## Testing
 
-The v3 40-check conformance suite (`docs/conformance.md`) lives in
+The v5 44-check conformance suite (`docs/conformance.md`) lives in
 `spec/conformance_spec.rb`.
 
 ```sh

@@ -26,6 +26,8 @@ import org.libphonenumber.ae.Format;
 import org.libphonenumber.ae.NumberType;
 import org.libphonenumber.ae.ShortNumberInfo;
 import org.libphonenumber.ae.ShortNumberCost;
+import org.libphonenumber.ae.TimeZones;
+import org.libphonenumber.ae.Carrier;
 
 PhoneNumbers.countryCode("US");                        // "1"
 PhoneNumbers.isValidNumber("US", "+1 201 555 0123");   // true
@@ -37,13 +39,22 @@ PhoneNumbers.formatInternational("US", "2015550123");          // "+1 (201) 555-
 
 PhoneNumbers.numberType("US", "2015550123");           // NumberType.FIXED_LINE
 PhoneNumbers.regions();                                // ["AC", "AD", "AE", ...]
-PhoneNumbers.abiVersion();                             // 3
+PhoneNumbers.abiVersion();                             // 5
 
 // short / emergency numbers (ShortNumberInfo)
 ShortNumberInfo.isEmergencyNumber("US", "911");        // true
 ShortNumberInfo.isValidShortNumber("US", "911");       // true
 ShortNumberInfo.expectedCost("US", "911");             // ShortNumberCost.TOLL_FREE
 ShortNumberInfo.exampleNumber("US");                   // "112"
+
+// time zones (PhoneNumberToTimeZonesMapper)
+TimeZones.timeZonesForNumber("US", "2015550123");      // ["America/New_York"]
+TimeZones.timeZonesForNumber("GB", "2070313000");      // ["Europe/London"]
+TimeZones.unknownTimeZone();                           // "Etc/Unknown"
+
+// carrier names (PhoneNumberToCarrierMapper)
+Carrier.carrierNameForNumber("GB", "7106000000");      // "O2"
+Carrier.carrierNameForValidNumber("GB", "7106000000"); // "O2" (only if valid)
 ```
 
 All entry points are static and stateless — the ABI has no handle. The engine
@@ -68,6 +79,13 @@ is loaded lazily and cached on first use.
   `PhoneNumbers`.
 * `ShortNumberCost` — `TOLL_FREE`, `STANDARD_RATE`, `PREMIUM_RATE`, `UNKNOWN`,
   plus `ShortNumberCost.of(int)` (falls back to `UNKNOWN`).
+* `TimeZones` — static methods for the timezone mapper:
+  `timeZonesForNumber` (a `List<String>` of IANA zone ids; a number with no
+  known zone maps to `["Etc/Unknown"]`), `timeZoneCount`, `unknownTimeZone`.
+  Also delegated from `PhoneNumbers`.
+* `Carrier` — static methods for the carrier mapper (English names):
+  `carrierNameForNumber`, `carrierNameForValidNumber` (`""` = no known carrier).
+  Also delegated from `PhoneNumbers`.
 * `Native` — the FFM symbol table. The only class that knows the C ABI.
 
 ## Tests

@@ -8,8 +8,8 @@ over Google libphonenumber's own metadata. It contains **no phone-number
 logic**: every member marshals to an `aether_pn_embed_*` call. One engine, one
 set of behaviours, N language surfaces.
 
-It speaks the full **v3** `aether_pn_embed_*` C ABI (58 symbols, full
-PhoneNumberUtil parity plus ShortNumberInfo — `docs/abi.md`). Every signature is still scalar-only
+It speaks the full **v5** `aether_pn_embed_*` C ABI (64 symbols, full
+PhoneNumberUtil parity plus ShortNumberInfo, TimeZones and Carrier — `docs/abi.md`). Every signature is still scalar-only
 (`const char*` and `int`), and there are still no opaque handles: a parsed
 number and an as-you-type state are themselves caller-owned *strings*.
 
@@ -74,6 +74,12 @@ pn.ShortNumberInfo.isEmergencyNumber('GB', '999');   // true
 pn.ShortNumberInfo.isValid('US', '911');             // true
 pn.ShortNumberInfo.expectedCost('US', '911');        // ShortNumberCost.tollFree
 pn.ShortNumberInfo.exampleNumber('US');              // '112'
+
+// Time zones + carrier (v5 — TimeZones, Carrier).
+pn.TimeZones.timeZonesForNumber('US', '2015550123'); // ['America/New_York']
+pn.TimeZones.timeZonesForNumber('GB', '2070313000'); // ['Europe/London']
+pn.TimeZones.unknownTimeZone();                      // 'Etc/Unknown'
+pn.Carrier.carrierNameForNumber('GB', '7106000000'); // 'O2'
 ```
 
 ### Surface
@@ -101,6 +107,11 @@ pn.ShortNumberInfo.exampleNumber('US');              // '112'
 * **`ShortNumberInfo`** — short / emergency numbers: `isPossible`, `isValid`,
   `isEmergencyNumber`, `connectsToEmergencyNumber`, `isCarrierSpecific`,
   `isSmsService`, `expectedCost` (a `ShortNumberCost`), `exampleNumber(region)`.
+* **`TimeZones`** (v5) — IANA time-zone lookup:
+  `timeZonesForNumber(region, input)` (a `List<String>`; `['Etc/Unknown']` when
+  none), `timeZoneCount(region, input)`, `unknownTimeZone()`.
+* **`Carrier`** (v5) — English carrier names: `carrierNameForNumber(region,
+  input)`, `carrierNameForValidNumber(region, input)` (`''` when none).
 
 ### Enums
 
@@ -143,7 +154,7 @@ and nothing borrowed to track.
 
 ## Tests
 
-The 40-check v3 conformance suite (`docs/conformance.md`) lives in
+The 44-check v5 conformance suite (`docs/conformance.md`) lives in
 `test/conformance_test.dart`.
 
 ```sh

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * The 40-check binding conformance suite (docs/conformance.md, v3).
+ * The 44-check binding conformance suite (docs/conformance.md, v5).
  *
  * Proves the PHP binding marshals every value shape across the FFI. It is NOT a
  * phone-number test suite — the behavioural cases live in the engine's own
@@ -40,8 +40,10 @@ if (is_file(__DIR__ . '/../vendor/autoload.php')) {
 }
 
 use PhoneNumberAe\AsYouTypeFormatter;
+use PhoneNumberAe\Carrier;
 use PhoneNumberAe\PhoneNumber;
 use PhoneNumberAe\ShortNumberInfo;
+use PhoneNumberAe\TimeZones;
 
 $passed = 0;
 /** @var list<string> $failures */
@@ -76,6 +78,22 @@ function eqInt(int $got, int $want, string $what = 'value'): void
     }
 }
 
+/**
+ * @param list<string> $got
+ * @param list<string> $want
+ */
+function eqStrList(array $got, array $want, string $what = 'value'): void
+{
+    if ($got !== $want) {
+        throw new \Exception(sprintf(
+            "%s:\n         got  [%s]\n         want [%s]",
+            $what,
+            implode(', ', $got),
+            implode(', ', $want)
+        ));
+    }
+}
+
 function isTrue(bool $got, string $what): void
 {
     if (!$got) {
@@ -97,7 +115,7 @@ function atLeast(int $got, int $min, string $what): void
     }
 }
 
-echo "=== phonenumber_ae PHP binding conformance (v3) ===\n";
+echo "=== phonenumber_ae PHP binding conformance (v5) ===\n";
 if (!extension_loaded('ffi')) {
     fwrite(STDERR, "php: ext-ffi is not loaded\n");
     exit(2);
@@ -247,7 +265,7 @@ check('33 matcher raw', function (): void {
 });
 
 check('34 abi version', function (): void {
-    eqInt(PhoneNumber::abiVersion(), 3, 'abi version');
+    eqInt(PhoneNumber::abiVersion(), 5, 'abi version');
 });
 
 // ---- ShortNumberInfo (v3) ----
@@ -274,6 +292,24 @@ check('39 short expected_cost US 911 is toll-free', function (): void {
 
 check('40 short example_number US', function (): void {
     eqStr(ShortNumberInfo::exampleNumber('US'), '112', 'US short example');
+});
+
+// ---- TimeZones + Carrier (v5) ----
+
+check('41 time_zones_for_number US', function (): void {
+    eqStrList(TimeZones::timeZonesForNumber('US', '2015550123'), ['America/New_York'], 'US tz');
+});
+
+check('42 time_zones_for_number GB', function (): void {
+    eqStrList(TimeZones::timeZonesForNumber('GB', '2070313000'), ['Europe/London'], 'GB tz');
+});
+
+check('43 unknown_time_zone', function (): void {
+    eqStr(TimeZones::unknownTimeZone(), 'Etc/Unknown', 'unknown tz');
+});
+
+check('44 carrier_name_for_number GB', function (): void {
+    eqStr(Carrier::carrierNameForNumber('GB', '7106000000'), 'O2', 'GB carrier');
 });
 
 // ---- a few extras exercising the idiomatic surface ----

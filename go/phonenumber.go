@@ -4,8 +4,9 @@
 // (core/native/libphonenumber_ae.so, compiled from pure Aether over Google
 // libphonenumber's own metadata). No phone-number logic lives in this package —
 // every function marshals to an `aether_pn_embed_*` call across the flat C ABI
-// described in docs/abi.md (v3, full PhoneNumberUtil parity plus
-// ShortNumberInfo). One engine, one set of behaviours, N language surfaces.
+// described in docs/abi.md (v5, full PhoneNumberUtil parity plus
+// ShortNumberInfo, TimeZones and Carrier). One engine, one set of behaviours,
+// N language surfaces.
 //
 // The ABI is stateless and handle-free: a parsed number and an AsYouType state
 // are themselves caller-owned STRINGS you pass back to accessor calls. Every
@@ -104,6 +105,16 @@ int   aether_pn_embed_short_is_carrier_specific(const char* region, const char* 
 int   aether_pn_embed_short_is_sms_service(const char* region, const char* input);
 int   aether_pn_embed_short_expected_cost(const char* region, const char* input);
 char* aether_pn_embed_short_example_number(const char* region);
+
+// PhoneNumberToTimeZonesMapper (timezone lookup)
+int   aether_pn_embed_tz_count(const char* region, const char* input);
+char* aether_pn_embed_tz_at(const char* region, const char* input, int idx);
+char* aether_pn_embed_tz_all(const char* region, const char* input);
+char* aether_pn_embed_tz_unknown(void);
+
+// PhoneNumberToCarrierMapper (English carrier names)
+char* aether_pn_embed_carrier_name(const char* region, const char* input);
+char* aether_pn_embed_carrier_name_for_valid(const char* region, const char* input);
 */
 import "C"
 
@@ -587,7 +598,7 @@ func IsAlphaNumber(s string) bool {
 	return C.aether_pn_embed_is_alpha_number(cs) != 0
 }
 
-// ABIVersion is the ABI revision the linked engine reports (currently 3).
+// ABIVersion is the ABI revision the linked engine reports (currently 5).
 func ABIVersion() int { return int(C.aether_pn_embed_abi_version()) }
 
 // ---- AsYouTypeFormatter ----
@@ -729,4 +740,62 @@ func ShortExampleNumber(region string) string {
 	cr := cStr(region)
 	defer C.free(unsafe.Pointer(cr))
 	return takeString(C.aether_pn_embed_short_example_number(cr))
+}
+
+// ---- PhoneNumberToTimeZonesMapper (timezone lookup) ----
+
+// The engine parses the raw (region, input) to E.164 itself, then does a
+// longest-prefix match over its digits. The unknown-zone sentinel is
+// "Etc/Unknown".
+
+// TimeZonesForNumber returns the IANA time-zone ids a number maps to, as a
+// slice. A number with no known zone maps to a single-element slice holding the
+// unknown zone (["Etc/Unknown"]).
+func TimeZonesForNumber(region, input string) []string {
+	cr, ci := cStr(region), cStr(input)
+	defer C.free(unsafe.Pointer(cr))
+	defer C.free(unsafe.Pointer(ci))
+	n := int(C.aether_pn_embed_tz_count(cr, ci))
+	if n == 0 {
+		return []string{UnknownTimeZone()}
+	}
+	out := make([]string, 0, n)
+	for i := 0; i < n; i++ {
+		out = append(out, takeString(C.aether_pn_embed_tz_at(cr, ci, C.int(i))))
+	}
+	return out
+}
+
+// TimeZoneCount is how many time zones a number maps to (0 = only the unknown
+// zone).
+func TimeZoneCount(region, input string) int {
+	cr, ci := cStr(region), cStr(input)
+	defer C.free(unsafe.Pointer(cr))
+	defer C.free(unsafe.Pointer(ci))
+	return int(C.aether_pn_embed_tz_count(cr, ci))
+}
+
+// UnknownTimeZone is the unknown-zone sentinel, "Etc/Unknown".
+func UnknownTimeZone() string {
+	return takeString(C.aether_pn_embed_tz_unknown())
+}
+
+// ---- PhoneNumberToCarrierMapper (English carrier names) ----
+
+// CarrierNameForNumber returns the English carrier name for a number, or "" if
+// no carrier is known.
+func CarrierNameForNumber(region, input string) string {
+	cr, ci := cStr(region), cStr(input)
+	defer C.free(unsafe.Pointer(cr))
+	defer C.free(unsafe.Pointer(ci))
+	return takeString(C.aether_pn_embed_carrier_name(cr, ci))
+}
+
+// CarrierNameForValidNumber returns the English carrier name only when the
+// number is valid, else "".
+func CarrierNameForValidNumber(region, input string) string {
+	cr, ci := cStr(region), cStr(input)
+	defer C.free(unsafe.Pointer(cr))
+	defer C.free(unsafe.Pointer(ci))
+	return takeString(C.aether_pn_embed_carrier_name_for_valid(cr, ci))
 }

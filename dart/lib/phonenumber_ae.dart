@@ -1,4 +1,4 @@
-/// Validate, parse and format international phone numbers (ABI v3).
+/// Validate, parse and format international phone numbers (ABI v5).
 ///
 /// A thin `dart:ffi` binding over the monorepo's one shared native engine
 /// (`core/native/libphonenumber_ae.so`, compiled from pure Aether over Google
@@ -74,4 +74,7 @@ export 'src/phonenumber.dart'
         PhoneNumberMatch,
         findNumbers,
         // short / emergency numbers
-        ShortNumberInfo;
+        ShortNumberInfo,
+        // timezone + carrier lookup
+        TimeZones,
+        Carrier;

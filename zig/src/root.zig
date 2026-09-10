@@ -10,12 +10,13 @@
 //! looks wrong, the bug is in the engine or in this marshalling — it is never a
 //! policy decision made here.
 //!
-//! ## ABI v3
+//! ## ABI v5
 //!
-//! This binding speaks **ABI v3** (`abiVersion()` → 3): the full
-//! `PhoneNumberUtil` surface plus the `ShortNumberInfo` side-library, 58
-//! exported symbols. The ABI is scalar-only (`const char*` and `int`) — v3 adds
-//! no new mechanism, only more calls (the 8 `short_*` symbols). Two constructs
+//! This binding speaks **ABI v5** (`abiVersion()` → 5): the full
+//! `PhoneNumberUtil` surface plus the `ShortNumberInfo`, `TimeZones` and
+//! `Carrier` side-libraries, 64 exported symbols. The ABI is scalar-only
+//! (`const char*` and `int`) — v5 adds no new mechanism, only more calls (the 4
+//! `tz_*` and 2 `carrier_*` symbols on top of the 8 `short_*`). Two constructs
 //! thread a *string* rather than an opaque handle:
 //!
 //!   * `parse` returns a caller-owned **parsed-number string**. Pass it to the
@@ -62,7 +63,7 @@
 const std = @import("std");
 
 // =========================================================================
-// The C ABI — a 1:1 transcription of core/embed.ae (v3, 58 symbols).
+// The C ABI — a 1:1 transcription of core/embed.ae (v5, 64 symbols).
 //
 // `core/embed.ae` names its exports `pn_embed_<name>`; building with
 // `--emit=lib` mangles them to `aether_pn_embed_<name>`, which is what we
@@ -149,6 +150,16 @@ const c = struct {
     extern "c" fn aether_pn_embed_short_is_sms_service(region: [*c]const u8, input: [*c]const u8) c_int;
     extern "c" fn aether_pn_embed_short_expected_cost(region: [*c]const u8, input: [*c]const u8) c_int;
     extern "c" fn aether_pn_embed_short_example_number(region: [*c]const u8) [*c]u8;
+
+    // ---- PhoneNumberToTimeZonesMapper (timezone lookup) ----
+    extern "c" fn aether_pn_embed_tz_count(region: [*c]const u8, input: [*c]const u8) c_int;
+    extern "c" fn aether_pn_embed_tz_at(region: [*c]const u8, input: [*c]const u8, idx: c_int) [*c]u8;
+    extern "c" fn aether_pn_embed_tz_all(region: [*c]const u8, input: [*c]const u8) [*c]u8;
+    extern "c" fn aether_pn_embed_tz_unknown() [*c]u8;
+
+    // ---- PhoneNumberToCarrierMapper (English carrier names) ----
+    extern "c" fn aether_pn_embed_carrier_name(region: [*c]const u8, input: [*c]const u8) [*c]u8;
+    extern "c" fn aether_pn_embed_carrier_name_for_valid(region: [*c]const u8, input: [*c]const u8) [*c]u8;
 };
 
 // =========================================================================
@@ -288,7 +299,7 @@ pub const Error = error{
 };
 
 /// The ABI revision this engine implements. Check it to fail fast against an
-/// engine older than the features you expect — v3 is what this binding needs.
+/// engine older than the features you expect — v5 is what this binding needs.
 pub fn abiVersion() i32 {
     return @intCast(c.aether_pn_embed_abi_version());
 }
@@ -941,6 +952,89 @@ pub fn shortExampleNumber(allocator: std.mem.Allocator, region: []const u8) Erro
     var r = try CStr.init(allocator, region);
     defer r.deinit();
     return takeString(allocator, c.aether_pn_embed_short_example_number(r.ptr()));
+}
+
+// =========================================================================
+// PhoneNumberToTimeZonesMapper (timezone lookup).
+//
+// Longest-prefix match over the number's E.164 digits. Pass a raw (region,
+// input) like everywhere else; the engine parses to E.164 itself. The
+// unknown-zone sentinel is "Etc/Unknown". Pure marshalling, like the rest.
+// =========================================================================
+
+/// The unknown-timezone sentinel, "Etc/Unknown". Caller frees.
+pub fn unknownTimeZone(allocator: std.mem.Allocator) Error![]u8 {
+    return takeString(allocator, c.aether_pn_embed_tz_unknown());
+}
+
+/// How many timezones the number maps to (0 means only the unknown zone).
+pub fn timeZoneCount(allocator: std.mem.Allocator, region: []const u8, input: []const u8) Error!usize {
+    var r = try CStr.init(allocator, region);
+    defer r.deinit();
+    var i = try CStr.init(allocator, input);
+    defer i.deinit();
+    const n = c.aether_pn_embed_tz_count(r.ptr(), i.ptr());
+    return if (n < 0) 0 else @intCast(n);
+}
+
+/// The IANA timezone ids for a number, as a slice. A number with no known
+/// zones comes back as a single-element slice holding the unknown zone, never
+/// empty — matching the other bindings. Caller frees via `freeTimeZones`.
+pub fn timeZonesForNumber(allocator: std.mem.Allocator, region: []const u8, input: []const u8) Error![][]u8 {
+    var r = try CStr.init(allocator, region);
+    defer r.deinit();
+    var i = try CStr.init(allocator, input);
+    defer i.deinit();
+    const raw_n = c.aether_pn_embed_tz_count(r.ptr(), i.ptr());
+    const n: usize = if (raw_n < 0) 0 else @intCast(raw_n);
+
+    if (n == 0) {
+        const out = allocator.alloc([]u8, 1) catch return Error.OutOfMemory;
+        errdefer allocator.free(out);
+        out[0] = try unknownTimeZone(allocator);
+        return out;
+    }
+
+    const out = allocator.alloc([]u8, n) catch return Error.OutOfMemory;
+    var filled: usize = 0;
+    errdefer {
+        for (out[0..filled]) |s| allocator.free(s);
+        allocator.free(out);
+    }
+    while (filled < n) : (filled += 1) {
+        out[filled] = try takeString(allocator, c.aether_pn_embed_tz_at(r.ptr(), i.ptr(), @intCast(filled)));
+    }
+    return out;
+}
+
+pub fn freeTimeZones(allocator: std.mem.Allocator, list: [][]u8) void {
+    for (list) |s| allocator.free(s);
+    allocator.free(list);
+}
+
+// =========================================================================
+// PhoneNumberToCarrierMapper (English carrier names).
+//
+// Longest-prefix match over the E.164 digits; English names only. "" when no
+// carrier is known for the number. Caller frees each returned slice.
+// =========================================================================
+
+/// The carrier name for a number (English), or "" if none is known.
+pub fn carrierNameForNumber(allocator: std.mem.Allocator, region: []const u8, input: []const u8) Error![]u8 {
+    var r = try CStr.init(allocator, region);
+    defer r.deinit();
+    var i = try CStr.init(allocator, input);
+    defer i.deinit();
+    return takeString(allocator, c.aether_pn_embed_carrier_name(r.ptr(), i.ptr()));
+}
+
+/// The carrier name only when the number is valid, else "".
+pub fn carrierNameForValidNumber(allocator: std.mem.Allocator, region: []const u8, input: []const u8) Error![]u8 {
+    var r = try CStr.init(allocator, region);
+    defer r.deinit();
+    var i = try CStr.init(allocator, input);
+    defer i.deinit();
+    return takeString(allocator, c.aether_pn_embed_carrier_name_for_valid(r.ptr(), i.ptr()));
 }
 
 test {

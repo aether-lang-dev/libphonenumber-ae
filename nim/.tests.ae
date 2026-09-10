@@ -44,7 +44,7 @@ aeb(cap) {
             println("nim: conformance suite reported failures")
             return 1
         }
-        println("nim: PASS — v3 conformance (parse, formats, AsYouType, matcher, ShortNumberInfo)")
+        println("nim: PASS — v5 conformance (parse, formats, AsYouType, matcher, ShortNumberInfo, TimeZones, Carrier)")
         return 0
     }
 }

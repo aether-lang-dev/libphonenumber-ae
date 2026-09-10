@@ -1,4 +1,4 @@
-/// The idiomatic Dart surface over the phonenumber engine (ABI v3).
+/// The idiomatic Dart surface over the phonenumber engine (ABI v5).
 ///
 /// Carries no phone-number logic — every member here marshals to an
 /// `aether_pn_embed_*` call in `native.dart`. Most of the surface is top-level
@@ -599,5 +599,63 @@ abstract final class ShortNumberInfo {
   static String exampleNumber(String region) {
     final api = _api;
     return _withUtf8(region, (r) => api.takeString(api.shortExampleNumber(r)));
+  }
+}
+
+// ---- PhoneNumberToTimeZonesMapper (timezone lookup) ----
+
+/// IANA time-zone lookup for a number, mirroring libphonenumber's
+/// `PhoneNumberToTimeZonesMapper`.
+///
+/// Every member marshals to an `aether_pn_embed_tz_*` call. The unknown-zone
+/// sentinel is `"Etc/Unknown"`. The class is never instantiated — like the rest
+/// of this surface it is stateless.
+abstract final class TimeZones {
+  /// The IANA time-zone ids for [input] in [region], in order.
+  ///
+  /// A number with no known zone maps to a single-element list of the unknown
+  /// zone (`['Etc/Unknown']`).
+  static List<String> timeZonesForNumber(String region, String input) {
+    final api = _api;
+    return _withUtf8x2(region, input, (r, i) {
+      final count = api.tzCount(r, i);
+      if (count == 0) return [unknownTimeZone()];
+      return [for (var k = 0; k < count; k++) api.takeString(api.tzAt(r, i, k))];
+    });
+  }
+
+  /// How many time zones [input] maps to in [region] (0 = only the unknown zone).
+  static int timeZoneCount(String region, String input) {
+    final api = _api;
+    return _withUtf8x2(region, input, (r, i) => api.tzCount(r, i));
+  }
+
+  /// The unknown-zone sentinel, `"Etc/Unknown"`.
+  static String unknownTimeZone() {
+    final api = _api;
+    return api.takeString(api.tzUnknown());
+  }
+}
+
+// ---- PhoneNumberToCarrierMapper (English carrier names) ----
+
+/// English carrier-name lookup for a number, mirroring libphonenumber's
+/// `PhoneNumberToCarrierMapper`.
+///
+/// Every member marshals to an `aether_pn_embed_carrier_*` call. `""` means no
+/// carrier is known. The class is never instantiated — it is stateless.
+abstract final class Carrier {
+  /// The carrier name for [input] in [region] (English), or "" if none is known.
+  static String carrierNameForNumber(String region, String input) {
+    final api = _api;
+    return _withUtf8x2(
+        region, input, (r, i) => api.takeString(api.carrierName(r, i)));
+  }
+
+  /// The carrier name only when [input] is a valid number for [region], else "".
+  static String carrierNameForValidNumber(String region, String input) {
+    final api = _api;
+    return _withUtf8x2(region, input,
+        (r, i) => api.takeString(api.carrierNameForValid(r, i)));
   }
 }

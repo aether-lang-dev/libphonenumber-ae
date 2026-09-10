@@ -1,6 +1,6 @@
 defmodule PhonenumberAe do
   @moduledoc """
-  Validate, parse and format international phone numbers (ABI v3).
+  Validate, parse and format international phone numbers (ABI v5).
 
   This is a thin Elixir surface over the monorepo's **canonical BEAM NIF**,
   which lives in `erlang/` and is compiled exactly once. There is no C source
@@ -11,8 +11,8 @@ defmodule PhonenumberAe do
   The engine itself (`core/native/libphonenumber_ae.so`) is pure Aether,
   compiled from Google libphonenumber's own metadata. No phone-number logic
   lives in this file: everything marshals to an `aether_pn_embed_*` call across
-  the C ABI in `core/embed.ae` (docs/abi.md — 58 symbols, full
-  PhoneNumberUtil parity plus ShortNumberInfo).
+  the C ABI in `core/embed.ae` (docs/abi.md — 64 symbols, full
+  PhoneNumberUtil parity plus ShortNumberInfo, TimeZones and Carrier).
 
       iex> PhonenumberAe.country_code("US")
       "1"
@@ -344,9 +344,44 @@ defmodule PhonenumberAe do
   @spec short_example_number(iodata()) :: binary()
   defdelegate short_example_number(region), to: :phonenumber_ae_nif
 
+  # ---- time zones (PhoneNumberToTimeZonesMapper) ----
+
+  @doc """
+  The IANA time-zone ids for a number, as a list. When the engine knows no zone
+  (count 0) the result is a single-element list of the unknown zone, mirroring
+  the other bindings — never an empty list.
+  """
+  @spec time_zones_for_number(iodata(), iodata()) :: [binary()]
+  def time_zones_for_number(region, input) do
+    case :phonenumber_ae_nif.tz_count(region, input) do
+      0 -> [unknown_time_zone()]
+      n -> Enum.map(0..(n - 1), &:phonenumber_ae_nif.tz_at(region, input, &1))
+    end
+  end
+
+  @doc "How many time zones the number maps to (0 = only the unknown zone)."
+  @spec time_zone_count(iodata(), iodata()) :: non_neg_integer()
+  def time_zone_count(region, input), do: :phonenumber_ae_nif.tz_count(region, input)
+
+  @doc ~S'The engine\'s sentinel unknown zone, "Etc/Unknown".'
+  @spec unknown_time_zone() :: binary()
+  def unknown_time_zone(), do: :phonenumber_ae_nif.tz_unknown()
+
+  # ---- carrier (PhoneNumberToCarrierMapper) ----
+
+  @doc ~S'The carrier name for a number (English), or "" if none is known.'
+  @spec carrier_name_for_number(iodata(), iodata()) :: binary()
+  def carrier_name_for_number(region, input),
+    do: :phonenumber_ae_nif.carrier_name(region, input)
+
+  @doc ~S'The carrier name, but only when the number is valid; else "".'
+  @spec carrier_name_for_valid_number(iodata(), iodata()) :: binary()
+  def carrier_name_for_valid_number(region, input),
+    do: :phonenumber_ae_nif.carrier_name_for_valid(region, input)
+
   # ---- introspection ----
 
-  @doc "The engine's ABI revision (3)."
+  @doc "The engine's ABI revision (5)."
   @spec abi_version() :: non_neg_integer()
   defdelegate abi_version(), to: :phonenumber_ae_nif
 

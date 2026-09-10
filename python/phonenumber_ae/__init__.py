@@ -47,6 +47,8 @@ from ._phonenumber import (
     short_is_possible, short_is_valid, is_emergency_number,
     connects_to_emergency_number, short_is_carrier_specific,
     short_is_sms_service, short_expected_cost, short_example_number,
+    time_zones_for_number, time_zone_count, unknown_time_zone,
+    carrier_name_for_number, carrier_name_for_valid_number,
 )
 
 __version__ = "0.2.0"
@@ -67,6 +69,8 @@ __all__ = [
     "short_is_possible", "short_is_valid", "is_emergency_number",
     "connects_to_emergency_number", "short_is_carrier_specific",
     "short_is_sms_service", "short_expected_cost", "short_example_number",
+    "time_zones_for_number", "time_zone_count", "unknown_time_zone",
+    "carrier_name_for_number", "carrier_name_for_valid_number",
     "COST_TOLL_FREE", "COST_STANDARD_RATE", "COST_PREMIUM_RATE", "COST_UNKNOWN",
     "E164", "INTERNATIONAL", "NATIONAL", "RFC3966",
     "TYPE_UNKNOWN", "TYPE_FIXED_LINE", "TYPE_MOBILE", "TYPE_TOLL_FREE",

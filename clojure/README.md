@@ -35,13 +35,22 @@ classes.
 
 (pn/number-type "US" "2015550123")           ;; => :fixed-line
 (pn/regions)                                  ;; => ["AC" "AD" ...]
-(pn/abi-version)                              ;; => 3
+(pn/abi-version)                              ;; => 5
 
 ;; short / emergency numbers (ShortNumberInfo)
 (pn/emergency-number? "US" "911")            ;; => true
 (pn/valid-short-number? "US" "911")          ;; => true
 (pn/short-expected-cost "US" "911")          ;; => :toll-free
 (pn/short-example-number "US")               ;; => "112"
+
+;; time zones (PhoneNumberToTimeZonesMapper)
+(pn/time-zones-for-number "US" "2015550123") ;; => ["America/New_York"]
+(pn/time-zones-for-number "GB" "2070313000") ;; => ["Europe/London"]
+(pn/unknown-time-zone)                        ;; => "Etc/Unknown"
+
+;; carrier names (PhoneNumberToCarrierMapper)
+(pn/carrier-name-for-number "GB" "7106000000")       ;; => "O2"
+(pn/carrier-name-for-valid-number "GB" "7106000000") ;; => "O2" (only if valid)
 ```
 
 The `number-type` result is a keyword and `format-number` takes one

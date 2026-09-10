@@ -6,14 +6,15 @@ This package is a **thin P/Invoke binding** over the monorepo's one shared
 native engine — `core/native/libphonenumber_ae.so`, compiled from pure Aether
 over Google libphonenumber's own metadata. It contains **no phone-number
 logic**: every member marshals to an `aether_pn_embed_*` call. One engine, one
-set of behaviours, N language surfaces. This is the **v3 ABI** (58 symbols, full
-`PhoneNumberUtil` parity plus the `ShortNumberInfo` side-library).
+set of behaviours, N language surfaces. This is the **v5 ABI** (64 symbols, full
+`PhoneNumberUtil` parity plus the `ShortNumberInfo`, `TimeZones` and `Carrier`
+side-libraries).
 
 | File | Role |
 |---|---|
 | `src/Native.cs` | the P/Invoke surface — the **only** place that knows the ABI |
 | `src/PhoneNumber.cs` | the idiomatic C# API over it |
-| `test/Conformance.cs` | the 40-check conformance suite, as a console runner |
+| `test/Conformance.cs` | the 44-check conformance suite, as a console runner |
 
 Targets **net8.0**, with **zero NuGet dependencies** — which is also what lets
 it build and test on a box with no network.
@@ -74,6 +75,16 @@ PhoneNumber.IsEmergencyNumber("GB", "999");                 // true
 PhoneNumber.ShortIsValid("US", "911");                      // true
 PhoneNumber.ShortExpectedCost("US", "911");                 // ShortNumberCost.TollFree
 PhoneNumber.ShortExampleNumber("US");                       // "112"
+
+// time zones (raw region + input; the engine parses to E.164 itself)
+PhoneNumber.TimeZonesForNumber("US", "2015550123");         // ["America/New_York"]
+PhoneNumber.TimeZonesForNumber("GB", "2070313000");         // ["Europe/London"]
+PhoneNumber.TimeZoneCount("US", "2015550123");              // 1
+PhoneNumber.UnknownTimeZone();                              // "Etc/Unknown"
+
+// carrier (English names; "" when none is known)
+PhoneNumber.CarrierNameForNumber("GB", "7106000000");       // "O2"
+PhoneNumber.CarrierNameForValidNumber("GB", "7106000000");  // "O2" (only if valid)
 ```
 
 The surface:
@@ -133,7 +144,16 @@ PhoneNumber.ShortIsSmsService(region, input)          // bool
 PhoneNumber.ShortExpectedCost(region, input)    // ShortNumberCost
 PhoneNumber.ShortExampleNumber(region)          // string
 
-PhoneNumber.AbiVersion                          // 3
+// time zones (PhoneNumberToTimeZonesMapper)
+PhoneNumber.TimeZonesForNumber(region, input)   // IReadOnlyList<string>; ["Etc/Unknown"] if none
+PhoneNumber.TimeZoneCount(region, input)        // int; 0 == only the unknown zone
+PhoneNumber.UnknownTimeZone()                   // "Etc/Unknown"
+
+// carrier (PhoneNumberToCarrierMapper, English names)
+PhoneNumber.CarrierNameForNumber(region, input)       // string; "" if none known
+PhoneNumber.CarrierNameForValidNumber(region, input)  // string; "" unless the number is valid
+
+PhoneNumber.AbiVersion                          // 5
 ```
 
 ### Constants
@@ -175,7 +195,7 @@ a keepalive list, `GetFunctionPointerForDelegate`) do not arise here.
 
 ## Tests
 
-The 40-check conformance suite (`docs/conformance.md`) lives in
+The 44-check conformance suite (`docs/conformance.md`) lives in
 `test/Conformance.cs`, alongside a few surface extras and a 5,000-iteration loop
 over the caller-owned-string contract (now exercising the parse accessors too).
 

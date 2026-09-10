@@ -1,5 +1,5 @@
 "
-I validate, parse and format international phone numbers (ABI v3).
+I validate, parse and format international phone numbers (ABI v5).
 
 ```
 PhonenumberAe countryCode: 'US'.                      ""-> '1'""
@@ -17,8 +17,8 @@ I am **marshalling only**. The engine — the metadata table, isPossible /
 isValid, number typing and formatting — is the pure-Aether
 `core/phonenumber.ae`, compiled from Google libphonenumber's own metadata,
 shared by every language binding in this monorepo and reached through the
-`aether_pn_embed_*` C ABI (`core/embed.ae`, docs/abi.md — 58 symbols, full
-PhoneNumberUtil parity plus ShortNumberInfo). Naming: `core/embed.ae` declares `pn_embed_<name>`;
+`aether_pn_embed_*` C ABI (`core/embed.ae`, docs/abi.md — 64 symbols, full
+PhoneNumberUtil parity plus ShortNumberInfo, TimeZones and Carrier). Naming: `core/embed.ae` declares `pn_embed_<name>`;
 `--emit=lib` mangles that to `aether_pn_embed_<name>`, which is what the FFI
 calls below name.
 
@@ -580,6 +580,47 @@ PhonenumberAe class >> primShortExampleNumber: region [
 		    char * region ) )
 ]
 
+{ #category : 'private - ffi timezones' }
+PhonenumberAe class >> primTzCount: region input: input [
+
+	^ self ffiCall: #( int aether_pn_embed_tz_count (
+		    char * region, char * input ) )
+]
+
+{ #category : 'private - ffi timezones' }
+PhonenumberAe class >> primTzAt: region input: input idx: idx [
+
+	^ self ffiCall: #( void * aether_pn_embed_tz_at (
+		    char * region, char * input, int idx ) )
+]
+
+{ #category : 'private - ffi timezones' }
+PhonenumberAe class >> primTzAll: region input: input [
+
+	^ self ffiCall: #( void * aether_pn_embed_tz_all (
+		    char * region, char * input ) )
+]
+
+{ #category : 'private - ffi timezones' }
+PhonenumberAe class >> primTzUnknown [
+
+	^ self ffiCall: #( void * aether_pn_embed_tz_unknown ( void ) )
+]
+
+{ #category : 'private - ffi carrier' }
+PhonenumberAe class >> primCarrierName: region input: input [
+
+	^ self ffiCall: #( void * aether_pn_embed_carrier_name (
+		    char * region, char * input ) )
+]
+
+{ #category : 'private - ffi carrier' }
+PhonenumberAe class >> primCarrierNameForValid: region input: input [
+
+	^ self ffiCall: #( void * aether_pn_embed_carrier_name_for_valid (
+		    char * region, char * input ) )
+]
+
 { #category : 'private - strings' }
 PhonenumberAe class >> takeString: aPointer [
 	"Copy an ABI-returned string out and free it through the ABI.
@@ -1006,9 +1047,60 @@ PhonenumberAe class >> shortExampleNumber: aRegion [
 	^ self takeString: (self primShortExampleNumber: (aRegion ifNil: [ '' ]))
 ]
 
+{ #category : 'time zones' }
+PhonenumberAe class >> timeZonesForNumber: anInput region: aRegion [
+	"The IANA time-zone ids for a number, as an OrderedCollection. When the
+	 engine knows no zone (count 0) the result is a single-element collection of
+	 the unknown zone, mirroring the other bindings — never empty."
+
+	| region input n out |
+	region := aRegion ifNil: [ '' ].
+	input := anInput ifNil: [ '' ].
+	n := self primTzCount: region input: input.
+	n = 0 ifTrue: [ ^ OrderedCollection with: self unknownTimeZone ].
+	out := OrderedCollection new.
+	0 to: n - 1 do: [ :i |
+		out add: (self takeString: (self primTzAt: region input: input idx: i)) ].
+	^ out
+]
+
+{ #category : 'time zones' }
+PhonenumberAe class >> timeZoneCount: anInput region: aRegion [
+	"How many time zones the number maps to (0 = only the unknown zone)."
+
+	^ self
+		  primTzCount: (aRegion ifNil: [ '' ])
+		  input: (anInput ifNil: [ '' ])
+]
+
+{ #category : 'time zones' }
+PhonenumberAe class >> unknownTimeZone [
+	"The engine's sentinel unknown zone, 'Etc/Unknown'."
+
+	^ self takeString: self primTzUnknown
+]
+
+{ #category : 'carrier' }
+PhonenumberAe class >> carrierNameForNumber: anInput region: aRegion [
+	"The carrier name for a number (English), or '' if none is known."
+
+	^ self takeString: (self
+			   primCarrierName: (aRegion ifNil: [ '' ])
+			   input: (anInput ifNil: [ '' ]))
+]
+
+{ #category : 'carrier' }
+PhonenumberAe class >> carrierNameForValidNumber: anInput region: aRegion [
+	"The carrier name, but only when the number is valid; else ''."
+
+	^ self takeString: (self
+			   primCarrierNameForValid: (aRegion ifNil: [ '' ])
+			   input: (anInput ifNil: [ '' ]))
+]
+
 { #category : 'introspection' }
 PhonenumberAe class >> abiVersion [
-	"The engine's ABI revision (3)."
+	"The engine's ABI revision (5)."
 
 	^ self primAbiVersion
 ]

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * The idiomatic PHP surface over the phonenumber engine (ABI v3).
+ * The idiomatic PHP surface over the phonenumber engine (ABI v5).
  *
  * Carries no phone-number logic — every method here marshals to an
  * `aether_pn_embed_*` call in {@see Native}.

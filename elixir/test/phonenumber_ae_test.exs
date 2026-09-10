@@ -159,10 +159,10 @@ defmodule PhonenumberAeTest do
   end
 
   test "34 abi version" do
-    assert PhonenumberAe.abi_version() == 3
+    assert PhonenumberAe.abi_version() == 5
   end
 
-  # ---- ShortNumberInfo (docs/conformance.md #35–40, v3) ----
+  # ---- ShortNumberInfo (docs/conformance.md #35–40, v5) ----
 
   test "35 short emergency US" do
     assert PhonenumberAe.is_emergency_number?("US", "911") == true
@@ -189,7 +189,25 @@ defmodule PhonenumberAeTest do
     assert PhonenumberAe.short_example_number("US") == "112"
   end
 
-  # ---- extras: the marshalling corners the 40 do not reach ----
+  # ---- TimeZones + Carrier (docs/conformance.md #41–44, v5) ----
+
+  test "41 tz US" do
+    assert PhonenumberAe.time_zones_for_number("US", "2015550123") == ["America/New_York"]
+  end
+
+  test "42 tz GB" do
+    assert PhonenumberAe.time_zones_for_number("GB", "2070313000") == ["Europe/London"]
+  end
+
+  test "43 tz unknown" do
+    assert PhonenumberAe.unknown_time_zone() == "Etc/Unknown"
+  end
+
+  test "44 carrier" do
+    assert PhonenumberAe.carrier_name_for_number("GB", "7106000000") == "O2"
+  end
+
+  # ---- extras: the marshalling corners the 44 do not reach ----
 
   # The NIF takes iodata, so a caller with a plain charlist should not have to
   # flatten it first.

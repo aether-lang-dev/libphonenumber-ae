@@ -1,18 +1,19 @@
 'use strict';
 /**
- * koffi bindings for the phonenumber engine (libphonenumber_ae.so), ABI v3.
+ * koffi bindings for the phonenumber engine (libphonenumber_ae.so), ABI v5.
  *
  * This module is the ONLY place in the JavaScript binding that knows about the
  * C ABI. Everything above it (`phonenumber.js`) is idiomatic JavaScript over
  * these symbols. No phone-number logic lives here or anywhere else in this
  * package — the engine is `core/phonenumber.ae`, shared by every binding.
  *
- * v3 adds the ShortNumberInfo side-library (8 symbols) on top of the full
- * PhoneNumberUtil parity ABI (now 58 symbols). Every signature is still
- * scalar-only (`const char *` and `int`), and every returned `char*` is
- * caller-owned. There are still no opaque handles: a parsed number and an
- * AsYouType state are themselves caller-owned *strings* you hand back to the
- * accessor calls and free like any other returned string.
+ * v5 adds the PhoneNumberToTimeZonesMapper (4 symbols) and the
+ * PhoneNumberToCarrierMapper (2 symbols) side-libraries on top of the v3
+ * ShortNumberInfo ABI (now 64 symbols). Every signature is still scalar-only
+ * (`const char *` and `int`), and every returned `char*` is caller-owned. There
+ * are still no opaque handles: a parsed number and an AsYouType state are
+ * themselves caller-owned *strings* you hand back to the accessor calls and
+ * free like any other returned string.
  *
  * Library resolution, in order:
  *   1. an explicit path passed to `load(path)`
@@ -211,6 +212,16 @@ function declare(lib) {
     shortIsSmsService: f('int aether_pn_embed_short_is_sms_service(const char *region, const char *input)'),
     shortExpectedCost: f('int aether_pn_embed_short_expected_cost(const char *region, const char *input)'),
     shortExampleNumber: f('void *aether_pn_embed_short_example_number(const char *region)'),
+
+    // ---- PhoneNumberToTimeZonesMapper (timezone lookup) ----
+    tzCount: f('int aether_pn_embed_tz_count(const char *region, const char *input)'),
+    tzAt: f('void *aether_pn_embed_tz_at(const char *region, const char *input, int idx)'),
+    tzAll: f('void *aether_pn_embed_tz_all(const char *region, const char *input)'),
+    tzUnknown: f('void *aether_pn_embed_tz_unknown()'),
+
+    // ---- PhoneNumberToCarrierMapper (English carrier names) ----
+    carrierName: f('void *aether_pn_embed_carrier_name(const char *region, const char *input)'),
+    carrierNameForValid: f('void *aether_pn_embed_carrier_name_for_valid(const char *region, const char *input)'),
   };
 }
 

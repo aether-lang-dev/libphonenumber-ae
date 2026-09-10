@@ -1,4 +1,4 @@
-## The 40-check binding conformance suite (docs/conformance.md, v3), in Nim.
+## The 44-check binding conformance suite (docs/conformance.md, v5), in Nim.
 ##
 ## Proves this binding marshals every value shape across the FFI. It is NOT a
 ## phone-number test suite — the behavioural cases live in the engine's own
@@ -127,8 +127,8 @@ suite "conformance":
     let matches = findNumbers("call 201-555-0123 now", "US", lenValid)
     check matches[0].raw == "201-555-0123"
 
-  test "34 abi_version == 3":
-    check abiVersion() == 3
+  test "34 abi_version == 5":
+    check abiVersion() == 5
 
   test "35 short is_emergency US 911":
     check isEmergencyNumber("US", "911") == true
@@ -148,6 +148,18 @@ suite "conformance":
 
   test "40 short example_number US == 112":
     check shortExampleNumber("US") == "112"
+
+  test "41 time_zones_for_number US == America/New_York":
+    check timeZonesForNumber("US", "2015550123") == @["America/New_York"]
+
+  test "42 time_zones_for_number GB == Europe/London":
+    check timeZonesForNumber("GB", "2070313000") == @["Europe/London"]
+
+  test "43 unknown_time_zone == Etc/Unknown":
+    check unknownTimeZone() == "Etc/Unknown"
+
+  test "44 carrier_name_for_number GB 7106000000 == O2":
+    check carrierNameForNumber("GB", "7106000000") == "O2"
 
 suite "surface":
 
@@ -176,6 +188,13 @@ suite "surface":
     discard ayt.inputDigit('0')
     ayt.clear()
     check ayt.result == ""
+
+  test "time_zone_count agrees with the list length":
+    check timeZoneCount("US", "2015550123") == 1
+    check timeZonesForNumber("US", "2015550123").len == 1
+
+  test "carrier_name_for_valid agrees for a valid number":
+    check carrierNameForValidNumber("GB", "7106000000") == "O2"
 
   test "no leak across many string round trips":
     # Not a leak detector, but it exercises takeString several thousand times;

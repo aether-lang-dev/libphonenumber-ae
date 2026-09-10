@@ -1,4 +1,4 @@
-//! The 40-check binding conformance suite (docs/conformance.md, v3).
+//! The 44-check binding conformance suite (docs/conformance.md, v5).
 //!
 //! Proves the Zig binding marshals every value shape across the FFI. It is NOT
 //! a phone-number test suite — the behavioural cases live in the engine's own
@@ -25,7 +25,7 @@ fn expectStr(want: []const u8, got: anyerror![]u8) !void {
 }
 
 // =========================================================================
-// The forty (docs/conformance.md, v3)
+// The forty-four (docs/conformance.md, v5)
 // =========================================================================
 
 test "01 country_code US == 1" {
@@ -182,8 +182,8 @@ test "33 matcher_raw" {
     try testing.expectEqualStrings("201-555-0123", matches[0].raw);
 }
 
-test "34 abi_version == 3" {
-    try testing.expectEqual(@as(i32, 3), pn.abiVersion());
+test "34 abi_version == 5" {
+    try testing.expectEqual(@as(i32, 5), pn.abiVersion());
 }
 
 test "35 short is_emergency US 911" {
@@ -210,9 +210,45 @@ test "40 short example_number US == 112" {
     try expectStr("112", pn.shortExampleNumber(alloc, "US"));
 }
 
+/// Assert a timezone slice equals a single expected zone id, freeing it. The
+/// `defer freeTimeZones` is what makes a forgotten free show up as a failure.
+fn expectSingleZone(want: []const u8, region: []const u8, input: []const u8) !void {
+    const zones = try pn.timeZonesForNumber(alloc, region, input);
+    defer pn.freeTimeZones(alloc, zones);
+    try testing.expectEqual(@as(usize, 1), zones.len);
+    try testing.expectEqualStrings(want, zones[0]);
+}
+
+test "41 time_zones_for_number US == America/New_York" {
+    try expectSingleZone("America/New_York", "US", "2015550123");
+}
+
+test "42 time_zones_for_number GB == Europe/London" {
+    try expectSingleZone("Europe/London", "GB", "2070313000");
+}
+
+test "43 unknown_time_zone == Etc/Unknown" {
+    try expectStr("Etc/Unknown", pn.unknownTimeZone(alloc));
+}
+
+test "44 carrier_name_for_number GB 7106000000 == O2" {
+    try expectStr("O2", pn.carrierNameForNumber(alloc, "GB", "7106000000"));
+}
+
 // =========================================================================
 // Extras — Zig-specific hazards and surface edges
 // =========================================================================
+
+test "extra time_zone_count agrees with the list length" {
+    try testing.expectEqual(@as(usize, 1), try pn.timeZoneCount(alloc, "US", "2015550123"));
+    const zones = try pn.timeZonesForNumber(alloc, "US", "2015550123");
+    defer pn.freeTimeZones(alloc, zones);
+    try testing.expectEqual(@as(usize, 1), zones.len);
+}
+
+test "extra carrier_name_for_valid agrees for a valid number" {
+    try expectStr("O2", pn.carrierNameForValidNumber(alloc, "GB", "7106000000"));
+}
 
 test "extra region_at out of range is an owned empty string" {
     // The ABI returns an owned "" rather than null. Freeing it through the one
