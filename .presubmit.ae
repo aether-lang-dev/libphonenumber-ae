@@ -29,10 +29,8 @@ aeb(cap) {
         dep("ruby/.tests.ae")
         dep("go/.tests.ae")
         dep("rust/.tests.ae")
-        dep("java/aether/.tests.ae")
-        // The top-level javascript/ dir is Google's Closure JS port; the Aether
-        // binding nests under javascript/aether/ to avoid clobbering it.
-        dep("javascript/aether/.tests.ae")
+        dep("java/.tests.ae")
+        dep("javascript/.tests.ae")
         dep("dotnet/.tests.ae")
         dep("dart/.tests.ae")
         dep("php/.tests.ae")

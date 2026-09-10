@@ -11,9 +11,9 @@ java/**/target/
 # Ignore the logs directory
 /logs/
 
-# ---- Aether port (feat/aether-port) build artifacts ----
-# Depth-agnostic globs: the bindings nest (e.g. javascript/aether/), so match
-# these build/dep/output dirs and compiled artifacts wherever they appear.
+# ---- Aether build artifacts ----
+# Depth-agnostic globs: match these build/dep/output dirs and compiled
+# artifacts wherever they appear under any binding.
 /target/
 **/.aeb/
 **/target/
