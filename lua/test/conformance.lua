@@ -1,4 +1,4 @@
---- The 44-check binding conformance suite (docs/conformance.md, v5).
+--- The 45-check binding conformance suite (docs/conformance.md, v6).
 ---
 --- Proves the Lua binding marshals every value shape across the FFI. It is NOT
 --- a phone-number test suite — the behavioural cases live in the engine's own
@@ -62,10 +62,10 @@ local function eq_list(got, want, what)
   end
 end
 
-print("=== phonenumber_ae Lua binding conformance (v5) ===")
+print("=== phonenumber_ae Lua binding conformance (v6) ===")
 print(string.format("engine: %s (ABI v%d)", pn.engine_path(), pn.abi_version()))
 
--- ---- the forty ----
+-- ---- the forty-five ----
 
 test("01 country_code US == 1", function()
   eq(pn.country_code("US"), "1")
@@ -201,8 +201,8 @@ test("33 matcher_raw", function()
   eq(matches[1].raw, "201-555-0123", "match raw")
 end)
 
-test("34 abi_version == 5", function()
-  eq(pn.abi_version(), 5, "abi_version")
+test("34 abi_version == 6", function()
+  eq(pn.abi_version(), 6, "abi_version")
 end)
 
 test("35 short is_emergency US 911", function()
@@ -247,6 +247,10 @@ test("44 carrier_name_for_number GB 7106000000 == O2", function()
   eq(pn.carrier_name_for_number("GB", "7106000000"), "O2")
 end)
 
+test("45 geo_description_for_number US 6502530000 == Mountain View, CA", function()
+  eq(pn.geo_description_for_number("US", "6502530000"), "Mountain View, CA")
+end)
+
 -- ---- a few surface extras ----
 
 test("format style aliases agree", function()
@@ -274,6 +278,10 @@ end)
 
 test("carrier_name_for_valid agrees for a valid number", function()
   eq(pn.carrier_name_for_valid_number("GB", "7106000000"), "O2")
+end)
+
+test("geo_description_for_valid agrees for a valid number", function()
+  eq(pn.geo_description_for_valid_number("US", "6502530000"), "Mountain View, CA")
 end)
 
 test("many round trips do not leak", function()

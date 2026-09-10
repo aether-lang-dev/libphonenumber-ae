@@ -1,4 +1,4 @@
-%%% The binding conformance suite (docs/conformance.md, v5), as EUnit.
+%%% The binding conformance suite (docs/conformance.md, v6), as EUnit.
 %%%
 %%% Proves the Erlang binding marshals every value shape across the FFI. It is
 %%% NOT a phone-number test suite — the behavioural cases live in the engine's
@@ -12,7 +12,7 @@
 -include_lib("eunit/include/eunit.hrl").
 
 %%------------------------------------------------------------------
-%% The 44 checks (docs/conformance.md, v5)
+%% The 45 checks (docs/conformance.md, v6)
 %%------------------------------------------------------------------
 
 t01_country_code_us_test() ->
@@ -138,7 +138,7 @@ t33_matcher_raw_test() ->
     ?assertEqual(<<"201-555-0123">>, Raw).
 
 t34_abi_version_test() ->
-    ?assertEqual(5, phonenumber_ae:abi_version()).
+    ?assertEqual(6, phonenumber_ae:abi_version()).
 
 %%------------------------------------------------------------------
 %% ShortNumberInfo (docs/conformance.md #35–40, v3)
@@ -166,7 +166,7 @@ t40_short_example_test() ->
     ?assertEqual(<<"112">>, phonenumber_ae:short_example_number(<<"US">>)).
 
 %%------------------------------------------------------------------
-%% TimeZones + Carrier (docs/conformance.md #41–44, v5)
+%% TimeZones + Carrier + Geocoder (docs/conformance.md #41–45, v6)
 %%------------------------------------------------------------------
 
 t41_tz_us_test() ->
@@ -184,8 +184,12 @@ t44_carrier_test() ->
     ?assertEqual(<<"O2">>,
                  phonenumber_ae:carrier_name_for_number(<<"GB">>, <<"7106000000">>)).
 
+t45_geocoder_test() ->
+    ?assertEqual(<<"Mountain View, CA">>,
+                 phonenumber_ae:geo_description_for_number(<<"US">>, <<"6502530000">>)).
+
 %%------------------------------------------------------------------
-%% Extras — marshalling corners the 44 do not reach
+%% Extras — marshalling corners the 45 do not reach
 %%------------------------------------------------------------------
 
 %% The NIF takes iodata, not just binaries — a caller with a plain string list

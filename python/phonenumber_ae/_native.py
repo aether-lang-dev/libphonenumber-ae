@@ -185,6 +185,9 @@ def _declare(lib):
         # PhoneNumberToCarrierMapper
         "aether_pn_embed_carrier_name": ([S, S], P),
         "aether_pn_embed_carrier_name_for_valid": ([S, S], P),
+        # PhoneNumberOfflineGeocoder
+        "aether_pn_embed_geo_description": ([S, S], P),
+        "aether_pn_embed_geo_description_for_valid": ([S, S], P),
     }
     for name, (argtypes, restype) in sigs.items():
         fn = getattr(lib, name)

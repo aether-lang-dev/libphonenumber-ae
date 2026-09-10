@@ -1,4 +1,4 @@
-/// The 44-check binding conformance suite (docs/conformance.md, v5).
+/// The 45-check binding conformance suite (docs/conformance.md, v6).
 ///
 /// Proves the Dart binding marshals every value shape across the FFI. It is NOT
 /// a phone-number test suite — the behavioural cases live in the engine's own
@@ -159,7 +159,7 @@ void main() {
   });
 
   test('34 abi version', () {
-    expect(pn.abiVersion(), equals(5));
+    expect(pn.abiVersion(), equals(6));
   });
 
   // ---- ShortNumberInfo (v3) ----
@@ -189,7 +189,7 @@ void main() {
     expect(pn.ShortNumberInfo.exampleNumber('US'), equals('112'));
   });
 
-  // ---- TimeZones + Carrier (v5) ----
+  // ---- TimeZones + Carrier + Geocoder (v5/v6) ----
 
   test('41 time_zones_for_number US', () {
     expect(pn.TimeZones.timeZonesForNumber('US', '2015550123'),
@@ -207,6 +207,11 @@ void main() {
 
   test('44 carrier_name_for_number GB', () {
     expect(pn.Carrier.carrierNameForNumber('GB', '7106000000'), equals('O2'));
+  });
+
+  test('45 geo_description_for_number US', () {
+    expect(pn.Geocoder.geoDescriptionForNumber('US', '6502530000'),
+        equals('Mountain View, CA'));
   });
 
   // ---- a few extras exercising the idiomatic surface ----

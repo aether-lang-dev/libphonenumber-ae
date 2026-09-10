@@ -1,5 +1,5 @@
 "
-The 44-check binding conformance suite (docs/conformance.md, v5), in Pharo.
+The 45-check binding conformance suite (docs/conformance.md, v6), in Pharo.
 
 I prove the Pharo binding marshals every value shape across the FFI. I am NOT a
 phone-number test suite — the behavioural cases live in the engine's own tests
@@ -272,7 +272,7 @@ PhonenumberAeConformanceTest >> test33MatcherRaw [
 { #category : 'tests' }
 PhonenumberAeConformanceTest >> test34AbiVersion [
 
-	self assert: PhonenumberAe abiVersion equals: 5
+	self assert: PhonenumberAe abiVersion equals: 6
 ]
 
 { #category : 'tests - short numbers' }
@@ -349,6 +349,14 @@ PhonenumberAeConformanceTest >> test44Carrier [
 	self
 		assert: (PhonenumberAe carrierNameForNumber: '7106000000' region: 'GB')
 		equals: 'O2'
+]
+
+{ #category : 'tests - geocoder' }
+PhonenumberAeConformanceTest >> test45Geocoder [
+
+	self
+		assert: (PhonenumberAe geoDescriptionForNumber: '6502530000' region: 'US')
+		equals: 'Mountain View, CA'
 ]
 
 { #category : 'tests - extras' }

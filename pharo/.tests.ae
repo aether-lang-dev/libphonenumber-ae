@@ -28,7 +28,7 @@ aeb(cap) {
             println("pharo: conformance suite reported failures")
             return 1
         }
-        println("pharo: PASS — 44-check conformance (v5 ABI, incl. ShortNumberInfo, timezones + carrier)")
+        println("pharo: PASS — 45-check conformance (v6 ABI, incl. ShortNumberInfo, timezones, carrier + geocoder)")
         return 0
     }
 }

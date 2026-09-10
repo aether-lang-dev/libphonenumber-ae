@@ -1,6 +1,7 @@
 (ns org.libphonenumber.ae.core
-  "Idiomatic Clojure over the Java binding (ABI v5, full PhoneNumberUtil parity
-  plus ShortNumberInfo, the timezone mapper and the carrier mapper).
+  "Idiomatic Clojure over the Java binding (ABI v6, full PhoneNumberUtil parity
+  plus ShortNumberInfo, the timezone mapper, the carrier mapper and the offline
+  geocoder).
 
   There is **no second FFI here**. The one JVM binding to the shared Aether
   engine is `java/aether/` (FFM / Panama), and everything in this namespace is
@@ -24,6 +25,7 @@
                                   Carrier
                                   CountryCodeSource
                                   Format
+                                  Geocoder
                                   Leniency
                                   MatchType
                                   Matcher$Match
@@ -373,9 +375,24 @@
   [^String region ^String input]
   (Carrier/carrierNameForValidNumber region input))
 
+;; ---- geocoder ------------------------------------------------------------
+;;
+;; English geographic descriptions by longest-prefix match over the E.164
+;; digits. These reach the Java Geocoder mapper.
+
+(defn geo-description-for-number
+  "A geographic description for a number (English), or \"\" if none is known."
+  [^String region ^String input]
+  (Geocoder/geoDescriptionForNumber region input))
+
+(defn geo-description-for-valid-number
+  "A geographic description only when the number is valid, else \"\"."
+  [^String region ^String input]
+  (Geocoder/geoDescriptionForValidNumber region input))
+
 ;; ---- version -------------------------------------------------------------
 
 (defn abi-version
-  "The ABI revision the loaded engine reports (5 for this build)."
+  "The ABI revision the loaded engine reports (6 for this build)."
   []
   (PhoneNumbers/abiVersion))

@@ -1,0 +1,79 @@
+// core.geocoder — a pure-Aether PhoneNumberOfflineGeocoder (the geocoding side-
+// library of libphonenumber), English descriptions.
+//
+// Compiled from resources/geocoding/en/<cc>.txt (via core/gen/generate_geo.ae)
+// into core/geocoder_metadata.ae, stored as ONE ~7 MB string blob (~269k
+// entries — far too many for the compiler's per-function statement cap as
+// list.add calls, but fine as a single string constant).
+//
+// Answers getDescriptionForNumber by longest-prefix match over the E.164 digits.
+// The blob is "cc<0x1F>prefix<0x1F>desc\n" rows; we scan it directly in a single
+// pass with the cached-length accessors (char_at_n / substring_n) so a lookup is
+// O(n), not O(n^2). The input is a phone number's full E.164 digit string
+// ("<cc><national>", no '+'); the ABI layer parses a raw (region, input) to that.
+
+import std.string
+import core.geocoder_metadata
+
+exports(description_for_e164)
+
+fn digits(s: string) -> string {
+    out = ""
+    n = string.length(s)
+    for (i = 0; i < n; i++) {
+        c = string.char_at(s, i)
+        if c >= 48 && c <= 57 { out = "${out}${string.substring(s, i, i + 1)}" }
+    }
+    return out
+}
+
+// The geographic description for the longest prefix of the E.164 digits, or "".
+description_for_e164(e164: string) -> string {
+    d = digits(e164)
+    dlen = string.length(d)
+    if dlen == 0 { return "" }
+    b = geocoder_metadata.blob()
+    n = string.length(b)
+    us = 31   // 0x1F field separator
+    nl = 10   // '\n' row separator
+
+    best = ""
+    best_len = -1
+    row_start = 0
+    i = 0
+    while i <= n {
+        at_nl = 0
+        if i == n { at_nl = 1 } else { if string.char_at_n(b, n, i) == nl { at_nl = 1 } }
+        if at_nl == 1 {
+            f1 = -1   // end of cc  (first US)
+            f2 = -1   // end of prefix (second US)
+            j = row_start
+            while j < i {
+                if string.char_at_n(b, n, j) == us {
+                    if f1 < 0 { f1 = j }
+                    else if f2 < 0 { f2 = j; break }
+                }
+                j = j + 1
+            }
+            if f1 >= 0 && f2 >= 0 {
+                pl = f2 - (f1 + 1)
+                if pl <= dlen && pl > best_len {
+                    if prefix_eq(b, n, f1 + 1, d, pl) == 1 {
+                        best = string.substring_n(b, n, f2 + 1, i)   // description
+                        best_len = pl
+                    }
+                }
+            }
+            row_start = i + 1
+        }
+        i = i + 1
+    }
+    return best
+}
+
+fn prefix_eq(b: string, blen: int, boff: int, d: string, pl: int) -> int {
+    for (k = 0; k < pl; k++) {
+        if string.char_at_n(b, blen, boff + k) != string.char_at(d, k) { return 0 }
+    }
+    return 1
+}

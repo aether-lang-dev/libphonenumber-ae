@@ -1,4 +1,4 @@
---- Validate, parse and format international phone numbers (ABI v5).
+--- Validate, parse and format international phone numbers (ABI v6).
 ---
 --- The idiomatic Lua surface over the phonenumber engine. Carries no
 --- phone-number logic — every function here marshals to the C extension in
@@ -457,6 +457,20 @@ end
 --- The carrier name only when the number is valid, else "".
 function M.carrier_name_for_valid_number(region, input)
   return native.carrier_name_for_valid(region, input)
+end
+
+-- ---- PhoneNumberOfflineGeocoder (English geographic descriptions) ----
+-- Longest-prefix match over the E.164 digits; English descriptions only. "" when
+-- no description is known for the number.
+
+--- A geographic description for a number (English), or "" if none is known.
+function M.geo_description_for_number(region, input)
+  return native.geo_description(region, input)
+end
+
+--- A geographic description only when the number is valid, else "".
+function M.geo_description_for_valid_number(region, input)
+  return native.geo_description_for_valid(region, input)
 end
 
 -- ---- lifecycle ----

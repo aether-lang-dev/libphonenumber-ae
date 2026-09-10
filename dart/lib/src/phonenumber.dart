@@ -1,4 +1,4 @@
-/// The idiomatic Dart surface over the phonenumber engine (ABI v5).
+/// The idiomatic Dart surface over the phonenumber engine (ABI v6).
 ///
 /// Carries no phone-number logic — every member here marshals to an
 /// `aether_pn_embed_*` call in `native.dart`. Most of the surface is top-level
@@ -657,5 +657,28 @@ abstract final class Carrier {
     final api = _api;
     return _withUtf8x2(region, input,
         (r, i) => api.takeString(api.carrierNameForValid(r, i)));
+  }
+}
+
+// ---- PhoneNumberOfflineGeocoder (English geographic descriptions) ----
+
+/// English geographic-description lookup for a number, mirroring
+/// libphonenumber's `PhoneNumberOfflineGeocoder`.
+///
+/// Every member marshals to an `aether_pn_embed_geo_*` call. `""` means no
+/// description is known. The class is never instantiated — it is stateless.
+abstract final class Geocoder {
+  /// A geographic description for [input] in [region] (English), or "" if none.
+  static String geoDescriptionForNumber(String region, String input) {
+    final api = _api;
+    return _withUtf8x2(
+        region, input, (r, i) => api.takeString(api.geoDescription(r, i)));
+  }
+
+  /// A geographic description only when [input] is a valid number, else "".
+  static String geoDescriptionForValidNumber(String region, String input) {
+    final api = _api;
+    return _withUtf8x2(region, input,
+        (r, i) => api.takeString(api.geoDescriptionForValid(r, i)));
   }
 }

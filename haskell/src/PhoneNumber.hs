@@ -2,7 +2,7 @@
 
 -- |
 -- Module      : PhoneNumber
--- Description : Validate, parse and format international phone numbers (ABI v5).
+-- Description : Validate, parse and format international phone numbers (ABI v6).
 --
 -- A thin binding over the monorepo's ONE shared native engine —
 -- @core\/native\/libphonenumber_ae.so@, compiled from pure Aether over Google
@@ -11,12 +11,13 @@
 -- described in @core\/embed.ae@. One engine, one set of behaviours, N language
 -- surfaces.
 --
--- == ABI v5
+-- == ABI v6
 --
 -- The ABI is full @PhoneNumberUtil@ parity plus the @ShortNumberInfo@
 -- side-library (short \/ emergency numbers), the @PhoneNumberToTimeZonesMapper@
--- (IANA time zones) and the @PhoneNumberToCarrierMapper@ (English carrier
--- names). A parsed number is a
+-- (IANA time zones), the @PhoneNumberToCarrierMapper@ (English carrier
+-- names) and the @PhoneNumberOfflineGeocoder@ (English geographic
+-- descriptions). A parsed number is a
 -- caller-owned string you carry in a 'ParsedNumber' and read fields from on
 -- demand; the 'AsYouTypeFormatter' threads its state through the same
 -- caller-owned-string mechanism, wrapped here behind an 'IORef'; and
@@ -133,6 +134,10 @@ module PhoneNumber
     -- * PhoneNumberToCarrierMapper (English carrier names)
   , carrierNameForNumber
   , carrierNameForValidNumber
+
+    -- * PhoneNumberOfflineGeocoder (English geographic descriptions)
+  , geoDescriptionForNumber
+  , geoDescriptionForValidNumber
 
     -- * Enumerations
   , NumberType (..)
@@ -761,11 +766,26 @@ carrierNameForValidNumber :: B.ByteString -> B.ByteString -> IO B.ByteString
 carrierNameForValidNumber region input = str2 N.aether_pn_embed_carrier_name_for_valid region input
 
 -- ---------------------------------------------------------------------------
+-- PhoneNumberOfflineGeocoder (English geographic descriptions)
+-- ---------------------------------------------------------------------------
+--
+-- Longest-prefix match over the E.164 digits; English descriptions only.
+-- @\"\"@ when no description is known for the number.
+
+-- | A geographic description for a number (English), or @\"\"@ if none is known.
+geoDescriptionForNumber :: B.ByteString -> B.ByteString -> IO B.ByteString
+geoDescriptionForNumber region input = str2 N.aether_pn_embed_geo_description region input
+
+-- | A geographic description only when the number is valid, else @\"\"@.
+geoDescriptionForValidNumber :: B.ByteString -> B.ByteString -> IO B.ByteString
+geoDescriptionForValidNumber region input = str2 N.aether_pn_embed_geo_description_for_valid region input
+
+-- ---------------------------------------------------------------------------
 -- Introspection
 -- ---------------------------------------------------------------------------
 
--- | The engine's ABI revision (@5@ for this binding — adds ShortNumberInfo,
--- the TimeZones mapper and the Carrier mapper).
+-- | The engine's ABI revision (@6@ for this binding — adds ShortNumberInfo,
+-- the TimeZones mapper, the Carrier mapper and the Geocoder).
 abiVersion :: IO Int
 abiVersion = fromIntegral <$> N.aether_pn_embed_abi_version
 

@@ -1,4 +1,4 @@
-// The 1:1 symbol table for the phonenumber C ABI (core/embed.ae) — v5.
+// The 1:1 symbol table for the phonenumber C ABI (core/embed.ae) — v6.
 //
 // This file is the ONLY place in the .NET binding that knows about the C ABI.
 // Everything above it (PhoneNumber.cs) is idiomatic C# over these symbols. No
@@ -384,6 +384,14 @@ public static class Native
 
     [DllImport(Lib, EntryPoint = "aether_pn_embed_carrier_name_for_valid", CallingConvention = CallingConvention.Cdecl)]
     public static extern IntPtr CarrierNameForValid(byte[] region, byte[] input);
+
+    // -- PhoneNumberOfflineGeocoder (English geographic descriptions) --
+
+    [DllImport(Lib, EntryPoint = "aether_pn_embed_geo_description", CallingConvention = CallingConvention.Cdecl)]
+    public static extern IntPtr GeoDescription(byte[] region, byte[] input);
+
+    [DllImport(Lib, EntryPoint = "aether_pn_embed_geo_description_for_valid", CallingConvention = CallingConvention.Cdecl)]
+    public static extern IntPtr GeoDescriptionForValid(byte[] region, byte[] input);
 
     // ---- string marshalling ----
 

@@ -1,15 +1,16 @@
 'use strict';
 /**
- * koffi bindings for the phonenumber engine (libphonenumber_ae.so), ABI v5.
+ * koffi bindings for the phonenumber engine (libphonenumber_ae.so), ABI v6.
  *
  * This module is the ONLY place in the JavaScript binding that knows about the
  * C ABI. Everything above it (`phonenumber.js`) is idiomatic JavaScript over
  * these symbols. No phone-number logic lives here or anywhere else in this
  * package — the engine is `core/phonenumber.ae`, shared by every binding.
  *
- * v5 adds the PhoneNumberToTimeZonesMapper (4 symbols) and the
- * PhoneNumberToCarrierMapper (2 symbols) side-libraries on top of the v3
- * ShortNumberInfo ABI (now 64 symbols). Every signature is still scalar-only
+ * v6 adds the PhoneNumberOfflineGeocoder (2 symbols) on top of the v5
+ * PhoneNumberToTimeZonesMapper (4 symbols) and PhoneNumberToCarrierMapper
+ * (2 symbols) side-libraries and the v3 ShortNumberInfo ABI (now 66 symbols).
+ * Every signature is still scalar-only
  * (`const char *` and `int`), and every returned `char*` is caller-owned. There
  * are still no opaque handles: a parsed number and an AsYouType state are
  * themselves caller-owned *strings* you hand back to the accessor calls and
@@ -222,6 +223,10 @@ function declare(lib) {
     // ---- PhoneNumberToCarrierMapper (English carrier names) ----
     carrierName: f('void *aether_pn_embed_carrier_name(const char *region, const char *input)'),
     carrierNameForValid: f('void *aether_pn_embed_carrier_name_for_valid(const char *region, const char *input)'),
+
+    // ---- PhoneNumberOfflineGeocoder (English geographic descriptions) ----
+    geoDescription: f('void *aether_pn_embed_geo_description(const char *region, const char *input)'),
+    geoDescriptionForValid: f('void *aether_pn_embed_geo_description_for_valid(const char *region, const char *input)'),
   };
 }
 

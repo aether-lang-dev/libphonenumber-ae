@@ -1,4 +1,4 @@
-## The 44-check binding conformance suite (docs/conformance.md, v5), in Nim.
+## The 45-check binding conformance suite (docs/conformance.md, v6), in Nim.
 ##
 ## Proves this binding marshals every value shape across the FFI. It is NOT a
 ## phone-number test suite — the behavioural cases live in the engine's own
@@ -127,8 +127,8 @@ suite "conformance":
     let matches = findNumbers("call 201-555-0123 now", "US", lenValid)
     check matches[0].raw == "201-555-0123"
 
-  test "34 abi_version == 5":
-    check abiVersion() == 5
+  test "34 abi_version == 6":
+    check abiVersion() == 6
 
   test "35 short is_emergency US 911":
     check isEmergencyNumber("US", "911") == true
@@ -160,6 +160,9 @@ suite "conformance":
 
   test "44 carrier_name_for_number GB 7106000000 == O2":
     check carrierNameForNumber("GB", "7106000000") == "O2"
+
+  test "45 geo_description_for_number US 6502530000 == Mountain View, CA":
+    check geoDescriptionForNumber("US", "6502530000") == "Mountain View, CA"
 
 suite "surface":
 
@@ -195,6 +198,9 @@ suite "surface":
 
   test "carrier_name_for_valid agrees for a valid number":
     check carrierNameForValidNumber("GB", "7106000000") == "O2"
+
+  test "geo_description_for_valid agrees for a valid number":
+    check geoDescriptionForValidNumber("US", "6502530000") == "Mountain View, CA"
 
   test "no leak across many string round trips":
     # Not a leak detector, but it exercises takeString several thousand times;

@@ -1,5 +1,5 @@
 /* lua/src/phonenumber_ae.c — the Lua 5.4 C extension over the phonenumber
- * C ABI (core/embed.ae), ABI v5.
+ * C ABI (core/embed.ae), ABI v6.
  *
  * This file is the ONLY place in the Lua binding that knows about the C ABI.
  * Everything above it (lua/src/phonenumber_ae.lua) is idiomatic Lua over these
@@ -12,8 +12,8 @@
  * LIBPHONENUMBER_AE_LIB resolution order as every other binding applies and one
  * .so serves them all.
  *
- * v5 is full PhoneNumberUtil parity plus the ShortNumberInfo, TimeZones and
- * Carrier side-libraries: 64
+ * v6 is full PhoneNumberUtil parity plus the ShortNumberInfo, TimeZones,
+ * Carrier and Geocoder side-libraries: 66
  * ABI symbols. Signatures are still scalar-only (const char* / int). There are
  * still no opaque handles — a parsed
  * number and an AsYouType state are themselves caller-owned STRINGS that come
@@ -142,6 +142,9 @@ typedef struct {
     /* PhoneNumberToCarrierMapper */
     fn_str_str2    carrier_name;
     fn_str_str2    carrier_name_for_valid;
+    /* PhoneNumberOfflineGeocoder */
+    fn_str_str2    geo_description;
+    fn_str_str2    geo_description_for_valid;
 } Engine;
 
 static Engine ENGINE;                 /* process-wide; loaded once */
@@ -234,6 +237,9 @@ static int load_symbols(lua_State* L, void* lib, const char* path) {
     /* PhoneNumberToCarrierMapper */
     SYM(carrier_name,                   "aether_pn_embed_carrier_name");
     SYM(carrier_name_for_valid,         "aether_pn_embed_carrier_name_for_valid");
+    /* PhoneNumberOfflineGeocoder */
+    SYM(geo_description,                 "aether_pn_embed_geo_description");
+    SYM(geo_description_for_valid,       "aether_pn_embed_geo_description_for_valid");
 #undef SYM
 
     ENGINE.handle = lib;
@@ -761,6 +767,22 @@ static int l_carrier_name_for_valid(lua_State* L) {
     return 1;
 }
 
+/* ---- PhoneNumberOfflineGeocoder (English geographic descriptions) ---- */
+
+static int l_geo_description(lua_State* L) {
+    engine_load(L, NULL);
+    push_owned(L, ENGINE.geo_description(luaL_checkstring(L, 1),
+                                         luaL_checkstring(L, 2)));
+    return 1;
+}
+
+static int l_geo_description_for_valid(lua_State* L) {
+    engine_load(L, NULL);
+    push_owned(L, ENGINE.geo_description_for_valid(luaL_checkstring(L, 1),
+                                                   luaL_checkstring(L, 2)));
+    return 1;
+}
+
 /* ---- module table ---- */
 
 static const luaL_Reg MODULE[] = {
@@ -839,6 +861,9 @@ static const luaL_Reg MODULE[] = {
     /* PhoneNumberToCarrierMapper */
     {"carrier_name",                  l_carrier_name},
     {"carrier_name_for_valid",        l_carrier_name_for_valid},
+    /* PhoneNumberOfflineGeocoder */
+    {"geo_description",               l_geo_description},
+    {"geo_description_for_valid",     l_geo_description_for_valid},
     {NULL, NULL}
 };
 

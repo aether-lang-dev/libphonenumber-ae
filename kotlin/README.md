@@ -38,7 +38,7 @@ formatInternational("US", "2015550123")    // "+1 (201) 555-0123"
 
 numberType("US", "2015550123")             // NumberType.FIXED_LINE
 regions                                     // ["AC", "AD", ...]  (a property)
-abiVersion()                                // 5
+abiVersion()                                // 6
 
 // short / emergency numbers (ShortNumberInfo)
 isEmergencyNumber("US", "911")             // true
@@ -54,6 +54,10 @@ unknownTimeZone()                          // "Etc/Unknown"
 // carrier names (PhoneNumberToCarrierMapper)
 carrierNameForNumber("GB", "7106000000")   // "O2"
 carrierNameForValidNumber("GB", "7106000000") // "O2" (only if valid)
+
+// geographic descriptions (PhoneNumberOfflineGeocoder)
+geoDescriptionForNumber("US", "6502530000")   // "Mountain View, CA"
+geoDescriptionForValidNumber("US", "6502530000") // "Mountain View, CA" (only if valid)
 ```
 
 Everything above is a top-level function (or the `regions` property) over the

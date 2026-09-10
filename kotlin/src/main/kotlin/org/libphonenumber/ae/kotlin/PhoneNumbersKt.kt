@@ -5,6 +5,7 @@ package org.libphonenumber.ae.kotlin
 import org.libphonenumber.ae.AsYouTypeFormatter
 import org.libphonenumber.ae.Carrier
 import org.libphonenumber.ae.Format
+import org.libphonenumber.ae.Geocoder
 import org.libphonenumber.ae.Leniency
 import org.libphonenumber.ae.MatchType
 import org.libphonenumber.ae.Matcher
@@ -17,8 +18,9 @@ import org.libphonenumber.ae.TimeZones
 import org.libphonenumber.ae.ValidationResult
 
 /**
- * Idiomatic Kotlin over the Java binding (ABI v5, full PhoneNumberUtil parity
- * plus ShortNumberInfo, the timezone mapper and the carrier mapper).
+ * Idiomatic Kotlin over the Java binding (ABI v6, full PhoneNumberUtil parity
+ * plus ShortNumberInfo, the timezone mapper, the carrier mapper and the offline
+ * geocoder).
  *
  * There is **no second FFI here**. The one JVM binding to the shared Aether
  * engine is `java/aether/` (FFM / Panama); everything in this file is ordinary
@@ -192,6 +194,19 @@ fun carrierNameForNumber(region: String, input: String): String =
 /** The carrier name only when the number is valid, else `""`. */
 fun carrierNameForValidNumber(region: String, input: String): String =
     Carrier.carrierNameForValidNumber(region, input)
+
+// ---- geocoder ----
+//
+// English geographic descriptions by longest-prefix match over the E.164
+// digits. These reach the Java Geocoder mapper.
+
+/** A geographic description for a number (English), or `""` if none is known. */
+fun geoDescriptionForNumber(region: String, input: String): String =
+    Geocoder.geoDescriptionForNumber(region, input)
+
+/** A geographic description only when the number is valid, else `""`. */
+fun geoDescriptionForValidNumber(region: String, input: String): String =
+    Geocoder.geoDescriptionForValidNumber(region, input)
 
 // ---- version ----
 

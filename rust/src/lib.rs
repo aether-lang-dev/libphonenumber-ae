@@ -13,8 +13,8 @@
 //! table, `isPossible`/`isValid`, number-type classification, the formatter,
 //! the AsYouType formatter, the matcher — is the pure-Aether
 //! `core/phonenumber.ae`, shared by every language binding in this monorepo and
-//! reached over the v5 `aether_pn_embed_*` C ABI (full `PhoneNumberUtil` parity
-//! plus `ShortNumberInfo`, time zones and carrier names). Everything here is
+//! reached over the v6 `aether_pn_embed_*` C ABI (full `PhoneNumberUtil` parity
+//! plus `ShortNumberInfo`, time zones, carrier names and geocoding). Everything here is
 //! marshalling; see [`native`] for the 1:1 symbol table.
 //!
 //! The ABI is stateless — there is no handle, only caller-owned strings — so
@@ -658,6 +658,18 @@ impl PhoneNumbers {
         self.str_2(self.api.carrier_name_for_valid, region, input)
     }
 
+    // ---- PhoneNumberOfflineGeocoder (English geographic descriptions) ----
+
+    /// The English geographic description for a number, or `""` if none is known.
+    pub fn geo_description_for_number(&self, region: &str, input: &str) -> String {
+        self.str_2(self.api.geo_description, region, input)
+    }
+
+    /// The English geographic description only when the number is valid, else `""`.
+    pub fn geo_description_for_valid_number(&self, region: &str, input: &str) -> String {
+        self.str_2(self.api.geo_description_for_valid, region, input)
+    }
+
     // ---- marshalling helpers ----
 
     fn str_1(&self, f: unsafe extern "C" fn(*const c_char) -> *mut c_char, a: &str) -> String {
@@ -1158,4 +1170,16 @@ pub fn carrier_name_for_number(region: &str, input: &str) -> String {
 /// The English carrier name only when the number is valid, else `""`.
 pub fn carrier_name_for_valid_number(region: &str, input: &str) -> String {
     shared().carrier_name_for_valid_number(region, input)
+}
+
+// ---- PhoneNumberOfflineGeocoder (English geographic descriptions) ----
+
+/// The English geographic description for a number, or `""` if none is known.
+pub fn geo_description_for_number(region: &str, input: &str) -> String {
+    shared().geo_description_for_number(region, input)
+}
+
+/// The English geographic description only when the number is valid, else `""`.
+pub fn geo_description_for_valid_number(region: &str, input: &str) -> String {
+    shared().geo_description_for_valid_number(region, input)
 }

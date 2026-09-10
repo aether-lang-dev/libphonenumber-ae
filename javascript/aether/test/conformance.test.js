@@ -1,6 +1,6 @@
 'use strict';
 /**
- * The 44-check binding conformance suite (docs/conformance.md, v5).
+ * The 45-check binding conformance suite (docs/conformance.md, v6).
  *
  * Proves the JavaScript binding marshals every value shape across the FFI. It
  * is NOT a phone-number test suite — the behavioural cases live in the engine's
@@ -156,7 +156,7 @@ test('33 matcher raw', () => {
 });
 
 test('34 abi version', () => {
-  assert.strictEqual(pn.abiVersion(), 5);
+  assert.strictEqual(pn.abiVersion(), 6);
 });
 
 // ---- ShortNumberInfo (v3) ----
@@ -185,7 +185,7 @@ test('40 short example_number US', () => {
   assert.strictEqual(pn.ShortNumberInfo.exampleNumber('US'), '112');
 });
 
-// ---- TimeZones + Carrier (v5) ----
+// ---- TimeZones + Carrier + Geocoder (v5/v6) ----
 
 test('41 time_zones_for_number US', () => {
   assert.deepStrictEqual(
@@ -203,6 +203,11 @@ test('43 unknown_time_zone', () => {
 
 test('44 carrier_name_for_number GB', () => {
   assert.strictEqual(pn.Carrier.carrierNameForNumber('GB', '7106000000'), 'O2');
+});
+
+test('45 geo_description_for_number US', () => {
+  assert.strictEqual(
+    pn.Geocoder.geoDescriptionForNumber('US', '6502530000'), 'Mountain View, CA');
 });
 
 // ---- a few extras exercising the idiomatic surface ----

@@ -4,8 +4,8 @@
 // (core/native/libphonenumber_ae.so, compiled from pure Aether over Google
 // libphonenumber's own metadata). No phone-number logic lives in this package —
 // every function marshals to an `aether_pn_embed_*` call across the flat C ABI
-// described in docs/abi.md (v5, full PhoneNumberUtil parity plus
-// ShortNumberInfo, TimeZones and Carrier). One engine, one set of behaviours,
+// described in docs/abi.md (v6, full PhoneNumberUtil parity plus
+// ShortNumberInfo, TimeZones, Carrier and Geocoder). One engine, one set of behaviours,
 // N language surfaces.
 //
 // The ABI is stateless and handle-free: a parsed number and an AsYouType state
@@ -115,6 +115,10 @@ char* aether_pn_embed_tz_unknown(void);
 // PhoneNumberToCarrierMapper (English carrier names)
 char* aether_pn_embed_carrier_name(const char* region, const char* input);
 char* aether_pn_embed_carrier_name_for_valid(const char* region, const char* input);
+
+// PhoneNumberOfflineGeocoder (English geographic descriptions)
+char* aether_pn_embed_geo_description(const char* region, const char* input);
+char* aether_pn_embed_geo_description_for_valid(const char* region, const char* input);
 */
 import "C"
 
@@ -798,4 +802,24 @@ func CarrierNameForValidNumber(region, input string) string {
 	defer C.free(unsafe.Pointer(cr))
 	defer C.free(unsafe.Pointer(ci))
 	return takeString(C.aether_pn_embed_carrier_name_for_valid(cr, ci))
+}
+
+// ---- PhoneNumberOfflineGeocoder (English geographic descriptions) ----
+
+// GeoDescriptionForNumber returns the English geographic description for a
+// number, or "" if no description is known.
+func GeoDescriptionForNumber(region, input string) string {
+	cr, ci := cStr(region), cStr(input)
+	defer C.free(unsafe.Pointer(cr))
+	defer C.free(unsafe.Pointer(ci))
+	return takeString(C.aether_pn_embed_geo_description(cr, ci))
+}
+
+// GeoDescriptionForValidNumber returns the English geographic description only
+// when the number is valid, else "".
+func GeoDescriptionForValidNumber(region, input string) string {
+	cr, ci := cStr(region), cStr(input)
+	defer C.free(unsafe.Pointer(cr))
+	defer C.free(unsafe.Pointer(ci))
+	return takeString(C.aether_pn_embed_geo_description_for_valid(cr, ci))
 }

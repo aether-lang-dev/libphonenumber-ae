@@ -20,6 +20,7 @@ aeb(cap) {
         dep("core_tests/.short.ae")     // ShortNumberInfo behaviour
         dep("core_tests/.tz.ae")        // PhoneNumberToTimeZonesMapper behaviour
         dep("core_tests/.carrier.ae")   // PhoneNumberToCarrierMapper behaviour
+        dep("core_tests/.geo.ae")       // PhoneNumberOfflineGeocoder behaviour
 
         // Native-FFI bindings.
         dep("python/.tests.ae")

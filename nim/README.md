@@ -6,11 +6,11 @@ This package is a **thin `importc` binding** over the monorepo's one shared
 native engine — `core/native/libphonenumber_ae.so`, compiled from pure Aether
 over Google libphonenumber's own metadata. It contains **no phone-number
 logic**: every proc marshals to an `aether_pn_embed_*` call across the flat C
-ABI (v5, full `PhoneNumberUtil` parity plus the ShortNumberInfo, TimeZones and
-Carrier surfaces) described in `core/embed.ae`. One engine, one set of
-behaviours, N language surfaces.
+ABI (v6, full `PhoneNumberUtil` parity plus the ShortNumberInfo, TimeZones,
+Carrier and Geocoder surfaces) described in `core/embed.ae`. One engine, one set
+of behaviours, N language surfaces.
 
-The v5 ABI has **no opaque handle**: a parsed number and an AsYouType state are
+The v6 ABI has **no opaque handle**: a parsed number and an AsYouType state are
 themselves caller-owned *strings* — you get one back, pass it to accessor calls,
 and free it like any other returned string.
 
@@ -98,12 +98,12 @@ echo shortExpectedCost("US", "911")          # costTollFree
 echo shortExampleNumber("US")                # "112"
 ```
 
-### Time zones and carrier
+### Time zones, carrier and geocoder
 
-Both take a raw `(region, input)` and let the engine parse to E.164 itself.
+All take a raw `(region, input)` and let the engine parse to E.164 itself.
 `timeZonesForNumber` returns a `seq[string]` of IANA ids — a number with no
-known zones comes back as `@["Etc/Unknown"]`, never empty. Carrier names are
-English only, and `""` when no carrier is known.
+known zones comes back as `@["Etc/Unknown"]`, never empty. Carrier names and
+geographic descriptions are English only, and `""` when nothing is known.
 
 ```nim
 echo timeZonesForNumber("US", "2015550123")  # @["America/New_York"]
@@ -113,6 +113,9 @@ echo unknownTimeZone()                        # "Etc/Unknown"
 
 echo carrierNameForNumber("GB", "7106000000")        # "O2"
 echo carrierNameForValidNumber("GB", "7106000000")   # "O2" (only if valid)
+
+echo geoDescriptionForNumber("US", "6502530000")        # "Mountain View, CA"
+echo geoDescriptionForValidNumber("US", "6502530000")   # "Mountain View, CA" (only if valid)
 ```
 
 ### The surface
@@ -160,7 +163,7 @@ truncateTooLong(region, input): string
 normalizeDigitsOnly(s): string
 convertAlphaCharacters(s): string
 isAlphaNumber(s): bool
-abiVersion(): int                          # 5
+abiVersion(): int                          # 6
 
 # short numbers (ShortNumberInfo)
 shortIsPossible(region, input): bool
@@ -180,6 +183,10 @@ unknownTimeZone(): string                         # "Etc/Unknown"
 # carrier (PhoneNumberToCarrierMapper, English names)
 carrierNameForNumber(region, input): string       # "" if none known
 carrierNameForValidNumber(region, input): string  # "" unless the number is valid
+
+# geocoder (PhoneNumberOfflineGeocoder, English descriptions)
+geoDescriptionForNumber(region, input): string       # "" if none known
+geoDescriptionForValidNumber(region, input): string  # "" unless the number is valid
 
 # AsYouTypeFormatter, findNumbers (above)
 ```
@@ -222,7 +229,7 @@ explicitly. Do not "simplify" one of them to `int`.
 
 ## Conformance
 
-The 44-check conformance suite (`docs/conformance.md`, v5) lives in
+The 45-check conformance suite (`docs/conformance.md`, v6) lives in
 `tests/tconformance.nim`, alongside a few surface extras (the format-style
 aliases, the raw-int overload, out-of-range `regionAt`, AsYouType clear, and a
 several-thousand round-trip loop over `takeString`).

@@ -6,8 +6,8 @@ This package is a **thin cgo binding** over the monorepo's one shared native
 engine — `core/native/libphonenumber_ae.so`, compiled from pure Aether over
 Google libphonenumber's own metadata. It contains **no phone-number logic**:
 every function marshals to an `aether_pn_embed_*` call across the flat C ABI in
-[`docs/abi.md`](../docs/abi.md) (**v5**, full `PhoneNumberUtil` parity plus
-`ShortNumberInfo`, `TimeZones` and `Carrier`). One engine, one set of
+[`docs/abi.md`](../docs/abi.md) (**v6**, full `PhoneNumberUtil` parity plus
+`ShortNumberInfo`, `TimeZones`, `Carrier` and `Geocoder`). One engine, one set of
 behaviours, N language surfaces.
 
 The ABI is **handle-free**. There is no opaque handle: a parsed number and an
@@ -132,6 +132,15 @@ pn.CarrierNameForValidNumber("GB", "7106000000")   // "O2" (or "" if invalid)
 
 English names only; `""` means no carrier is known for the number.
 
+### Geocoding
+
+```go
+pn.GeoDescriptionForNumber("US", "6502530000")        // "Mountain View, CA"
+pn.GeoDescriptionForValidNumber("US", "6502530000")   // "Mountain View, CA" (or "" if invalid)
+```
+
+English descriptions only; `""` means no description is known for the number.
+
 ### Functions
 
 ```go
@@ -200,7 +209,11 @@ pn.UnknownTimeZone()                         // "Etc/Unknown"
 pn.CarrierNameForNumber(region, input)       // a name, or ""
 pn.CarrierNameForValidNumber(region, input)  // a name only if valid, else ""
 
-pn.ABIVersion()     int            // the engine's ABI revision (5)
+// geographic descriptions (English)
+pn.GeoDescriptionForNumber(region, input)       // a description, or ""
+pn.GeoDescriptionForValidNumber(region, input)  // a description only if valid, else ""
+
+pn.ABIVersion()     int            // the engine's ABI revision (6)
 ```
 
 ### Constants
@@ -251,7 +264,7 @@ engine is a pure, stateless transform.
 
 ## Tests
 
-The 44-check conformance suite ([`docs/conformance.md`](../docs/conformance.md))
+The 45-check conformance suite ([`docs/conformance.md`](../docs/conformance.md))
 lives in `phonenumber_test.go`. It is not a phone-number test suite — the
 behavioural cases are proven once, in the engine — it samples each *kind* of
 value crossing the FFI, so it proves the marshalling.

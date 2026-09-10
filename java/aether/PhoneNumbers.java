@@ -6,9 +6,9 @@ import java.util.List;
 
 /**
  * Validate, parse and format international phone numbers — the idiomatic Java
- * entry point over the shared Aether engine (ABI v5, full
+ * entry point over the shared Aether engine (ABI v6, full
  * {@code PhoneNumberUtil} parity plus {@code ShortNumberInfo}, the timezone
- * mapper and the carrier mapper).
+ * mapper, the carrier mapper and the offline geocoder).
  *
  * <pre>{@code
  * ParsedNumber n = PhoneNumbers.parse("+1 650 253 0000", "US");
@@ -361,9 +361,24 @@ public final class PhoneNumbers {
         return Carrier.carrierNameForValidNumber(region, input);
     }
 
+    // ---- geocoder ---------------------------------------------------------
+    //
+    // English geographic descriptions by longest-prefix match over the E.164
+    // digits. These delegate to {@link Geocoder}, which also stands on its own.
+
+    /** A geographic description for a number (English), or {@code ""}. See {@link Geocoder}. */
+    public static String geoDescriptionForNumber(String region, String input) {
+        return Geocoder.geoDescriptionForNumber(region, input);
+    }
+
+    /** A geographic description only when the number is valid, else {@code ""}. */
+    public static String geoDescriptionForValidNumber(String region, String input) {
+        return Geocoder.geoDescriptionForValidNumber(region, input);
+    }
+
     // ---- version ----------------------------------------------------------
 
-    /** The ABI revision the loaded engine reports ({@code 5} for this build). */
+    /** The ABI revision the loaded engine reports ({@code 6} for this build). */
     public static int abiVersion() {
         Native a = api();
         try {

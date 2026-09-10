@@ -18,7 +18,7 @@
         "test": "php tests/conformance.php"
     },
     "scripts-descriptions": {
-        "test": "Run the v5 44-check binding conformance suite (no dependencies required)."
+        "test": "Run the v6 45-check binding conformance suite (no dependencies required)."
     },
     "suggest": {
         "ext-ffi": "Required at run time; the engine is loaded with FFI::cdef."

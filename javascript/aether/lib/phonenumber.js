@@ -1,6 +1,6 @@
 'use strict';
 /**
- * Idiomatic JavaScript surface over the phonenumber engine (ABI v5).
+ * Idiomatic JavaScript surface over the phonenumber engine (ABI v6).
  *
  * Carries no phone-number logic — see the monorepo's one rule. Every function
  * here marshals to an `aether_pn_embed_*` call in `native.js`.
@@ -437,6 +437,25 @@ const Carrier = {
   },
 };
 
+// ---- PhoneNumberOfflineGeocoder (English geographic descriptions) ----
+
+/**
+ * English geographic-description lookup for a number, mirroring
+ * libphonenumber's `PhoneNumberOfflineGeocoder`. Every method marshals to an
+ * `aether_pn_embed_geo_*` ABI call; `""` means no description is known.
+ */
+const Geocoder = {
+  /** A geographic description for a number (English), or "" if none is known. */
+  geoDescriptionForNumber(region, input) {
+    return _s('geoDescription', _str(region), _str(input));
+  },
+
+  /** A geographic description only when the number is valid, else "". */
+  geoDescriptionForValidNumber(region, input) {
+    return _s('geoDescriptionForValid', _str(region), _str(input));
+  },
+};
+
 module.exports = {
   // metadata
   countryCode, exampleNumber, exampleNumberForType, invalidExampleNumber,
@@ -457,6 +476,6 @@ module.exports = {
   AsYouTypeFormatter, Match, findNumbers,
   // short / emergency numbers
   ShortNumberInfo,
-  // timezone + carrier lookup
-  TimeZones, Carrier,
+  // timezone + carrier + geocoder lookup
+  TimeZones, Carrier, Geocoder,
 };

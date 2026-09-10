@@ -6,12 +6,12 @@ This crate is **marshalling only**. The library itself — the metadata table,
 `isPossible`/`isValid`, number-type classification, the formatter, the
 AsYouType formatter, the matcher — is the pure-Aether engine in
 `core/phonenumber.ae`, compiled from Google libphonenumber's own metadata,
-shared by every language binding in this monorepo and reached through the v5
+shared by every language binding in this monorepo and reached through the v6
 `aether_pn_embed_*` C ABI (`core/embed.ae`, full `PhoneNumberUtil` parity plus
-`ShortNumberInfo`, time zones and carrier names). Cross-language behaviour is
+`ShortNumberInfo`, time zones, carrier names and geocoding). Cross-language behaviour is
 therefore identical by construction, not by test.
 
-`src/native.rs` is the **canonical 1:1 symbol table** for that ABI: all 64
+`src/native.rs` is the **canonical 1:1 symbol table** for that ABI: all 66
 exported symbols, in the order `core/embed.ae` declares them, with the exact C
 signature. Other bindings are expected to be diffable against it.
 
@@ -117,6 +117,17 @@ assert_eq!(pn::carrier_name_for_number("GB", "7106000000"), "O2");
 
 English names only; `""` means no carrier is known for the number.
 
+### Geocoding
+
+```rust
+use phonenumber_ae as pn;
+
+assert_eq!(pn::geo_description_for_number("US", "6502530000"), "Mountain View, CA");
+// geo_description_for_valid_number returns a description only if the number is valid, else ""
+```
+
+English descriptions only; `""` means no description is known for the number.
+
 To load a specific `.so`, use the [`PhoneNumbers`] type — the same surface over
 an engine you loaded yourself:
 
@@ -143,7 +154,8 @@ assert_eq!(num.national_number(), "1212345678");
 | Short numbers | `short_is_possible`, `short_is_valid`, `is_emergency_number`, `connects_to_emergency_number`, `short_is_carrier_specific`, `short_is_sms_service`, `short_expected_cost`(`_enum`), `short_example_number` |
 | Time zones | `time_zones_for_number` → `Vec<String>`, `time_zone_count`, `unknown_time_zone` |
 | Carrier | `carrier_name_for_number`, `carrier_name_for_valid_number` |
-| Metadata | `abi_version` (→ `5`) |
+| Geocoder | `geo_description_for_number`, `geo_description_for_valid_number` |
+| Metadata | `abi_version` (→ `6`) |
 
 Every metadata/free-function surface is available both crate-level (over one
 process-wide engine) and as a method on `PhoneNumbers`.
@@ -180,7 +192,7 @@ or, with the engine built for you:
 aeb rust/.tests.ae
 ```
 
-The suite is the 44-check v5 conformance contract in `docs/conformance.md`,
+The suite is the 45-check v6 conformance contract in `docs/conformance.md`,
 plus a few extras covering the typed idiomatic surface.
 
 ## Notes for maintainers

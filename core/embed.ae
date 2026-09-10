@@ -30,6 +30,7 @@ import core.phonenumber
 import core.shortnumber
 import core.timezone
 import core.carrier
+import core.geocoder
 import std.string
 import std.list
 
@@ -37,8 +38,23 @@ extern pn_raw_dup(s: string) -> string
 extern pn_raw_free(s: string)
 
 // ABI revision. Bumped to 2 for the full PhoneNumberUtil-parity surface.
-// ABI 3 ShortNumberInfo; ABI 4 timezone; ABI 5 carrier mapper (pn_embed_carrier_*).
-pn_embed_abi_version() -> int { return 5 }
+// ABI 3 ShortNumberInfo; 4 timezone; 5 carrier; 6 geocoder (pn_embed_geo_*).
+pn_embed_abi_version() -> int { return 6 }
+
+// ---- PhoneNumberOfflineGeocoder (English geographic descriptions) ----
+// Bindings pass a raw (region, input); we parse to E.164 and longest-prefix
+// match the geocoding map. getDescriptionForNumber semantics.
+// getDescriptionForNumber: the description, or "". Caller-owned.
+pn_embed_geo_description(region: string, input: string) -> string {
+    e164 = e164_digits_for(region, input)
+    if e164 == "" { return pn_raw_dup("") }
+    return pn_raw_dup(geocoder.description_for_e164(e164))
+}
+// getDescriptionForValidNumber: a description only when the number is valid.
+pn_embed_geo_description_for_valid(region: string, input: string) -> string {
+    if phonenumber.is_valid_number(region, input) == 0 { return pn_raw_dup("") }
+    return pn_embed_geo_description(region, input)
+}
 
 // ---- PhoneNumberToCarrierMapper (English carrier names) ----
 // Bindings pass a raw (region, input); we parse to E.164 and longest-prefix

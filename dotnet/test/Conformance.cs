@@ -1,4 +1,4 @@
-// The 44-check binding conformance suite (docs/conformance.md, v5).
+// The 45-check binding conformance suite (docs/conformance.md, v6).
 //
 // Proves the .NET binding marshals every value shape across the P/Invoke
 // boundary — a parsed number and its accessors, an AsYouType formatter, the
@@ -74,11 +74,11 @@ internal static class Conformance
 
     public static int Main()
     {
-        Console.WriteLine("=== phonenumber_ae .NET binding conformance (v5) ===");
+        Console.WriteLine("=== phonenumber_ae .NET binding conformance (v6) ===");
         Console.WriteLine($"engine: {PhoneNumber.NativeLibraryPath ?? "(default probing)"} " +
                           $"(ABI v{PhoneNumber.AbiVersion})");
 
-        // ---- the forty (docs/conformance.md) ----
+        // ---- the forty-five (docs/conformance.md) ----
 
         Check("01 country_code US == 1", () => Eq(PhoneNumber.CountryCode("US"), "1"));
 
@@ -198,7 +198,7 @@ internal static class Conformance
             Eq(matches[0].Raw, "201-555-0123", "raw");
         });
 
-        Check("34 abi_version == 5", () => Eq(PhoneNumber.AbiVersion, 5, "abi_version"));
+        Check("34 abi_version == 6", () => Eq(PhoneNumber.AbiVersion, 6, "abi_version"));
 
         Check("35 short is_emergency US 911", () =>
             IsTrue(PhoneNumber.IsEmergencyNumber("US", "911"), "is_emergency_number"));
@@ -232,6 +232,9 @@ internal static class Conformance
 
         Check("44 carrier_name_for_number GB 7106000000 == O2", () =>
             Eq(PhoneNumber.CarrierNameForNumber("GB", "7106000000"), "O2"));
+
+        Check("45 geo_description_for_number US 6502530000 == Mountain View, CA", () =>
+            Eq(PhoneNumber.GeoDescriptionForNumber("US", "6502530000"), "Mountain View, CA"));
 
         // ---- a few surface extras ----
 
@@ -269,6 +272,9 @@ internal static class Conformance
 
         Check("carrier_name_for_valid agrees for a valid number", () =>
             Eq(PhoneNumber.CarrierNameForValidNumber("GB", "7106000000"), "O2"));
+
+        Check("geo_description_for_valid agrees for a valid number", () =>
+            Eq(PhoneNumber.GeoDescriptionForValidNumber("US", "6502530000"), "Mountain View, CA"));
 
         Check("many calls do not leak or crash", () =>
         {

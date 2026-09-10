@@ -1,4 +1,4 @@
-/// The 1:1 symbol table for the phonenumber C ABI (`core/embed.ae`), v5.
+/// The 1:1 symbol table for the phonenumber C ABI (`core/embed.ae`), v6.
 ///
 /// This library is the ONLY place in the Dart binding that knows about the C
 /// ABI. Everything above it (`phonenumber.dart`) is idiomatic Dart over these
@@ -19,9 +19,10 @@
 ///
 /// ## No opaque handles
 ///
-/// v5 adds the PhoneNumberToTimeZonesMapper (4 symbols) and the
-/// PhoneNumberToCarrierMapper (2 symbols) side-libraries on top of the v3
-/// ShortNumberInfo ABI (now 64 symbols), but every signature is still
+/// v6 adds the PhoneNumberOfflineGeocoder (2 symbols) on top of the v5
+/// PhoneNumberToTimeZonesMapper (4 symbols) and PhoneNumberToCarrierMapper
+/// (2 symbols) side-libraries and the v3 ShortNumberInfo ABI (now 66 symbols),
+/// but every signature is still
 /// scalar-only (`const char*` and `int`). A parsed number and an AsYouType
 /// state are themselves caller-owned *strings*: you get one back, pass it to
 /// the accessor calls, and free it like any other returned string. There are
@@ -313,7 +314,12 @@ class Api {
         carrierName = lib.lookupFunction<_Str2C, _Str2>(
             'aether_pn_embed_carrier_name'),
         carrierNameForValid = lib.lookupFunction<_Str2C, _Str2>(
-            'aether_pn_embed_carrier_name_for_valid');
+            'aether_pn_embed_carrier_name_for_valid'),
+        // ---- PhoneNumberOfflineGeocoder ----
+        geoDescription = lib.lookupFunction<_Str2C, _Str2>(
+            'aether_pn_embed_geo_description'),
+        geoDescriptionForValid = lib.lookupFunction<_Str2C, _Str2>(
+            'aether_pn_embed_geo_description_for_valid');
 
   final ffi.DynamicLibrary lib;
 
@@ -404,6 +410,10 @@ class Api {
   // Carrier
   final _Str2 carrierName;
   final _Str2 carrierNameForValid;
+
+  // Geocoder
+  final _Str2 geoDescription;
+  final _Str2 geoDescriptionForValid;
 
   static Api? _cached;
 

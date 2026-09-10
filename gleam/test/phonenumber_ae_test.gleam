@@ -222,7 +222,7 @@ pub fn t33_matcher_raw_test() {
 
 pub fn t34_abi_version_test() {
   phonenumber_ae.abi_version()
-  |> should.equal(5)
+  |> should.equal(6)
 }
 
 // ---- ShortNumberInfo (docs/conformance.md #35–40, v5) ----
@@ -260,7 +260,7 @@ pub fn t40_short_example_test() {
   |> should.equal("112")
 }
 
-// ---- TimeZones + Carrier (docs/conformance.md #41–44, v5) ----
+// ---- TimeZones + Carrier + Geocoder (docs/conformance.md #41–45, v6) ----
 
 pub fn t41_tz_us_test() {
   phonenumber_ae.time_zones_for_number("US", "2015550123")
@@ -282,7 +282,12 @@ pub fn t44_carrier_test() {
   |> should.equal("O2")
 }
 
-// ---- extras: the marshalling corners the 44 do not reach ----
+pub fn t45_geocoder_test() {
+  phonenumber_ae.geo_description_for_number("US", "6502530000")
+  |> should.equal("Mountain View, CA")
+}
+
+// ---- extras: the marshalling corners the 45 do not reach ----
 
 pub fn format_helpers_test() {
   phonenumber_ae.format_national("US", "2015550123")

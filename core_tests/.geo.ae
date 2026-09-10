@@ -1,0 +1,16 @@
+// PhoneNumberOfflineGeocoder engine gate.
+import bldr
+import std.os
+aeb(cap) {
+    bldr.build() {
+        root = _get("root")
+        out = "${root}/target/pn_geo_probe"
+        _m = os.system("mkdir -p \"${root}/target\"")
+        rc = os.system("cd \"${root}\" && ae build core_tests/geo_probe.ae -o \"${out}\"")
+        if rc != 0 { println("core_tests: failed to build geo_probe.ae"); return 1 }
+        rc2 = os.system("\"${out}\"")
+        if rc2 != 0 { println("core_tests: geocoder probe failed"); return 1 }
+        println("core_tests: PASS — PhoneNumberOfflineGeocoder behaviour")
+        return 0
+    }
+}

@@ -70,3 +70,12 @@ too many for the compiler's per-function statement cap as list.add calls, fine
 as one string constant). Longest-prefix match. Only the English (en/) slice is
 carried; other languages can be added the same way. Pristine files, read
 directly, unmodified.
+
+geocoding/en/<cc>.txt (PhoneNumberOfflineGeocoder side-library)
+---------------------------------------------------------------
+core/gen/generate_geo.ae reads the in-tree resources/geocoding/en/<cc>.txt files
+(Google's own, Apache-2.0) — one "prefix|Description" entry per line, prefix being
+cc-inclusive E.164 digits — and compiles the ENGLISH descriptions (~269k entries,
+6.7 MB) into core/geocoder_metadata.ae as a single ~7 MB newline-joined string
+blob. Longest-prefix match. Only the English (en/) slice is carried; other
+languages can be added the same way. Pristine files, read directly, unmodified.

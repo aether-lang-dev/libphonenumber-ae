@@ -1,4 +1,4 @@
-// The 44-check binding conformance suite (docs/conformance.md, v5).
+// The 45-check binding conformance suite (docs/conformance.md, v6).
 //
 // Proves the Go binding marshals every value shape across the FFI. It is NOT a
 // phone-number test suite — the behavioural cases live in the engine's own
@@ -215,7 +215,7 @@ func Test33MatcherRaw(t *testing.T) {
 }
 
 func Test34ABIVersion(t *testing.T) {
-	eqInt(t, "ABIVersion()", ABIVersion(), 5)
+	eqInt(t, "ABIVersion()", ABIVersion(), 6)
 }
 
 func Test35ShortEmergencyUS(t *testing.T) {
@@ -261,6 +261,11 @@ func Test43UnknownTimeZone(t *testing.T) {
 func Test44CarrierName(t *testing.T) {
 	eqStr(t, `CarrierNameForNumber("GB", "7106000000")`,
 		CarrierNameForNumber("GB", "7106000000"), "O2")
+}
+
+func Test45GeoDescription(t *testing.T) {
+	eqStr(t, `GeoDescriptionForNumber("US", "6502530000")`,
+		GeoDescriptionForNumber("US", "6502530000"), "Mountain View, CA")
 }
 
 // The Format* convenience wrappers must agree with Format(..., style).

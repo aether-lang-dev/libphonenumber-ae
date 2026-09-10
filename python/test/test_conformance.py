@@ -111,7 +111,7 @@ def test_33_matcher_raw():
     assert matches[0].raw == "201-555-0123"
 
 def test_34_abi_version():
-    assert pn.abi_version() == 5
+    assert pn.abi_version() == 6
 
 
 def test_35_short_emergency_us():
@@ -151,4 +151,8 @@ def test_43_tz_unknown():
 
 
 def test_44_carrier():
-    assert pn.carrier_name_for_number("GB", "7106000000") == "O2" 
+    assert pn.carrier_name_for_number("GB", "7106000000") == "O2"
+
+
+def test_45_geocoder():
+    assert pn.geo_description_for_number("US", "6502530000") == "Mountain View, CA" 

@@ -1,6 +1,6 @@
 'use strict';
 /**
- * phonenumber_ae — JavaScript binding for the shared phonenumber engine (ABI v5).
+ * phonenumber_ae — JavaScript binding for the shared phonenumber engine (ABI v6).
  *
  * The engine (Google libphonenumber's metadata, parse, isPossible/isValid,
  * number typing, formatting, as-you-type, matcher) is pure Aether in

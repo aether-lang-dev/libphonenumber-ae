@@ -43,7 +43,7 @@ aeb(cap) {
             env_var("LIBPHONENUMBER_AE_LIB=${lib}")
         }
         if rc == 0 {
-            println("go: v5 ABI conformance (44 checks incl. ShortNumberInfo + timezones + carrier) PASSED")
+            println("go: v6 ABI conformance (45 checks incl. ShortNumberInfo + timezones + carrier + geocoder) PASSED")
         }
         // Explicit: bldr.build() does not adopt a builder's rc as the block's
         // implicit return, so without this the node reports FAIL even when

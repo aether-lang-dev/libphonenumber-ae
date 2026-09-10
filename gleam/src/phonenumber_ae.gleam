@@ -1,4 +1,4 @@
-//// Validate, parse and format international phone numbers (ABI v5).
+//// Validate, parse and format international phone numbers (ABI v6).
 ////
 //// This is a thin Gleam surface over the monorepo's **canonical BEAM NIF**,
 //// which lives in `erlang/` and is compiled exactly once. There is no C source
@@ -10,8 +10,8 @@
 //// The engine itself (`core/native/libphonenumber_ae.so`) is pure Aether,
 //// compiled from Google libphonenumber's own metadata. No phone-number logic
 //// lives in this file: everything marshals to an `aether_pn_embed_*` call
-//// across the C ABI in `core/embed.ae` (docs/abi.md — 64 symbols, full
-//// PhoneNumberUtil parity plus ShortNumberInfo, TimeZones and Carrier).
+//// across the C ABI in `core/embed.ae` (docs/abi.md — 66 symbols, full
+//// PhoneNumberUtil parity plus ShortNumberInfo, TimeZones, Carrier and Geocoder).
 ////
 //// ```gleam
 //// phonenumber_ae.country_code("US")
@@ -466,6 +466,13 @@ fn carrier_name_ffi(region: String, input: String) -> String
 @external(erlang, "phonenumber_ae_nif", "carrier_name_for_valid")
 fn carrier_name_for_valid_ffi(region: String, input: String) -> String
 
+// PhoneNumberOfflineGeocoder
+@external(erlang, "phonenumber_ae_nif", "geo_description")
+fn geo_description_ffi(region: String, input: String) -> String
+
+@external(erlang, "phonenumber_ae_nif", "geo_description_for_valid")
+fn geo_description_for_valid_ffi(region: String, input: String) -> String
+
 // ---- metadata ----
 
 /// The country calling code for a region ("1", "44", …), or "" if unknown.
@@ -861,9 +868,21 @@ pub fn carrier_name_for_valid_number(region: String, input: String) -> String {
   carrier_name_for_valid_ffi(region, input)
 }
 
+// ---- PhoneNumberOfflineGeocoder (English geographic descriptions) ----
+
+/// A geographic description for a number (English), or "" if none is known.
+pub fn geo_description_for_number(region: String, input: String) -> String {
+  geo_description_ffi(region, input)
+}
+
+/// A geographic description, but only when the number is valid; else "".
+pub fn geo_description_for_valid_number(region: String, input: String) -> String {
+  geo_description_for_valid_ffi(region, input)
+}
+
 // ---- introspection ----
 
-/// The engine's ABI revision (5).
+/// The engine's ABI revision (6).
 pub fn abi_version() -> Int {
   abi_version_ffi()
 }

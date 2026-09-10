@@ -1,7 +1,7 @@
 <?php
 
 /**
- * The 1:1 symbol table for the phonenumber C ABI (core/embed.ae), v5.
+ * The 1:1 symbol table for the phonenumber C ABI (core/embed.ae), v6.
  *
  * This file is the ONLY place in the PHP binding that knows about the C ABI.
  * Everything above it (PhoneNumber.php) is idiomatic PHP over these symbols.
@@ -22,9 +22,10 @@
  *
  * ## No opaque handles
  *
- * v5 adds the PhoneNumberToTimeZonesMapper (4 symbols) and the
- * PhoneNumberToCarrierMapper (2 symbols) side-libraries on top of the v3
- * ShortNumberInfo ABI (now 64 symbols), but every signature is still
+ * v6 adds the PhoneNumberOfflineGeocoder (2 symbols) on top of the v5
+ * PhoneNumberToTimeZonesMapper (4 symbols) and PhoneNumberToCarrierMapper
+ * (2 symbols) side-libraries and the v3 ShortNumberInfo ABI (now 66 symbols),
+ * but every signature is still
  * scalar-only (`const char*` and `int`). A parsed number and an as-you-type
  * state are themselves caller-owned *strings*: you get one back, pass it to the
  * accessor calls, and free it like any other returned string. There is still no
@@ -200,6 +201,10 @@ final class Native
         /* ---- PhoneNumberToCarrierMapper (English carrier names) ---- */
         char*  aether_pn_embed_carrier_name(const char* region, const char* input);
         char*  aether_pn_embed_carrier_name_for_valid(const char* region, const char* input);
+
+        /* ---- PhoneNumberOfflineGeocoder (English geographic descriptions) ---- */
+        char*  aether_pn_embed_geo_description(const char* region, const char* input);
+        char*  aether_pn_embed_geo_description_for_valid(const char* region, const char* input);
         C;
 
     private static ?FFI $ffi = null;

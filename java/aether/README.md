@@ -28,6 +28,7 @@ import org.libphonenumber.ae.ShortNumberInfo;
 import org.libphonenumber.ae.ShortNumberCost;
 import org.libphonenumber.ae.TimeZones;
 import org.libphonenumber.ae.Carrier;
+import org.libphonenumber.ae.Geocoder;
 
 PhoneNumbers.countryCode("US");                        // "1"
 PhoneNumbers.isValidNumber("US", "+1 201 555 0123");   // true
@@ -39,7 +40,7 @@ PhoneNumbers.formatInternational("US", "2015550123");          // "+1 (201) 555-
 
 PhoneNumbers.numberType("US", "2015550123");           // NumberType.FIXED_LINE
 PhoneNumbers.regions();                                // ["AC", "AD", "AE", ...]
-PhoneNumbers.abiVersion();                             // 5
+PhoneNumbers.abiVersion();                             // 6
 
 // short / emergency numbers (ShortNumberInfo)
 ShortNumberInfo.isEmergencyNumber("US", "911");        // true
@@ -55,6 +56,10 @@ TimeZones.unknownTimeZone();                           // "Etc/Unknown"
 // carrier names (PhoneNumberToCarrierMapper)
 Carrier.carrierNameForNumber("GB", "7106000000");      // "O2"
 Carrier.carrierNameForValidNumber("GB", "7106000000"); // "O2" (only if valid)
+
+// geographic descriptions (PhoneNumberOfflineGeocoder)
+Geocoder.geoDescriptionForNumber("US", "6502530000");      // "Mountain View, CA"
+Geocoder.geoDescriptionForValidNumber("US", "6502530000"); // "Mountain View, CA" (only if valid)
 ```
 
 All entry points are static and stateless — the ABI has no handle. The engine
@@ -86,6 +91,9 @@ is loaded lazily and cached on first use.
 * `Carrier` — static methods for the carrier mapper (English names):
   `carrierNameForNumber`, `carrierNameForValidNumber` (`""` = no known carrier).
   Also delegated from `PhoneNumbers`.
+* `Geocoder` — static methods for the offline geocoder (English descriptions):
+  `geoDescriptionForNumber`, `geoDescriptionForValidNumber` (`""` = no known
+  description). Also delegated from `PhoneNumbers`.
 * `Native` — the FFM symbol table. The only class that knows the C ABI.
 
 ## Tests

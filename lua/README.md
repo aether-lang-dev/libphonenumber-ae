@@ -1,8 +1,8 @@
 # phonenumber_ae (Lua)
 
-Validate, parse and format international phone numbers (ABI v5 — full
-PhoneNumberUtil parity plus the ShortNumberInfo, TimeZones and Carrier
-side-libraries).
+Validate, parse and format international phone numbers (ABI v6 — full
+PhoneNumberUtil parity plus the ShortNumberInfo, TimeZones, Carrier and
+Geocoder side-libraries).
 
 This binding is a **thin Lua 5.4 C extension** over the monorepo's one shared
 native engine — `core/native/libphonenumber_ae.so`, compiled from pure Aether
@@ -127,12 +127,12 @@ pn.short_expected_cost("US", "911")       -- pn.COST_TOLL_FREE (0)
 pn.short_example_number("US")             -- "112"
 ```
 
-### Time zones and carrier
+### Time zones, carrier and geocoder
 
-Both take a raw `(region, input)` and let the engine parse to E.164 itself.
+All take a raw `(region, input)` and let the engine parse to E.164 itself.
 `time_zones_for_number` returns a list of IANA ids — a number with no known
-zones comes back as `{"Etc/Unknown"}`, never empty. Carrier names are English
-only, and `""` when no carrier is known.
+zones comes back as `{"Etc/Unknown"}`, never empty. Carrier names and geographic
+descriptions are English only, and `""` when nothing is known.
 
 ```lua
 pn.time_zones_for_number("US", "2015550123")  -- {"America/New_York"}
@@ -142,6 +142,9 @@ pn.unknown_time_zone()                         -- "Etc/Unknown"
 
 pn.carrier_name_for_number("GB", "7106000000")        -- "O2"
 pn.carrier_name_for_valid_number("GB", "7106000000")  -- "O2" (only if valid)
+
+pn.geo_description_for_number("US", "6502530000")        -- "Mountain View, CA"
+pn.geo_description_for_valid_number("US", "6502530000")  -- "Mountain View, CA" (only if valid)
 ```
 
 The wider surface:
@@ -183,6 +186,9 @@ pn.unknown_time_zone()                               -- "Etc/Unknown"
 -- carrier (PhoneNumberToCarrierMapper, English names)
 pn.carrier_name_for_number(region, input)            -- "" if none known
 pn.carrier_name_for_valid_number(region, input)      -- "" unless the number is valid
+-- geocoder (PhoneNumberOfflineGeocoder, English descriptions)
+pn.geo_description_for_number(region, input)         -- "" if none known
+pn.geo_description_for_valid_number(region, input)   -- "" unless the number is valid
 -- lifecycle
 pn.abi_version() / engine_path() / load(path)
 ```
@@ -211,7 +217,7 @@ buffers, valid for the duration of the call.
 
 ## Tests
 
-The 44-check conformance suite (`docs/conformance.md`, v5) lives in
+The 45-check conformance suite (`docs/conformance.md`, v6) lives in
 `test/conformance.lua`, alongside a few surface extras. Lua 5.4 ships no
 de-facto-standard test framework, so it is a **plain assertion runner** — no
 dependency to install, and the exit code is the result.

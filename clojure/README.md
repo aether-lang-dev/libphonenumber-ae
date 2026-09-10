@@ -35,7 +35,7 @@ classes.
 
 (pn/number-type "US" "2015550123")           ;; => :fixed-line
 (pn/regions)                                  ;; => ["AC" "AD" ...]
-(pn/abi-version)                              ;; => 5
+(pn/abi-version)                              ;; => 6
 
 ;; short / emergency numbers (ShortNumberInfo)
 (pn/emergency-number? "US" "911")            ;; => true
@@ -51,6 +51,10 @@ classes.
 ;; carrier names (PhoneNumberToCarrierMapper)
 (pn/carrier-name-for-number "GB" "7106000000")       ;; => "O2"
 (pn/carrier-name-for-valid-number "GB" "7106000000") ;; => "O2" (only if valid)
+
+;; geographic descriptions (PhoneNumberOfflineGeocoder)
+(pn/geo-description-for-number "US" "6502530000")       ;; => "Mountain View, CA"
+(pn/geo-description-for-valid-number "US" "6502530000") ;; => "Mountain View, CA" (only if valid)
 ```
 
 The `number-type` result is a keyword and `format-number` takes one

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# The binding conformance suite (docs/conformance.md, v5).
+# The binding conformance suite (docs/conformance.md, v6).
 #
 # Proves the Ruby binding marshals every value shape across the FFI. It is NOT
 # a phone-number test suite — the behavioural cases live in the engine's own
@@ -154,7 +154,7 @@ RSpec.describe PhoneNumberAe do
   end
 
   it "34 abi version" do
-    expect(PhoneNumberAe.abi_version).to eq(5)
+    expect(PhoneNumberAe.abi_version).to eq(6)
   end
 
   it "35 short is_emergency_number US 911" do
@@ -195,5 +195,9 @@ RSpec.describe PhoneNumberAe do
 
   it "44 carrier_name_for_number GB" do
     expect(PhoneNumberAe::Carrier.carrier_name_for_number("GB", "7106000000")).to eq("O2")
+  end
+
+  it "45 geo_description_for_number US" do
+    expect(PhoneNumberAe::Geocoder.geo_description_for_number("US", "6502530000")).to eq("Mountain View, CA")
   end
 end

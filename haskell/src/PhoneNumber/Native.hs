@@ -2,7 +2,7 @@
 
 -- |
 -- Module      : PhoneNumber.Native
--- Description : The 1:1 symbol table for the phonenumber C ABI (v5).
+-- Description : The 1:1 symbol table for the phonenumber C ABI (v6).
 --
 -- This module is the ONLY place in the Haskell binding that knows about the C
 -- ABI. Every symbol the engine exports appears here once, with the exact C
@@ -10,12 +10,13 @@
 -- lives here or anywhere else in this package — the engine is
 -- @core\/phonenumber.ae@, compiled to @libphonenumber_ae.so@.
 --
--- == ABI v5
+-- == ABI v6
 --
 -- The ABI is __full @PhoneNumberUtil@ parity plus the @ShortNumberInfo@,
--- @PhoneNumberToTimeZonesMapper@ and @PhoneNumberToCarrierMapper@
--- side-libraries__ — 64 symbols, ABI version @5@ (the 4 @tz_*@ and 2
--- @carrier_*@ symbols are the v5 addition, on top of the 8 @short_*@ from v3).
+-- @PhoneNumberToTimeZonesMapper@, @PhoneNumberToCarrierMapper@ and
+-- @PhoneNumberOfflineGeocoder@ side-libraries__ — 66 symbols, ABI version @6@
+-- (the 2 @geo_*@ symbols are the v6 addition, on top of the 2 @carrier_*@ and 4
+-- @tz_*@ from v5 and the 8 @short_*@ from v3).
 -- Signatures remain scalar-only (@const char*@ and @int@), so nothing here
 -- re-enters the Haskell RTS and every import is still @unsafe@. Two symbols are
 -- __stateful in disguise__: 'aether_pn_embed_parse' returns a caller-owned
@@ -122,6 +123,10 @@ module PhoneNumber.Native
     -- * PhoneNumberToCarrierMapper (English carrier names)
   , aether_pn_embed_carrier_name
   , aether_pn_embed_carrier_name_for_valid
+
+    -- * PhoneNumberOfflineGeocoder (English geographic descriptions)
+  , aether_pn_embed_geo_description
+  , aether_pn_embed_geo_description_for_valid
 
     -- * String marshalling helpers
   , takeString
@@ -352,6 +357,14 @@ foreign import ccall unsafe "aether_pn_embed_carrier_name"
 
 foreign import ccall unsafe "aether_pn_embed_carrier_name_for_valid"
   aether_pn_embed_carrier_name_for_valid :: CString -> CString -> IO CString
+
+-- PhoneNumberOfflineGeocoder (English geographic descriptions) -------------
+
+foreign import ccall unsafe "aether_pn_embed_geo_description"
+  aether_pn_embed_geo_description :: CString -> CString -> IO CString
+
+foreign import ccall unsafe "aether_pn_embed_geo_description_for_valid"
+  aether_pn_embed_geo_description_for_valid :: CString -> CString -> IO CString
 
 -- ---------------------------------------------------------------------------
 -- String marshalling

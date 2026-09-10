@@ -1,4 +1,4 @@
-//! The 44-check binding conformance suite (docs/conformance.md, v5).
+//! The 45-check binding conformance suite (docs/conformance.md, v6).
 //!
 //! Proves the Zig binding marshals every value shape across the FFI. It is NOT
 //! a phone-number test suite — the behavioural cases live in the engine's own
@@ -25,7 +25,7 @@ fn expectStr(want: []const u8, got: anyerror![]u8) !void {
 }
 
 // =========================================================================
-// The forty-four (docs/conformance.md, v5)
+// The forty-five (docs/conformance.md, v6)
 // =========================================================================
 
 test "01 country_code US == 1" {
@@ -182,8 +182,8 @@ test "33 matcher_raw" {
     try testing.expectEqualStrings("201-555-0123", matches[0].raw);
 }
 
-test "34 abi_version == 5" {
-    try testing.expectEqual(@as(i32, 5), pn.abiVersion());
+test "34 abi_version == 6" {
+    try testing.expectEqual(@as(i32, 6), pn.abiVersion());
 }
 
 test "35 short is_emergency US 911" {
@@ -235,6 +235,10 @@ test "44 carrier_name_for_number GB 7106000000 == O2" {
     try expectStr("O2", pn.carrierNameForNumber(alloc, "GB", "7106000000"));
 }
 
+test "45 geo_description_for_number US 6502530000 == Mountain View, CA" {
+    try expectStr("Mountain View, CA", pn.geoDescriptionForNumber(alloc, "US", "6502530000"));
+}
+
 // =========================================================================
 // Extras — Zig-specific hazards and surface edges
 // =========================================================================
@@ -248,6 +252,10 @@ test "extra time_zone_count agrees with the list length" {
 
 test "extra carrier_name_for_valid agrees for a valid number" {
     try expectStr("O2", pn.carrierNameForValidNumber(alloc, "GB", "7106000000"));
+}
+
+test "extra geo_description_for_valid agrees for a valid number" {
+    try expectStr("Mountain View, CA", pn.geoDescriptionForValidNumber(alloc, "US", "6502530000"));
 }
 
 test "extra region_at out of range is an owned empty string" {

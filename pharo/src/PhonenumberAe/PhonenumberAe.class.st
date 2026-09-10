@@ -1,5 +1,5 @@
 "
-I validate, parse and format international phone numbers (ABI v5).
+I validate, parse and format international phone numbers (ABI v6).
 
 ```
 PhonenumberAe countryCode: 'US'.                      ""-> '1'""
@@ -17,8 +17,8 @@ I am **marshalling only**. The engine — the metadata table, isPossible /
 isValid, number typing and formatting — is the pure-Aether
 `core/phonenumber.ae`, compiled from Google libphonenumber's own metadata,
 shared by every language binding in this monorepo and reached through the
-`aether_pn_embed_*` C ABI (`core/embed.ae`, docs/abi.md — 64 symbols, full
-PhoneNumberUtil parity plus ShortNumberInfo, TimeZones and Carrier). Naming: `core/embed.ae` declares `pn_embed_<name>`;
+`aether_pn_embed_*` C ABI (`core/embed.ae`, docs/abi.md — 66 symbols, full
+PhoneNumberUtil parity plus ShortNumberInfo, TimeZones, Carrier and Geocoder). Naming: `core/embed.ae` declares `pn_embed_<name>`;
 `--emit=lib` mangles that to `aether_pn_embed_<name>`, which is what the FFI
 calls below name.
 
@@ -621,6 +621,20 @@ PhonenumberAe class >> primCarrierNameForValid: region input: input [
 		    char * region, char * input ) )
 ]
 
+{ #category : 'private - ffi geocoder' }
+PhonenumberAe class >> primGeoDescription: region input: input [
+
+	^ self ffiCall: #( void * aether_pn_embed_geo_description (
+		    char * region, char * input ) )
+]
+
+{ #category : 'private - ffi geocoder' }
+PhonenumberAe class >> primGeoDescriptionForValid: region input: input [
+
+	^ self ffiCall: #( void * aether_pn_embed_geo_description_for_valid (
+		    char * region, char * input ) )
+]
+
 { #category : 'private - strings' }
 PhonenumberAe class >> takeString: aPointer [
 	"Copy an ABI-returned string out and free it through the ABI.
@@ -1098,9 +1112,27 @@ PhonenumberAe class >> carrierNameForValidNumber: anInput region: aRegion [
 			   input: (anInput ifNil: [ '' ]))
 ]
 
+{ #category : 'geocoder' }
+PhonenumberAe class >> geoDescriptionForNumber: anInput region: aRegion [
+	"A geographic description for a number (English), or '' if none is known."
+
+	^ self takeString: (self
+			   primGeoDescription: (aRegion ifNil: [ '' ])
+			   input: (anInput ifNil: [ '' ]))
+]
+
+{ #category : 'geocoder' }
+PhonenumberAe class >> geoDescriptionForValidNumber: anInput region: aRegion [
+	"A geographic description, but only when the number is valid; else ''."
+
+	^ self takeString: (self
+			   primGeoDescriptionForValid: (aRegion ifNil: [ '' ])
+			   input: (anInput ifNil: [ '' ]))
+]
+
 { #category : 'introspection' }
 PhonenumberAe class >> abiVersion [
-	"The engine's ABI revision (5)."
+	"The engine's ABI revision (6)."
 
 	^ self primAbiVersion
 ]

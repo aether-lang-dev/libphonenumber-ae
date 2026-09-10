@@ -9,8 +9,8 @@
 ## `aether_pn_embed_<name>`. Everything below is marshalling: Nim values in, C
 ## scalars and `cstring`s out, and back.
 ##
-## ABI v5 (full `PhoneNumberUtil` parity, plus the ShortNumberInfo, TimeZones
-## and Carrier surfaces). The
+## ABI v6 (full `PhoneNumberUtil` parity, plus the ShortNumberInfo, TimeZones,
+## Carrier and Geocoder surfaces). The
 ## ABI has **no opaque handle**: a
 ## parsed number and an AsYouType state are themselves caller-owned *strings* —
 ## you get one back, pass it to accessor calls, and free it like any other
@@ -180,7 +180,7 @@ const
 #
 # Declared in the order core/embed.ae / docs/abi.md declare them, so the two can
 # be diffed by eye. Every integer is `cint`; every returned string is `cstring`
-# and is caller-owned (see the ownership rule at the top). All 64 symbols.
+# and is caller-owned (see the ownership rule at the top). All 66 symbols.
 
 # ---- lifecycle / metadata ----
 proc pnAbiVersion(): cint {.importc: "aether_pn_embed_abi_version", cdecl.}
@@ -326,6 +326,12 @@ proc pnCarrierName(region, input: cstring): cstring
   {.importc: "aether_pn_embed_carrier_name", cdecl.}
 proc pnCarrierNameForValid(region, input: cstring): cstring
   {.importc: "aether_pn_embed_carrier_name_for_valid", cdecl.}
+
+# ---- PhoneNumberOfflineGeocoder (English geographic descriptions) ----
+proc pnGeoDescription(region, input: cstring): cstring
+  {.importc: "aether_pn_embed_geo_description", cdecl.}
+proc pnGeoDescriptionForValid(region, input: cstring): cstring
+  {.importc: "aether_pn_embed_geo_description_for_valid", cdecl.}
 
 # ---------------------------------------------------------------------------
 # String marshalling — the one place a returned pointer is allowed to live.
@@ -571,8 +577,8 @@ proc isAlphaNumber*(s: string): bool =
   pnIsAlphaNumber(s.cstring) != 0
 
 proc abiVersion*(): int =
-  ## The ABI revision the linked engine reports (v5 — adds the TimeZones and
-  ## Carrier surfaces on top of ShortNumberInfo).
+  ## The ABI revision the linked engine reports (v6 — adds the Geocoder surface
+  ## on top of the TimeZones and Carrier surfaces).
   int(pnAbiVersion())
 
 # ---------------------------------------------------------------------------
@@ -713,3 +719,19 @@ proc carrierNameForNumber*(region, input: string): string =
 proc carrierNameForValidNumber*(region, input: string): string =
   ## The carrier name only when the number is valid, else "".
   takeString(pnCarrierNameForValid(region.cstring, input.cstring))
+
+# ---------------------------------------------------------------------------
+# PhoneNumberOfflineGeocoder (English geographic descriptions)
+# ---------------------------------------------------------------------------
+#
+# Longest-prefix match over the E.164 digits; English descriptions only. Pass a
+# raw (region, input) like everywhere else; the engine parses to E.164 itself.
+# "" when no description is known for the number.
+
+proc geoDescriptionForNumber*(region, input: string): string =
+  ## A geographic description for a number (English), or "" if none is known.
+  takeString(pnGeoDescription(region.cstring, input.cstring))
+
+proc geoDescriptionForValidNumber*(region, input: string): string =
+  ## A geographic description only when the number is valid, else "".
+  takeString(pnGeoDescriptionForValid(region.cstring, input.cstring))

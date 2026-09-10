@@ -52,7 +52,7 @@ PhonenumberAe format: '2015550123' region: 'US' style: #national.
 "-> '(201) 555-0123'"
 PhonenumberAe formatE164: '2015550123' region: 'US'.         "-> '+12015550123'"
 PhonenumberAe regions.                                        "-> an OrderedCollection: 'AC' 'AD' ..."
-PhonenumberAe abiVersion.                                     "-> 5"
+PhonenumberAe abiVersion.                                     "-> 6"
 ```
 
 ### Parsing
@@ -100,10 +100,11 @@ PhonenumberAe shortExpectedCost: '911' region: 'US'.   "-> #tollFree"
 PhonenumberAe shortExampleNumber: 'US'.                "-> '112'"
 ```
 
-### Time zones and carrier
+### Time zones, carrier and geocoder
 
-The engine also maps a number to its IANA time zones and (in English) its
-carrier. Both take a region plus the raw input, exactly like the calls above:
+The engine also maps a number to its IANA time zones, its (English) carrier, and
+an (English) geographic description. All take a region plus the raw input,
+exactly like the calls above:
 
 ```smalltalk
 PhonenumberAe timeZonesForNumber: '2015550123' region: 'US'.
@@ -112,13 +113,15 @@ PhonenumberAe timeZonesForNumber: '2070313000' region: 'GB'.
 "-> an OrderedCollection: 'Europe/London'"
 PhonenumberAe unknownTimeZone.                            "-> 'Etc/Unknown'"
 PhonenumberAe carrierNameForNumber: '7106000000' region: 'GB'.  "-> 'O2'"
+PhonenumberAe geoDescriptionForNumber: '6502530000' region: 'US'.
+"-> 'Mountain View, CA'"
 ```
 
 `timeZonesForNumber:region:` always returns a non-empty collection — a number
 the engine knows no zone for comes back as a one-element collection of
 `'Etc/Unknown'`, never empty.
 
-### The surface (v5 — full PhoneNumberUtil parity + ShortNumberInfo + TimeZones + Carrier)
+### The surface (v6 — full PhoneNumberUtil parity + ShortNumberInfo + TimeZones + Carrier + Geocoder)
 
 - **Metadata**: `countryCode:`, `exampleNumber:`, `exampleNumberForType:region:`,
   `invalidExampleNumber:`, `possibleLengths:`, `regionCodeForCountryCode:`,
@@ -153,11 +156,14 @@ the engine knows no zone for comes back as a one-element collection of
   (`'Etc/Unknown'`).
 - **Carrier**: `carrierNameForNumber:region:`,
   `carrierNameForValidNumber:region:` (English name, or `''`).
-- `abiVersion` (returns `5`).
+- **Geocoder**: `geoDescriptionForNumber:region:`,
+  `geoDescriptionForValidNumber:region:` (English geographic description, or
+  `''`).
+- `abiVersion` (returns `6`).
 
-> **v5 note.** The time-zone and carrier calls (`timeZonesForNumber:region:`,
-> `carrierNameForNumber:region:`, …) are new in v5; ShortNumberInfo arrived in
-> v3. The v2 format-style selectors are unchanged: `#e164` is `0` (it was `2` in
+> **v6 note.** The geocoder calls (`geoDescriptionForNumber:region:`, …) are new
+> in v6; the time-zone and carrier calls arrived in v5; ShortNumberInfo in v3.
+> The v2 format-style selectors are unchanged: `#e164` is `0` (it was `2` in
 > v1). Callers that use the style symbols never see the number.
 
 ## The one ABI trap worth knowing
@@ -188,8 +194,8 @@ Matching every other binding in the monorepo (see `PhonenumberAeLibrary`):
 
 `pharo/run-tests.sh` loads the Tonel package into a **throwaway copy** of a
 Pharo image (loading code mutates an image permanently, so the developer's own
-image is never touched) and runs the 44-check binding conformance suite
-(`docs/conformance.md`, v5) headless. `pharo/.tests.ae` drives it, threading the
+image is never touched) and runs the 45-check binding conformance suite
+(`docs/conformance.md`, v6) headless. `pharo/.tests.ae` drives it, threading the
 engine `.so` through `$LIBPHONENUMBER_AE_LIB`.
 
 Exit codes: `0` pass, `1` fail, `77` = no Pharo VM (a clean **SKIP** — nothing

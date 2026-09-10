@@ -15,9 +15,9 @@ import java.util.List;
 
 /**
  * The 1:1 symbol table for the phonenumber C ABI ({@code core/embed.ae}) —
- * <b>ABI v5, full {@code PhoneNumberUtil} parity plus {@code ShortNumberInfo},
- * the timezone mapper and the carrier mapper</b> — bound with the Java 22+
- * Foreign Function &amp; Memory API (JEP 454).
+ * <b>ABI v6, full {@code PhoneNumberUtil} parity plus {@code ShortNumberInfo},
+ * the timezone mapper, the carrier mapper and the offline geocoder</b> — bound
+ * with the Java 22+ Foreign Function &amp; Memory API (JEP 454).
  *
  * <p>This class is the ONLY place in the Java binding that knows about the C
  * ABI. Everything above it ({@link PhoneNumbers} and the value classes) is
@@ -111,7 +111,7 @@ public final class Native {
     public final Linker linker;
     private final SymbolLookup lookup;
 
-    // ---- the ABI symbols, one MethodHandle each (64 total) ----
+    // ---- the ABI symbols, one MethodHandle each (66 total) ----
 
     // lifecycle / metadata
     public final MethodHandle abiVersion;
@@ -196,6 +196,10 @@ public final class Native {
     // PhoneNumberToCarrierMapper
     public final MethodHandle carrierName;
     public final MethodHandle carrierNameForValid;
+
+    // PhoneNumberOfflineGeocoder
+    public final MethodHandle geoDescription;
+    public final MethodHandle geoDescriptionForValid;
 
     private static volatile Native cached;
 
@@ -335,6 +339,12 @@ public final class Native {
         // PhoneNumberToCarrierMapper
         carrierName = downcall("aether_pn_embed_carrier_name", FunctionDescriptor.of(P, P, P));
         carrierNameForValid = downcall("aether_pn_embed_carrier_name_for_valid",
+                FunctionDescriptor.of(P, P, P));
+
+        // PhoneNumberOfflineGeocoder
+        geoDescription = downcall("aether_pn_embed_geo_description",
+                FunctionDescriptor.of(P, P, P));
+        geoDescriptionForValid = downcall("aether_pn_embed_geo_description_for_valid",
                 FunctionDescriptor.of(P, P, P));
     }
 

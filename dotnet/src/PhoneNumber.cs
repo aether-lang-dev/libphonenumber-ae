@@ -1,4 +1,4 @@
-// The idiomatic C# surface over the phonenumber engine (ABI v5).
+// The idiomatic C# surface over the phonenumber engine (ABI v6).
 //
 // Carries no phone-number logic — every member here marshals to an
 // aether_pn_embed_* call in Native.cs. The stateless calls hang off the static
@@ -455,6 +455,25 @@ public static class PhoneNumber
     {
         Init();
         return Native.TakeString(Native.CarrierNameForValid(Native.Encode(region), Native.Encode(input)));
+    }
+
+    // ---- geocoder (PhoneNumberOfflineGeocoder, English descriptions) ----
+    //
+    // Longest-prefix match over the E.164 digits; English descriptions only.
+    // "" when no description is known for the number.
+
+    /// <summary>A geographic description for a number (English), or "" if none is known.</summary>
+    public static string GeoDescriptionForNumber(string region, string input)
+    {
+        Init();
+        return Native.TakeString(Native.GeoDescription(Native.Encode(region), Native.Encode(input)));
+    }
+
+    /// <summary>A geographic description only when the number is valid, else "".</summary>
+    public static string GeoDescriptionForValidNumber(string region, string input)
+    {
+        Init();
+        return Native.TakeString(Native.GeoDescriptionForValid(Native.Encode(region), Native.Encode(input)));
     }
 }
 

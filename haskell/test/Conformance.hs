@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 -- |
--- The 44-check binding conformance suite (@docs\/conformance.md@, v5).
+-- The 45-check binding conformance suite (@docs\/conformance.md@, v6).
 --
 -- Proves the Haskell binding marshals every value shape across the FFI. It is
 -- __not__ a phone-number test suite — the behavioural cases live in the
@@ -91,7 +91,7 @@ isFalse what got = unless (not got) $ assertFail (what ++ ": expected False")
 main :: IO ()
 main = do
   hSetEncoding stdout utf8
-  putStrLn "=== phonenumber_ae Haskell binding conformance (v5) ==="
+  putStrLn "=== phonenumber_ae Haskell binding conformance (v6) ==="
   v <- abiVersion
   putStrLn ("engine: ABI v" ++ show v)
 
@@ -109,7 +109,7 @@ main = do
 
 runChecks :: Failures -> IO ()
 runChecks fs = do
-  -- ---- the forty-four (docs/conformance.md v5) ----
+  -- ---- the forty-five (docs/conformance.md v6) ----
 
   check fs "01 country_code US == 1" $ do
     out <- countryCode "US"
@@ -267,9 +267,9 @@ runChecks fs = do
       (m0 : _) -> eqStr "match raw" (matchRaw m0) "201-555-0123"
       [] -> assertFail "no matches"
 
-  check fs "34 abi_version == 5" $ do
+  check fs "34 abi_version == 6" $ do
     v <- abiVersion
-    eqInt "abi_version" v 5
+    eqInt "abi_version" v 6
 
   check fs "35 short is_emergency US 911" $ do
     ok <- isEmergencyNumber "US" "911"
@@ -311,6 +311,10 @@ runChecks fs = do
     c <- carrierNameForNumber "GB" "7106000000"
     eqStr "carrier_name" c "O2"
 
+  check fs "45 geo_description_for_number US 6502530000 == Mountain View, CA" $ do
+    g <- geoDescriptionForNumber "US" "6502530000"
+    eqStr "geo_description" g "Mountain View, CA"
+
   -- ---- a few surface extras ----
 
   check fs "format style aliases agree" $ do
@@ -336,6 +340,10 @@ runChecks fs = do
   check fs "carrier_name_for_valid agrees for a valid number" $ do
     c <- carrierNameForValidNumber "GB" "7106000000"
     eqStr "carrier_name_for_valid" c "O2"
+
+  check fs "geo_description_for_valid agrees for a valid number" $ do
+    g <- geoDescriptionForValidNumber "US" "6502530000"
+    eqStr "geo_description_for_valid" g "Mountain View, CA"
 
   check fs "many round trips do not leak or crash" $ do
     forM_ [1 :: Int .. 3000] $ \_ -> do

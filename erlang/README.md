@@ -71,7 +71,7 @@ fixed_line           = phonenumber_ae:number_type(<<"US">>, <<"2015550123">>),
 <<"(201) 555-0123">> = phonenumber_ae:format(<<"US">>, <<"2015550123">>, national),
 <<"+12015550123">>   = phonenumber_ae:format_e164(<<"US">>, <<"2015550123">>),
 Regions              = phonenumber_ae:regions(),   %% [<<"AC">>, <<"AD">>, ...]
-5                    = phonenumber_ae:abi_version().
+6                    = phonenumber_ae:abi_version().
 ```
 
 All string inputs accept `iodata` (a binary, a string, or an iolist); all
@@ -126,10 +126,11 @@ toll_free  = phonenumber_ae:short_expected_cost(<<"US">>, <<"911">>),
 <<"112">>  = phonenumber_ae:short_example_number(<<"US">>).
 ```
 
-### Time zones and carrier
+### Time zones, carrier and geocoder
 
-The engine also maps a number to its IANA time zones and (in English) its
-carrier. Both take a region plus the raw input, exactly like the calls above:
+The engine also maps a number to its IANA time zones, its (English) carrier, and
+an (English) geographic description. All take a region plus the raw input,
+exactly like the calls above:
 
 ```erlang
 [<<"America/New_York">>] =
@@ -137,13 +138,15 @@ carrier. Both take a region plus the raw input, exactly like the calls above:
 [<<"Europe/London">>] =
     phonenumber_ae:time_zones_for_number(<<"GB">>, <<"2070313000">>),
 <<"Etc/Unknown">> = phonenumber_ae:unknown_time_zone(),
-<<"O2">>          = phonenumber_ae:carrier_name_for_number(<<"GB">>, <<"7106000000">>).
+<<"O2">>          = phonenumber_ae:carrier_name_for_number(<<"GB">>, <<"7106000000">>),
+<<"Mountain View, CA">> =
+    phonenumber_ae:geo_description_for_number(<<"US">>, <<"6502530000">>).
 ```
 
 `time_zones_for_number/2` always returns a non-empty list — a number the engine
 knows no zone for comes back as `[<<"Etc/Unknown">>]`, not `[]`.
 
-### The surface (v5 — full PhoneNumberUtil parity + ShortNumberInfo + TimeZones + Carrier)
+### The surface (v6 — full PhoneNumberUtil parity + ShortNumberInfo + TimeZones + Carrier + Geocoder)
 
 - **Metadata**: `country_code/1`, `example_number/1`,
   `example_number_for_type/2`, `invalid_example_number/1`, `possible_lengths/1`,
@@ -180,10 +183,13 @@ knows no zone for comes back as `[<<"Etc/Unknown">>]`, not `[]`.
   ids), `time_zone_count/2`, `unknown_time_zone/0` (`<<"Etc/Unknown">>`).
 - **Carrier**: `carrier_name_for_number/2`, `carrier_name_for_valid_number/2`
   (English name, or `<<>>`).
-- `abi_version/0` (returns `5`).
+- **Geocoder**: `geo_description_for_number/2`,
+  `geo_description_for_valid_number/2` (English geographic description, or
+  `<<>>`).
+- `abi_version/0` (returns `6`).
 
-> **v5 note.** The time-zone and carrier calls (`time_zones_for_number/2`,
-> `carrier_name_for_number/2`, …) are new in v5; ShortNumberInfo arrived in v3.
+> **v6 note.** The geocoder calls (`geo_description_for_number/2`, …) are new in
+> v6; the time-zone and carrier calls arrived in v5; ShortNumberInfo in v3.
 > The format-style selectors from v2 are unchanged: `e164` is `0` (it was `2` in
 > v1). Callers that use the style atoms never see the number; callers that
 > hard-coded the old integer must switch to the atoms.
@@ -198,8 +204,8 @@ strings (every `char*` the ABI returns is caller-owned).
 
 ## Conformance
 
-`erlang/.tests.ae` runs the 44-check binding conformance suite
-(`docs/conformance.md`, v5) as EUnit, against the very same compiled module
+`erlang/.tests.ae` runs the 45-check binding conformance suite
+(`docs/conformance.md`, v6) as EUnit, against the very same compiled module
 Elixir and Gleam load. It samples each *kind* of value crossing the FFI — it
 proves the marshalling, not the library. The suite SKIPs (green) when `erl`,
 `erl_nif.h`, or `eunit` is absent.

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * The 44-check binding conformance suite (docs/conformance.md, v5).
+ * The 45-check binding conformance suite (docs/conformance.md, v6).
  *
  * Proves the PHP binding marshals every value shape across the FFI. It is NOT a
  * phone-number test suite — the behavioural cases live in the engine's own
@@ -41,6 +41,7 @@ if (is_file(__DIR__ . '/../vendor/autoload.php')) {
 
 use PhoneNumberAe\AsYouTypeFormatter;
 use PhoneNumberAe\Carrier;
+use PhoneNumberAe\Geocoder;
 use PhoneNumberAe\PhoneNumber;
 use PhoneNumberAe\ShortNumberInfo;
 use PhoneNumberAe\TimeZones;
@@ -115,7 +116,7 @@ function atLeast(int $got, int $min, string $what): void
     }
 }
 
-echo "=== phonenumber_ae PHP binding conformance (v5) ===\n";
+echo "=== phonenumber_ae PHP binding conformance (v6) ===\n";
 if (!extension_loaded('ffi')) {
     fwrite(STDERR, "php: ext-ffi is not loaded\n");
     exit(2);
@@ -265,7 +266,7 @@ check('33 matcher raw', function (): void {
 });
 
 check('34 abi version', function (): void {
-    eqInt(PhoneNumber::abiVersion(), 5, 'abi version');
+    eqInt(PhoneNumber::abiVersion(), 6, 'abi version');
 });
 
 // ---- ShortNumberInfo (v3) ----
@@ -294,7 +295,7 @@ check('40 short example_number US', function (): void {
     eqStr(ShortNumberInfo::exampleNumber('US'), '112', 'US short example');
 });
 
-// ---- TimeZones + Carrier (v5) ----
+// ---- TimeZones + Carrier + Geocoder (v5/v6) ----
 
 check('41 time_zones_for_number US', function (): void {
     eqStrList(TimeZones::timeZonesForNumber('US', '2015550123'), ['America/New_York'], 'US tz');
@@ -310,6 +311,10 @@ check('43 unknown_time_zone', function (): void {
 
 check('44 carrier_name_for_number GB', function (): void {
     eqStr(Carrier::carrierNameForNumber('GB', '7106000000'), 'O2', 'GB carrier');
+});
+
+check('45 geo_description_for_number US', function (): void {
+    eqStr(Geocoder::geoDescriptionForNumber('US', '6502530000'), 'Mountain View, CA', 'US geo');
 });
 
 // ---- a few extras exercising the idiomatic surface ----

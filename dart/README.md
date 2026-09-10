@@ -8,8 +8,8 @@ over Google libphonenumber's own metadata. It contains **no phone-number
 logic**: every member marshals to an `aether_pn_embed_*` call. One engine, one
 set of behaviours, N language surfaces.
 
-It speaks the full **v5** `aether_pn_embed_*` C ABI (64 symbols, full
-PhoneNumberUtil parity plus ShortNumberInfo, TimeZones and Carrier — `docs/abi.md`). Every signature is still scalar-only
+It speaks the full **v6** `aether_pn_embed_*` C ABI (66 symbols, full
+PhoneNumberUtil parity plus ShortNumberInfo, TimeZones, Carrier and Geocoder — `docs/abi.md`). Every signature is still scalar-only
 (`const char*` and `int`), and there are still no opaque handles: a parsed
 number and an as-you-type state are themselves caller-owned *strings*.
 
@@ -80,6 +80,9 @@ pn.TimeZones.timeZonesForNumber('US', '2015550123'); // ['America/New_York']
 pn.TimeZones.timeZonesForNumber('GB', '2070313000'); // ['Europe/London']
 pn.TimeZones.unknownTimeZone();                      // 'Etc/Unknown'
 pn.Carrier.carrierNameForNumber('GB', '7106000000'); // 'O2'
+
+// Geographic descriptions (v6 — Geocoder).
+pn.Geocoder.geoDescriptionForNumber('US', '6502530000'); // 'Mountain View, CA'
 ```
 
 ### Surface
@@ -112,6 +115,9 @@ pn.Carrier.carrierNameForNumber('GB', '7106000000'); // 'O2'
   none), `timeZoneCount(region, input)`, `unknownTimeZone()`.
 * **`Carrier`** (v5) — English carrier names: `carrierNameForNumber(region,
   input)`, `carrierNameForValidNumber(region, input)` (`''` when none).
+* **`Geocoder`** (v6) — English geographic descriptions:
+  `geoDescriptionForNumber(region, input)`,
+  `geoDescriptionForValidNumber(region, input)` (`''` when none).
 
 ### Enums
 
@@ -154,7 +160,7 @@ and nothing borrowed to track.
 
 ## Tests
 
-The 44-check v5 conformance suite (`docs/conformance.md`) lives in
+The 45-check v6 conformance suite (`docs/conformance.md`) lives in
 `test/conformance_test.dart`.
 
 ```sh

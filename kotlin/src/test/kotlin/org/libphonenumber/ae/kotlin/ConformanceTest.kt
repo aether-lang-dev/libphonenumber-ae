@@ -9,7 +9,7 @@ import org.libphonenumber.ae.ShortNumberCost
 import org.libphonenumber.ae.ValidationResult
 
 /**
- * The 44-check binding conformance suite (docs/conformance.md, v5), in Kotlin.
+ * The 45-check binding conformance suite (docs/conformance.md, v6), in Kotlin.
  *
  * Proves the **Kotlin layer** reaches the same engine behaviour the Java and
  * Python suites see. Since that layer sits on the Java binding rather than on
@@ -31,7 +31,7 @@ object ConformanceTest {
 
     @JvmStatic
     fun main(args: Array<String>) {
-        // ---- the 44 required checks ----
+        // ---- the 45 required checks ----
         check("01 countryCode US") { assertEquals("1", countryCode("US")) }
         check("02 countryCode GB") { assertEquals("44", countryCode("GB")) }
         check("03 unknown region") { assertEquals("", countryCode("ZZ")) }
@@ -114,7 +114,7 @@ object ConformanceTest {
             val ms = findNumbers("call 201-555-0123 now", "US", Leniency.VALID)
             assertEquals("201-555-0123", ms[0].raw())
         }
-        check("34 abiVersion") { assertEquals(5, abiVersion()) }
+        check("34 abiVersion") { assertEquals(6, abiVersion()) }
         check("35 isEmergencyNumber US 911") { assertTrue("911 emergency US", isEmergencyNumber("US", "911")) }
         check("36 isEmergencyNumber US 999") { assertTrue("999 not emergency US", !isEmergencyNumber("US", "999")) }
         check("37 isEmergencyNumber GB 999") { assertTrue("999 emergency GB", isEmergencyNumber("GB", "999")) }
@@ -132,6 +132,9 @@ object ConformanceTest {
         check("43 unknownTimeZone") { assertEquals("Etc/Unknown", unknownTimeZone()) }
         check("44 carrierNameForNumber GB") {
             assertEquals("O2", carrierNameForNumber("GB", "7106000000"))
+        }
+        check("45 geoDescriptionForNumber US") {
+            assertEquals("Mountain View, CA", geoDescriptionForNumber("US", "6502530000"))
         }
 
         // ---- extras specific to the Kotlin layer ----
@@ -151,19 +154,20 @@ object ConformanceTest {
             assertTrue("112 valid short US", isValidShortNumber("US", "112"))
             assertEquals("112", shortExampleNumber("US"))
         }
-        check("timezone + carrier surface reads via Kotlin functions") {
+        check("timezone + carrier + geocoder surface reads via Kotlin functions") {
             assertEquals(listOf("America/New_York"), timeZonesForNumber("US", "2015550123"))
             assertEquals("Etc/Unknown", unknownTimeZone())
             assertEquals("O2", carrierNameForNumber("GB", "7106000000"))
+            assertEquals("Mountain View, CA", geoDescriptionForNumber("US", "6502530000"))
         }
 
         // ---- report ----
         println()
         if (failures.isEmpty()) {
-            println("PASS (v5, timezones + carrier) — $passed checks")
+            println("PASS (v6, timezones + carrier + geocoder) — $passed checks")
             System.exit(0)
         }
-        println("FAIL (v5) — ${failures.size} of ${passed + failures.size} checks failed:")
+        println("FAIL (v6) — ${failures.size} of ${passed + failures.size} checks failed:")
         failures.forEach { println("  $it") }
         System.exit(1)
     }

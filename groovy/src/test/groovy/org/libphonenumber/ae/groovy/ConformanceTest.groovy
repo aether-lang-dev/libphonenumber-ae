@@ -19,6 +19,7 @@ import static org.libphonenumber.ae.groovy.PhoneNumbers.format
 import static org.libphonenumber.ae.groovy.PhoneNumbers.formatE164
 import static org.libphonenumber.ae.groovy.PhoneNumbers.formatInternational
 import static org.libphonenumber.ae.groovy.PhoneNumbers.formatRfc3966
+import static org.libphonenumber.ae.groovy.PhoneNumbers.geoDescriptionForNumber
 import static org.libphonenumber.ae.groovy.PhoneNumbers.isNanpaCountry
 import static org.libphonenumber.ae.groovy.PhoneNumbers.isNumberMatch
 import static org.libphonenumber.ae.groovy.PhoneNumbers.isPossibleNumber
@@ -40,7 +41,7 @@ import static org.libphonenumber.ae.groovy.PhoneNumbers.truncateTooLong
 import static org.libphonenumber.ae.groovy.PhoneNumbers.unknownTimeZone
 
 /**
- * The 44-check binding conformance suite (docs/conformance.md, v5), in Groovy.
+ * The 45-check binding conformance suite (docs/conformance.md, v6), in Groovy.
  *
  * Proves the <b>Groovy layer</b> reaches the same engine behaviour the Java and
  * Python suites see. Since that layer sits on the Java binding rather than on
@@ -60,7 +61,7 @@ class ConformanceTest {
     static List<String> failures = []
 
     static void main(String[] args) {
-        // ---- the 44 required checks ----
+        // ---- the 45 required checks ----
         check('01 countryCode US') { assertEquals('1', countryCode('US')) }
         check('02 countryCode GB') { assertEquals('44', countryCode('GB')) }
         check('03 unknown region') { assertEquals('', countryCode('ZZ')) }
@@ -143,7 +144,7 @@ class ConformanceTest {
             def ms = findNumbers('call 201-555-0123 now', 'US', Leniency.VALID)
             assertEquals('201-555-0123', ms[0].raw())
         }
-        check('34 abiVersion') { assertEquals(5, abiVersion()) }
+        check('34 abiVersion') { assertEquals(6, abiVersion()) }
         check('35 isEmergencyNumber US 911') { assertTrue('911 emergency US', isEmergencyNumber('US', '911')) }
         check('36 isEmergencyNumber US 999') { assertTrue('999 not emergency US', !isEmergencyNumber('US', '999')) }
         check('37 isEmergencyNumber GB 999') { assertTrue('999 emergency GB', isEmergencyNumber('GB', '999')) }
@@ -162,6 +163,9 @@ class ConformanceTest {
         check('44 carrierNameForNumber GB') {
             assertEquals('O2', carrierNameForNumber('GB', '7106000000'))
         }
+        check('45 geoDescriptionForNumber US') {
+            assertEquals('Mountain View, CA', geoDescriptionForNumber('US', '6502530000'))
+        }
 
         // ---- extras specific to the Groovy layer ----
         check('format default style is NATIONAL') {
@@ -176,10 +180,10 @@ class ConformanceTest {
         // ---- report ----
         println()
         if (failures.isEmpty()) {
-            println("PASS (v5, timezones + carrier) — $passed checks")
+            println("PASS (v6, timezones + carrier + geocoder) — $passed checks")
             System.exit(0)
         }
-        println("FAIL (v5) — ${failures.size()} of ${passed + failures.size()} checks failed:")
+        println("FAIL (v6) — ${failures.size()} of ${passed + failures.size()} checks failed:")
         failures.each { println("  $it") }
         System.exit(1)
     }

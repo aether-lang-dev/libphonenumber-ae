@@ -17,7 +17,7 @@ aeb(cap) {
             println("rust: cargo test reported failures (is libloading vendored/cached?)")
             return 1
         }
-        println("rust: PASS — v5 44-check conformance (full PhoneNumberUtil parity + ShortNumberInfo + timezones + carrier)")
+        println("rust: PASS — v6 45-check conformance (full PhoneNumberUtil parity + ShortNumberInfo + timezones + carrier + geocoder)")
         return 0
     }
 }

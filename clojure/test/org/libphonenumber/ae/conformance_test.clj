@@ -1,5 +1,5 @@
 (ns org.libphonenumber.ae.conformance-test
-  "The 44-check binding conformance suite (docs/conformance.md, v5), in Clojure.
+  "The 45-check binding conformance suite (docs/conformance.md, v6), in Clojure.
 
   Proves the **Clojure layer** reaches the same engine behaviour the Java and
   Python suites see. Since that layer sits on the Java binding rather than on
@@ -16,7 +16,7 @@
   (:require [clojure.test :refer [deftest is run-tests]]
             [org.libphonenumber.ae.core :as pn]))
 
-;; ---- the 40 required checks ----------------------------------------------
+;; ---- the 45 required checks ----------------------------------------------
 
 (deftest test-01-country-code-us
   (is (= "1" (pn/country-code "US"))))
@@ -116,7 +116,7 @@
   (is (= "201-555-0123" (:raw (first (pn/find-numbers "call 201-555-0123 now" "US" :valid))))))
 
 (deftest test-34-abi-version
-  (is (= 5 (pn/abi-version))))
+  (is (= 6 (pn/abi-version))))
 
 (deftest test-35-emergency-us-911
   (is (true? (pn/emergency-number? "US" "911"))))
@@ -147,6 +147,9 @@
 
 (deftest test-44-carrier
   (is (= "O2" (pn/carrier-name-for-number "GB" "7106000000"))))
+
+(deftest test-45-geocoder
+  (is (= "Mountain View, CA" (pn/geo-description-for-number "US" "6502530000"))))
 
 ;; ---- extras specific to the Clojure layer --------------------------------
 

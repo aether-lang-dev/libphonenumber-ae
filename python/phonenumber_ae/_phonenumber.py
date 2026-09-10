@@ -335,3 +335,15 @@ def carrier_name_for_number(region, number):
 def carrier_name_for_valid_number(region, number):
     """The carrier name only when the number is valid, else ''."""
     return _s("aether_pn_embed_carrier_name_for_valid", _enc(region), _enc(number))
+
+
+# ---- PhoneNumberOfflineGeocoder (English geographic descriptions) ----
+
+def geo_description_for_number(region, number):
+    """A geographic description for a number (English), or '' if none is known."""
+    return _s("aether_pn_embed_geo_description", _enc(region), _enc(number))
+
+
+def geo_description_for_valid_number(region, number):
+    """A description only when the number is valid, else ''."""
+    return _s("aether_pn_embed_geo_description_for_valid", _enc(region), _enc(number))

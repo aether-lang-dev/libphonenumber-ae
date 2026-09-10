@@ -10,13 +10,14 @@
 //! looks wrong, the bug is in the engine or in this marshalling — it is never a
 //! policy decision made here.
 //!
-//! ## ABI v5
+//! ## ABI v6
 //!
-//! This binding speaks **ABI v5** (`abiVersion()` → 5): the full
-//! `PhoneNumberUtil` surface plus the `ShortNumberInfo`, `TimeZones` and
-//! `Carrier` side-libraries, 64 exported symbols. The ABI is scalar-only
-//! (`const char*` and `int`) — v5 adds no new mechanism, only more calls (the 4
-//! `tz_*` and 2 `carrier_*` symbols on top of the 8 `short_*`). Two constructs
+//! This binding speaks **ABI v6** (`abiVersion()` → 6): the full
+//! `PhoneNumberUtil` surface plus the `ShortNumberInfo`, `TimeZones`,
+//! `Carrier` and `Geocoder` side-libraries, 66 exported symbols. The ABI is
+//! scalar-only (`const char*` and `int`) — v6 adds no new mechanism, only more
+//! calls (the 2 `geo_*` symbols on top of the 2 `carrier_*`, 4 `tz_*` and 8
+//! `short_*`). Two constructs
 //! thread a *string* rather than an opaque handle:
 //!
 //!   * `parse` returns a caller-owned **parsed-number string**. Pass it to the
@@ -63,7 +64,7 @@
 const std = @import("std");
 
 // =========================================================================
-// The C ABI — a 1:1 transcription of core/embed.ae (v5, 64 symbols).
+// The C ABI — a 1:1 transcription of core/embed.ae (v6, 66 symbols).
 //
 // `core/embed.ae` names its exports `pn_embed_<name>`; building with
 // `--emit=lib` mangles them to `aether_pn_embed_<name>`, which is what we
@@ -160,6 +161,10 @@ const c = struct {
     // ---- PhoneNumberToCarrierMapper (English carrier names) ----
     extern "c" fn aether_pn_embed_carrier_name(region: [*c]const u8, input: [*c]const u8) [*c]u8;
     extern "c" fn aether_pn_embed_carrier_name_for_valid(region: [*c]const u8, input: [*c]const u8) [*c]u8;
+
+    // ---- PhoneNumberOfflineGeocoder (English geographic descriptions) ----
+    extern "c" fn aether_pn_embed_geo_description(region: [*c]const u8, input: [*c]const u8) [*c]u8;
+    extern "c" fn aether_pn_embed_geo_description_for_valid(region: [*c]const u8, input: [*c]const u8) [*c]u8;
 };
 
 // =========================================================================
@@ -299,7 +304,7 @@ pub const Error = error{
 };
 
 /// The ABI revision this engine implements. Check it to fail fast against an
-/// engine older than the features you expect — v5 is what this binding needs.
+/// engine older than the features you expect — v6 is what this binding needs.
 pub fn abiVersion() i32 {
     return @intCast(c.aether_pn_embed_abi_version());
 }
@@ -1035,6 +1040,31 @@ pub fn carrierNameForValidNumber(allocator: std.mem.Allocator, region: []const u
     var i = try CStr.init(allocator, input);
     defer i.deinit();
     return takeString(allocator, c.aether_pn_embed_carrier_name_for_valid(r.ptr(), i.ptr()));
+}
+
+// =========================================================================
+// PhoneNumberOfflineGeocoder (English geographic descriptions).
+//
+// Longest-prefix match over the E.164 digits; English descriptions only. ""
+// when no description is known for the number. Caller frees each returned slice.
+// =========================================================================
+
+/// A geographic description for a number (English), or "" if none is known.
+pub fn geoDescriptionForNumber(allocator: std.mem.Allocator, region: []const u8, input: []const u8) Error![]u8 {
+    var r = try CStr.init(allocator, region);
+    defer r.deinit();
+    var i = try CStr.init(allocator, input);
+    defer i.deinit();
+    return takeString(allocator, c.aether_pn_embed_geo_description(r.ptr(), i.ptr()));
+}
+
+/// A geographic description only when the number is valid, else "".
+pub fn geoDescriptionForValidNumber(allocator: std.mem.Allocator, region: []const u8, input: []const u8) Error![]u8 {
+    var r = try CStr.init(allocator, region);
+    defer r.deinit();
+    var i = try CStr.init(allocator, input);
+    defer i.deinit();
+    return takeString(allocator, c.aether_pn_embed_geo_description_for_valid(r.ptr(), i.ptr()));
 }
 
 test {

@@ -1,0 +1,28 @@
+// core_tests/geo_probe — PhoneNumberOfflineGeocoder engine gate (pure Aether).
+//
+// Longest-prefix geographic-description lookup over the E.164 digits (English).
+// Run: ae run core_tests/geo_probe.ae
+
+import std.string
+import core.geocoder
+
+fn fail(msg: string) { println("FAIL: ${msg}"); exit(1) }
+fn eq_s(label: string, got: string, want: string) {
+    if got != want { fail("${label}: got '${got}', want '${want}'") }
+}
+
+main() {
+    // Google's own canonical geocoder test: +1 650 253 0000 -> Mountain View, CA
+    eq_s("US 650253 -> Mountain View", geocoder.description_for_e164("16502530000"), "Mountain View, CA")
+    // GB London
+    eq_s("GB 4420 -> London", geocoder.description_for_e164("442070313000"), "London")
+    // CN Beijing
+    eq_s("CN 8610 -> Beijing", geocoder.description_for_e164("861012345678"), "Beijing")
+    // US NJ (longest prefix)
+    eq_s("US 1201200 -> Jersey City", geocoder.description_for_e164("12012000000"), "Jersey City, NJ")
+    // unknown cc -> empty
+    eq_s("unknown -> empty", geocoder.description_for_e164("9990000000"), "")
+
+    println("geo_probe: PASS — PhoneNumberOfflineGeocoder (longest-prefix description lookup)")
+    return 0
+}

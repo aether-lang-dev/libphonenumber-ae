@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Idiomatic Ruby surface over the phonenumber engine (ABI v5).
+# Idiomatic Ruby surface over the phonenumber engine (ABI v6).
 #
 # Carries no phone-number logic — see the monorepo's one rule in LLM.md. Every
 # method here marshals to an `aether_pn_embed_*` call in `native.rb`.
@@ -491,6 +491,28 @@ module PhoneNumberAe
     # The carrier name only when the number is valid, else "".
     def carrier_name_for_valid_number(region, number)
       PhoneNumberAe.send(:_s, "aether_pn_embed_carrier_name_for_valid",
+                         PhoneNumberAe.send(:_enc, region),
+                         PhoneNumberAe.send(:_enc, number))
+    end
+  end
+
+  # ---- PhoneNumberOfflineGeocoder (English geographic descriptions) ----
+
+  # Maps a number to an English geographic description of the area it belongs
+  # to. The engine parses the raw (region, input) to E.164 itself.
+  module Geocoder
+    module_function
+
+    # A geographic description for a number (English), or "" if none is known.
+    def geo_description_for_number(region, number)
+      PhoneNumberAe.send(:_s, "aether_pn_embed_geo_description",
+                         PhoneNumberAe.send(:_enc, region),
+                         PhoneNumberAe.send(:_enc, number))
+    end
+
+    # A description only when the number is valid, else "".
+    def geo_description_for_valid_number(region, number)
+      PhoneNumberAe.send(:_s, "aether_pn_embed_geo_description_for_valid",
                          PhoneNumberAe.send(:_enc, region),
                          PhoneNumberAe.send(:_enc, number))
     end

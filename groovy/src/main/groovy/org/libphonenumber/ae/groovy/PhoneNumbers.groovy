@@ -3,6 +3,7 @@ package org.libphonenumber.ae.groovy
 import org.libphonenumber.ae.AsYouTypeFormatter
 import org.libphonenumber.ae.Carrier
 import org.libphonenumber.ae.Format
+import org.libphonenumber.ae.Geocoder
 import org.libphonenumber.ae.Leniency
 import org.libphonenumber.ae.MatchType
 import org.libphonenumber.ae.Matcher
@@ -14,8 +15,9 @@ import org.libphonenumber.ae.TimeZones
 import org.libphonenumber.ae.ValidationResult
 
 /**
- * Idiomatic Groovy over the Java binding (ABI v5, full PhoneNumberUtil parity
- * plus ShortNumberInfo, the timezone mapper and the carrier mapper).
+ * Idiomatic Groovy over the Java binding (ABI v6, full PhoneNumberUtil parity
+ * plus ShortNumberInfo, the timezone mapper, the carrier mapper and the offline
+ * geocoder).
  *
  * There is <b>no second FFI here</b>. The one JVM binding to the shared Aether
  * engine is {@code java/aether/} (FFM / Panama); everything in this file is
@@ -236,6 +238,19 @@ class PhoneNumbers {
 
     static String carrierNameForValidNumber(String region, String input) {
         Carrier.carrierNameForValidNumber(region, input)
+    }
+
+    // ---- geocoder ----
+    //
+    // English geographic descriptions by longest-prefix match over the E.164
+    // digits. These reach the Java Geocoder mapper.
+
+    static String geoDescriptionForNumber(String region, String input) {
+        Geocoder.geoDescriptionForNumber(region, input)
+    }
+
+    static String geoDescriptionForValidNumber(String region, String input) {
+        Geocoder.geoDescriptionForValidNumber(region, input)
     }
 
     // ---- version ----

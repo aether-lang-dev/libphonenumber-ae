@@ -1,8 +1,8 @@
 # phonenumber_ae (Ruby)
 
 A thin Ruby binding over the shared, pure-Aether libphonenumber engine — the
-full **v5 ABI** (full `PhoneNumberUtil` parity plus `ShortNumberInfo`, time
-zones and carrier names).
+full **v6 ABI** (full `PhoneNumberUtil` parity plus `ShortNumberInfo`, time
+zones, carrier names and geocoding).
 
 ```ruby
 require "phonenumber_ae"
@@ -76,6 +76,15 @@ PhoneNumberAe::Carrier.carrier_name_for_valid_number("GB", "7106000000")  # => "
 
 Names are English only; `""` means no carrier is known for the number.
 
+### Geocoding
+
+```ruby
+PhoneNumberAe::Geocoder.geo_description_for_number("US", "6502530000")        # => "Mountain View, CA"
+PhoneNumberAe::Geocoder.geo_description_for_valid_number("US", "6502530000")  # => "Mountain View, CA" (or "" if invalid)
+```
+
+Descriptions are English only; `""` means no description is known for the number.
+
 This gem is a **thin Fiddle binding** over the monorepo's one shared native
 engine — `libphonenumber_ae.so`, compiled from pure Aether over Google
 libphonenumber's own metadata. It contains **no** phone-number logic —
@@ -143,7 +152,7 @@ truncate_too_long(region, input)
 normalize_digits_only(str)
 convert_alpha_characters(str)
 is_alpha_number(str)                             # => true / false
-abi_version                                      # => 5
+abi_version                                      # => 6
 ```
 
 Short / emergency numbers live in the `PhoneNumberAe::ShortNumber` module
@@ -162,7 +171,7 @@ PhoneNumberAe::ShortNumber.example_number(region)                    # => "112"
 ```
 
 Time zones live in the `PhoneNumberAe::TimeZones` module, carrier names in
-`PhoneNumberAe::Carrier`:
+`PhoneNumberAe::Carrier`, geographic descriptions in `PhoneNumberAe::Geocoder`:
 
 ```ruby
 PhoneNumberAe::TimeZones.time_zones_for_number(region, input)        # => ["America/New_York", …]
@@ -170,6 +179,8 @@ PhoneNumberAe::TimeZones.time_zone_count(region, input)              # => an Int
 PhoneNumberAe::TimeZones.unknown_time_zone                           # => "Etc/Unknown"
 PhoneNumberAe::Carrier.carrier_name_for_number(region, input)        # => a name, or ""
 PhoneNumberAe::Carrier.carrier_name_for_valid_number(region, input)  # => a name only if valid, else ""
+PhoneNumberAe::Geocoder.geo_description_for_number(region, input)        # => a description, or ""
+PhoneNumberAe::Geocoder.geo_description_for_valid_number(region, input)  # => a description only if valid, else ""
 ```
 
 Classes: `PhoneNumberAe::ParsedNumber`, `PhoneNumberAe::AsYouTypeFormatter`
@@ -201,7 +212,7 @@ freed the same way.
 
 ## Testing
 
-The v5 44-check conformance suite (`docs/conformance.md`) lives in
+The v6 45-check conformance suite (`docs/conformance.md`) lives in
 `spec/conformance_spec.rb`.
 
 ```sh
