@@ -1,0 +1,30 @@
+// The Java binding's classes, compiled once and shared by the whole JVM
+// family: kotlin/, groovy/ and clojure/ all layer over THESE classes rather
+// than binding the engine a second time.
+//
+// Flat layout: the .java sources sit directly in this module dir (java/aether/),
+// NOT under a Maven src/main/java tree. aeb's `java.javac` builder, with no
+// source_layout set, globs *.java at the module root (depth 1) — which is
+// exactly our layout. The sources keep their `package org.libphonenumber.ae;`
+// declaration; javac reads the package from the file and emits the class tree
+// under -d, so a flat source dir with a packaged class is fine (a Maven src
+// tree is a build-tool convention, not a javac requirement).
+//
+// The important part is what this node publishes: the standard
+// `jvm_classpath_deps_including_transitive` artifact, which every JVM SDK
+// builder reads through `bldr._build_dep_classpath(...)`. The kotlin/groovy/
+// clojure layers dep this node for the classpath.
+//
+// JDK 22+ is required: the binding is FFM/Panama (java.lang.foreign), final in
+// 22. `release` is deliberately NOT pinned below that.
+
+import bldr
+import java
+
+aeb(cap) {
+    bldr.build() {
+        java.javac() {
+            // no source_layout -> flat *.java glob at this module dir
+        }
+    }
+}

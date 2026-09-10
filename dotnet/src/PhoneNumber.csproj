@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The .NET binding over the shared phonenumber engine.
+
+    The engine is P/Invoked (dlopen'd at run time), not linked, so this project
+    has NO build-time dependency on the native library and NO NuGet
+    dependencies at all — which is also what lets it build and test on a box
+    with no network.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>PhoneNumbers</RootNamespace>
+    <AssemblyName>PhoneNumberAe</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <!--
+      CS1591 "missing XML comment for publicly visible member". The idiomatic
+      API (PhoneNumber and the two enums) IS documented; the exception is
+      `Native`, a 1:1 transcription of the C ABI whose members are named after
+      their `aether_pn_embed_*` entry points and are collectively documented by
+      the file header. Restating each entry point name would be noise.
+    -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+
+    <!--
+      There are no PackageReferences, so restore is a local no-op and `dotnet
+      build` never reaches for nuget.org.
+    -->
+    <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageId>PhoneNumber.Aether</PackageId>
+    <Version>0.2.0</Version>
+    <Description>
+      Validate and format international phone numbers. A thin P/Invoke binding
+      over the shared phonenumber native engine — no phone-number logic lives
+      in C#.
+    </Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/paul-hammant/libphonenumber-ae</RepositoryUrl>
+  </PropertyGroup>
+
+</Project>

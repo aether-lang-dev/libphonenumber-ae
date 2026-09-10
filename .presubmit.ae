@@ -1,0 +1,50 @@
+// Named target set: everything that must be green before a push.
+//
+// The engine node comes first in spirit (aeb topo-sorts it first in fact,
+// since every binding deps core/.build.ae).
+//
+// Bindings whose toolchain is absent skip loudly rather than failing, so this
+// is meaningful on a partial toolchain set. Read target/.aeb/logs/<label>.log
+// for per-node verdicts — aeb's exit status does not always reflect a leaf's
+// own PASS/FAIL.
+
+import bldr
+
+aeb(cap) {
+    bldr.build() {
+        // The engine and its two gates.
+        dep("core_tests/.tests.ae")   // pure-Aether engine behaviour
+        dep("core_tests/.abi.ae")     // C-over-dlopen ABI conformance
+        dep("core_tests/.parity.ae")  // Google PhoneNumberUtilTest baseline
+
+        // Native-FFI bindings.
+        dep("python/.tests.ae")
+        dep("ruby/.tests.ae")
+        dep("go/.tests.ae")
+        dep("rust/.tests.ae")
+        dep("java/aether/.tests.ae")
+        // The top-level javascript/ dir is Google's Closure JS port; the Aether
+        // binding nests under javascript/aether/ to avoid clobbering it.
+        dep("javascript/aether/.tests.ae")
+        dep("dotnet/.tests.ae")
+        dep("dart/.tests.ae")
+        dep("php/.tests.ae")
+        dep("lua/.tests.ae")
+        dep("haskell/.tests.ae")
+        dep("nim/.tests.ae")
+        dep("zig/.tests.ae")
+        dep("pharo/.tests.ae")
+
+        // BEAM family — erlang owns the NIF; elixir and gleam share it.
+        dep("erlang/.tests.ae")
+        dep("elixir/.tests.ae")
+        dep("gleam/.tests.ae")
+
+        // JVM family — thin layers over the Java classes, no second FFI.
+        dep("kotlin/.tests.ae")
+        dep("clojure/.tests.ae")
+        dep("groovy/.tests.ae")
+
+        return 0
+    }
+}

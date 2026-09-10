@@ -1,0 +1,29 @@
+{
+  "name": "phonenumber_ae",
+  "version": "0.1.0",
+  "description": "Validate and format international phone numbers — a koffi binding over the shared Aether libphonenumber engine.",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "lib/",
+    "native/",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node --test test/conformance.test.js"
+  },
+  "keywords": [
+    "phone",
+    "phonenumber",
+    "libphonenumber",
+    "e164",
+    "ffi"
+  ],
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "koffi": "^3.1.4"
+  }
+}

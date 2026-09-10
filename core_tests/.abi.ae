@@ -1,0 +1,37 @@
+// C ABI conformance: a pure-C consumer that dlopens the engine .so and drives
+// every exported symbol — the caller-owned-string contract, the query surface
+// (country code, example, lengths, national-number extraction, isPossible,
+// isValid, number-type, all three format styles) and region enumeration.
+//
+// This is the gate that matters for the bindings. Every language binding is
+// marshalling over exactly these symbols, so if this passes, a binding failure
+// is a binding bug, not an engine one. Keep it in C with nothing but dlopen +
+// dlsym: no language runtime can mask a problem here.
+
+import bldr
+import std.os
+
+aeb(cap) {
+    bldr.build() {
+        dep("core/.build.ae")
+        lib = dep_artifact("core/.build.ae", "shared_lib")
+        root = _get("root")
+        bin = "${root}/target/pn_abi_smoke"
+
+        _m = os.system("mkdir -p \"${root}/target\"")
+
+        rc = os.system("cc -D_GNU_SOURCE -o \"${bin}\" \"${root}/core_tests/abi_smoke.c\" -ldl")
+        if rc != 0 {
+            println("core_tests: failed to compile abi_smoke.c")
+            return 1
+        }
+
+        rc2 = os.system("\"${bin}\" \"${lib}\"")
+        if rc2 != 0 {
+            println("core_tests: the C ABI smoke test reported failures")
+            return 1
+        }
+        println("core_tests: PASS — C ABI conformance")
+        return 0
+    }
+}

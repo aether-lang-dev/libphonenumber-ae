@@ -1,0 +1,430 @@
+// core.gen.generate — compile libphonenumber's metadata XML into a pure-Aether table.
+//
+// libphonenumber's authority is one big XML file (PhoneNumberMetadata.xml,
+// ~250 territories). Like every serious libphonenumber port (Java, JS, C++,
+// Python), we do NOT parse that XML at runtime — we compile it, once, into
+// generated code. This tool is that compile step: it streams the XML with
+// std.xml's pull parser and emits a pure-Aether `metadata.ae` table.
+//
+// Run offline when the metadata changes (from the repo root):
+//     ae run core/gen/generate.ae > core/metadata.ae
+//
+// The XML lives at the repo's canonical location, resources/PhoneNumberMetadata.xml
+// (Google's own copy, Apache-2.0). See PhoneNumberMetadata.xml.PROVENANCE.
+//
+// Scope: full PhoneNumberUtil parity. Per territory we carry the possible-
+// lengths (national + localOnly), the parse attributes (nationalPrefix,
+// nationalPrefixForParsing, nationalPrefixTransformRule, internationalPrefix,
+// preferredExtnPrefix, mainCountryForCode), every display format (pattern,
+// template, leadingDigits, nationalPrefixFormattingRule, intlFormat), the
+// generalDesc pattern, and the per-type national-number patterns (fixedLine,
+// mobile, tollFree, premiumRate, sharedCost, voip, personalNumber, pager, uan,
+// voicemail). A second table, cc_regions(), maps each country code to its
+// ordered region list (main country first) for getRegionCodeForNumber.
+//
+// Fields are separated by a US control byte (0x1F) so a regex's own commas /
+// pipes / brackets never collide with a delimiter; the packed multi-format
+// fields use 0x1E between formats and 0x1D within a format's leadingDigits.
+// The exact row layout is printed in the generated file's header (below) and
+// mirrored by the F_* indices in core/phonenumber.ae.
+
+import std.xml
+import std.string
+import std.list
+import std.file
+
+// The territory-level per-type descriptors we capture, in row order after the
+// six header fields. generalDesc is handled specially (its pattern + lengths).
+fn types() -> ptr {
+    l = list.new()
+    list.add(l, "fixedLine")
+    list.add(l, "mobile")
+    list.add(l, "tollFree")
+    list.add(l, "premiumRate")
+    list.add(l, "sharedCost")
+    list.add(l, "voip")
+    list.add(l, "personalNumber")
+    list.add(l, "pager")
+    list.add(l, "uan")
+    list.add(l, "voicemail")
+    return l
+}
+
+fn index_of_str(l: ptr, s: string) -> int {
+    n = list.size(l)
+    for (i = 0; i < n; i++) {
+        v, _ = list.get(l, i)
+        if v == s { return i }
+    }
+    return -1
+}
+
+// Collapse the whitespace libphonenumber pretty-prints inside element text and
+// attribute values (patterns and lengths span many indented lines in the XML).
+fn squeeze(s: string) -> string {
+    out = ""
+    n = string.length(s)
+    for (i = 0; i < n; i++) {
+        c = string.char_at(s, i)
+        if c == 32 || c == 9 || c == 10 || c == 13 { continue }
+        out = "${out}${string.substring(s, i, i + 1)}"
+    }
+    return out
+}
+
+main() {
+    xmltext, ferr = file.read("resources/PhoneNumberMetadata.xml")
+    if ferr != "" {
+        println("// ERROR reading metadata: ${ferr}")
+        return 1
+    }
+    ty = types()
+    nty = list.size(ty)
+
+    p = xml.parser(xmltext)
+
+    // Emit the module header.
+    println("// core.metadata — GENERATED, do not edit.")
+    println("//")
+    println("// Produced by core/gen/generate.ae from resources/PhoneNumberMetadata.xml")
+    println("// (Apache-2.0, (c) The Libphonenumber Authors). Re-run the generator")
+    println("// to refresh; see core/gen/PhoneNumberMetadata.xml.PROVENANCE.")
+    println("//")
+    println("// Each row is US-separated (0x1F) fields, in this order:")
+    println("//   id | cc | natLengths | localLengths | example |")
+    println("//   nationalPrefix | nationalPrefixForParsing | nationalPrefixTransformRule |")
+    println("//   internationalPrefix | preferredExtnPrefix | mainCountryForCode |")
+    println("//   fmtPatterns | fmtTemplates | fmtLeadingDigits | fmtNationalPrefixRule |")
+    println("//   fmtIntlFormats | general | fixedLine | mobile | tollFree | premiumRate |")
+    println("//   sharedCost | voip | personalNumber | pager | uan | voicemail")
+    println("//")
+    println("// The five fmt* fields each pack ALL of a territory's display formats,")
+    println("// 0x1E-separated and positionally aligned (per-format leadingDigits are")
+    println("// further 0x1D-separated). Per-type fields are national-number regexes")
+    println("// (isValidNumber). See core/phonenumber.ae for the F_* field indices.")
+    println("")
+    println("import std.list")
+    println("")
+    println("exports(rows, SEP, cc_regions)")
+    println("")
+    println("// The field separator used in every row (US control byte, 0x1F).")
+    println("SEP() -> string { return \"\\x1f\" }")
+    println("")
+    println("rows() -> ptr {")
+    println("    l = list.new()")
+
+    // cc -> ordered region list, for getRegionCodeForNumber. Accumulated as we
+    // stream; emitted as cc_regions() after rows(). Each entry: "cc=R1,R2,..".
+    cc_map = list.new()
+
+    // Per-territory streaming state.
+    in_territory = 0
+    cur_id = ""
+    cur_cc = ""
+    cur_example = ""
+    cur_natlengths = ""     // territory-wide union (generalDesc, fallback fixedLine)
+    cur_locallengths = ""   // generalDesc localOnly lengths (IS_POSSIBLE_LOCAL_ONLY)
+    fixed_lengths = ""      // fallback source
+    have_natlengths = 0
+    // Territory-level parse/format attributes (from <territory ...>).
+    cur_natprefix = ""      // nationalPrefix (e.g. "0", "1")
+    cur_npparsing = ""      // nationalPrefixForParsing (regex; defaults to natprefix)
+    cur_nptransform = ""    // nationalPrefixTransformRule
+    cur_intlprefix = ""     // internationalPrefix (IDD)
+    cur_extnprefix = ""     // preferredExtnPrefix
+    cur_maincountry = ""    // mainCountryForCode ("true"/"")
+    // ALL display formats, 0x1E-joined and positionally aligned. Each format
+    // carries pattern, template, leadingDigits, nationalPrefixFormattingRule and
+    // intlFormat so the engine can route by leadingDigits (as upstream does)
+    // and apply the national-prefix formatting rule.
+    fmt_patterns = ""       // patterns, 0x1E-joined
+    fmt_templates = ""      // national-format templates, 0x1E-joined
+    fmt_leading = ""        // leadingDigits (0x1D-joined per format if several), 0x1E-joined
+    fmt_npr = ""            // nationalPrefixFormattingRule, 0x1E-joined
+    fmt_intl = ""           // intlFormat (or "" = same as national; "NA" = not dialable), 0x1E-joined
+    pend_pattern = ""       // the pattern of the numberFormat we're inside
+    pend_npr = ""           // its nationalPrefixFormattingRule
+    pend_leading = ""       // its accumulated leadingDigits
+    pend_have_fmt = 0       // has the national <format> for this numberFormat been seen?
+    cur_general = ""        // generalDesc national-number pattern
+
+    // Which per-type element we are currently inside (index into ty, or -1).
+    // generalDesc is tracked separately with in_general.
+    cur_type = -1
+    in_general = 0
+    // Per-type national-number patterns for the current territory.
+    typ_pat = list.new()    // rebuilt per territory below
+
+    // What element's text are we about to read next?
+    pending = ""
+
+    ev = xml.next(p)
+    while ev != xml.EVENT_EOF && ev != xml.EVENT_ERROR {
+        if ev == xml.EVENT_START {
+            nm = xml.name(p)
+            if nm == "territory" {
+                in_territory = 1
+                cur_id = xml.attr(p, "id")
+                cur_cc = xml.attr(p, "countryCode")
+                cur_natprefix = xml.attr(p, "nationalPrefix")
+                cur_npparsing = xml.attr(p, "nationalPrefixForParsing")
+                cur_nptransform = xml.attr(p, "nationalPrefixTransformRule")
+                cur_intlprefix = xml.attr(p, "internationalPrefix")
+                cur_extnprefix = xml.attr(p, "preferredExtnPrefix")
+                cur_maincountry = xml.attr(p, "mainCountryForCode")
+                cur_example = ""
+                cur_natlengths = ""
+                cur_locallengths = ""
+                fixed_lengths = ""
+                have_natlengths = 0
+                fmt_patterns = ""
+                fmt_templates = ""
+                fmt_leading = ""
+                fmt_npr = ""
+                fmt_intl = ""
+                pend_pattern = ""
+                pend_npr = ""
+                pend_leading = ""
+                pend_have_fmt = 0
+                cur_general = ""
+                cur_type = -1
+                in_general = 0
+                // fresh per-type pattern slots, all ""
+                list.free(typ_pat)
+                typ_pat = list.new()
+                for (t = 0; t < nty; t++) { list.add(typ_pat, "") }
+            } else if in_territory == 1 {
+                if nm == "generalDesc" { in_general = 1 }
+                else {
+                    ti = index_of_str(ty, nm)
+                    if ti >= 0 { cur_type = ti }
+                }
+                // nationalNumberPattern text: capture for general or the type.
+                if nm == "nationalNumberPattern" {
+                    if in_general == 1 { pending = "general-nnp" }
+                    else if cur_type >= 0 { pending = "type-nnp" }
+                }
+                // possibleLengths: territory union from generalDesc (national +
+                // localOnly), else remember fixedLine's national as a fallback.
+                if nm == "possibleLengths" {
+                    natl = xml.attr(p, "national")
+                    if in_general == 1 {
+                        cur_natlengths = natl; have_natlengths = 1
+                        cur_locallengths = xml.attr(p, "localOnly")
+                    }
+                    else if cur_type == index_of_str(ty, "fixedLine") && fixed_lengths == "" {
+                        fixed_lengths = natl
+                    }
+                }
+                // fixedLine example is the display example.
+                if nm == "exampleNumber" && cur_type == index_of_str(ty, "fixedLine") && cur_example == "" {
+                    pending = "example-text"
+                }
+                // Every display format: capture pattern + nationalPrefixFormattingRule
+                // at <numberFormat>, accumulate <leadingDigits>, then pair with the
+                // first <format> (national) and optional <intlFormat>.
+                if nm == "numberFormat" {
+                    pend_pattern = squeeze(xml.attr(p, "pattern"))
+                    pend_npr = squeeze(xml.attr(p, "nationalPrefixFormattingRule"))
+                    pend_leading = ""
+                    pend_have_fmt = 0
+                }
+                if nm == "leadingDigits" && pend_pattern != "" { pending = "leading-text" }
+                if nm == "format" && pend_pattern != "" && pend_have_fmt == 0 { pending = "format-text" }
+                if nm == "intlFormat" && pend_have_fmt == 1 { pending = "intl-text" }
+            }
+        } else if ev == xml.EVENT_TEXT {
+            if pending == "general-nnp" { cur_general = squeeze(xml.text(p)); pending = "" }
+            else if pending == "type-nnp" {
+                if cur_type >= 0 {
+                    prev, _ = list.get(typ_pat, cur_type)
+                    if prev == "" { list.set(typ_pat, cur_type, squeeze(xml.text(p))) }
+                }
+                pending = ""
+            }
+            else if pending == "example-text" { cur_example = squeeze(xml.text(p)); pending = "" }
+            else if pending == "leading-text" {
+                // Accumulate this numberFormat's leadingDigits (there may be
+                // several <leadingDigits> — join with 0x1D). Whitespace inside a
+                // leadingDigits regex is insignificant, so squeeze it.
+                ld = squeeze(xml.text(p))
+                gs = string.from_char(29)   // 0x1D group separator
+                if pend_leading == "" { pend_leading = ld }
+                else { pend_leading = "${pend_leading}${gs}${ld}" }
+                pending = ""
+            }
+            else if pending == "format-text" {
+                // The national <format> for this numberFormat. Append a full,
+                // positionally-aligned record across the five format lists.
+                // Templates are single-line with significant spaces (e.g.
+                // "($1) $2-$3"), so trim ends but do NOT squeeze interior space.
+                tmpl = string.trim(xml.text(p))
+                rs = string.from_char(30)   // 0x1E record separator
+                if fmt_patterns == "" {
+                    fmt_patterns = pend_pattern
+                    fmt_templates = tmpl
+                    fmt_leading = pend_leading
+                    fmt_npr = pend_npr
+                    fmt_intl = ""   // default: intl == national; overwritten by intl-text
+                } else {
+                    fmt_patterns = "${fmt_patterns}${rs}${pend_pattern}"
+                    fmt_templates = "${fmt_templates}${rs}${tmpl}"
+                    fmt_leading = "${fmt_leading}${rs}${pend_leading}"
+                    fmt_npr = "${fmt_npr}${rs}${pend_npr}"
+                    fmt_intl = "${fmt_intl}${rs}"
+                }
+                pend_have_fmt = 1   // ready for an optional <intlFormat>
+                pending = ""
+            }
+            else if pending == "intl-text" {
+                // <intlFormat> overrides the last record's intl slot. "NA" means
+                // "not internationally dialable"; a template means a distinct
+                // international grouping. Rewrite the final 0x1E record of fmt_intl.
+                itmpl = string.trim(xml.text(p))
+                fmt_intl = replace_last_record(fmt_intl, itmpl)
+                pending = ""
+            }
+        } else if ev == xml.EVENT_END {
+            nm = xml.name(p)
+            if nm == "generalDesc" { in_general = 0 }
+            else if index_of_str(ty, nm) >= 0 { cur_type = -1 }
+            // A numberFormat closed: reset per-format pending state so the next
+            // one's <format> is captured (pend_have_fmt gated it).
+            if nm == "numberFormat" { pend_pattern = ""; pend_npr = ""; pend_leading = ""; pend_have_fmt = 0 }
+            if nm == "territory" {
+                if cur_cc != "" && cur_id != "" {
+                    lengths = cur_natlengths
+                    if have_natlengths == 0 { lengths = fixed_lengths }
+                    // nationalPrefixForParsing defaults to the plain nationalPrefix.
+                    npparse = cur_npparsing
+                    if npparse == "" { npparse = cur_natprefix }
+                    // Assemble the row with the US separator (0x1F).
+                    row = join_fields(cur_id, cur_cc, lengths, cur_locallengths,
+                        cur_example, cur_natprefix, npparse, cur_nptransform,
+                        cur_intlprefix, cur_extnprefix, cur_maincountry,
+                        fmt_patterns, fmt_templates, fmt_leading, fmt_npr, fmt_intl,
+                        cur_general, typ_pat, nty)
+                    println("    list.add(l, \"${esc(row)}\")")
+                    // Record cc -> region for the region-detection map. The
+                    // mainCountryForCode territory sorts first in its cc's list.
+                    cc_add(cc_map, cur_cc, cur_id, cur_maincountry)
+                }
+                in_territory = 0
+            }
+        }
+        ev = xml.next(p)
+    }
+
+    println("    return l")
+    println("}")
+    println("")
+
+    // Emit the cc -> region-list map. Rows are "cc<0x1F>R1,R2,..", the main
+    // country (mainCountryForCode) first. Used by getRegionCodeForNumber and
+    // getRegionCodesForCountryCode.
+    println("// cc -> ordered region list (main country first), 0x1F-separated:")
+    println("//   \"1<US>US,CA,...\"  where <US> is the 0x1F byte.")
+    println("cc_regions() -> ptr {")
+    println("    l = list.new()")
+    ncc = list.size(cc_map)
+    for (i = 0; i < ncc; i++) {
+        entry, _ = list.get(cc_map, i)
+        // entry is "cc\x1fR1,R2,.." already; emit as a literal.
+        println("    list.add(l, \"${esc(entry)}\")")
+    }
+    println("    return l")
+    println("}")
+
+    xml.free(p)
+    list.free(ty)
+    list.free(typ_pat)
+    list.free(cc_map)
+    return 0
+}
+
+// cc_add(map, cc, region, mainCountry) — append region to cc's entry, putting a
+// mainCountryForCode region at the FRONT (upstream tries the main country first).
+// Entries are "cc\x1fR1,R2,.." (the cc, a 0x1F, then comma-joined regions).
+fn cc_add(map: ptr, cc: string, region: string, is_main: string) {
+    sep = string.from_char(31)
+    n = list.size(map)
+    for (i = 0; i < n; i++) {
+        e, _ = list.get(map, i)
+        // does this entry start with "cc\x1f"?
+        prefix = "${cc}${sep}"
+        if starts_with(e, prefix) == 1 {
+            regions = string.substring(e, string.length(prefix), string.length(e))
+            if is_main == "true" { regions = "${region},${regions}" }
+            else { regions = "${regions},${region}" }
+            list.set(map, i, "${prefix}${regions}")
+            return
+        }
+    }
+    // first region for this cc
+    list.add(map, "${cc}${sep}${region}")
+}
+
+fn starts_with(s: string, prefix: string) -> int {
+    lp = string.length(prefix)
+    if string.length(s) < lp { return 0 }
+    if string.substring(s, 0, lp) == prefix { return 1 }
+    return 0
+}
+
+// Replace the final 0x1E-separated record of `s` with `val`.
+fn replace_last_record(s: string, val: string) -> string {
+    n = string.length(s)
+    last = -1
+    for (i = 0; i < n; i++) {
+        if string.char_at(s, i) == 30 { last = i }
+    }
+    if last < 0 { return val }   // single record
+    return "${string.substring(s, 0, last + 1)}${val}"
+}
+
+// Build one row string, fields joined by the 0x1F separator. Field order MUST
+// match core/phonenumber.ae's F_* indices.
+fn join_fields(id: string, cc: string, natlengths: string, locallengths: string,
+    example: string, natprefix: string, npparsing: string, nptransform: string,
+    intlprefix: string, extnprefix: string, maincountry: string,
+    fmt_patterns: string, fmt_templates: string, fmt_leading: string,
+    fmt_npr: string, fmt_intl: string, general: string, typ_pat: ptr, nty: int) -> string {
+    sep = string.from_char(31)
+    row = "${id}${sep}${cc}${sep}${natlengths}${sep}${locallengths}${sep}${example}"
+    row = "${row}${sep}${natprefix}${sep}${npparsing}${sep}${nptransform}"
+    row = "${row}${sep}${intlprefix}${sep}${extnprefix}${sep}${maincountry}"
+    row = "${row}${sep}${fmt_patterns}${sep}${fmt_templates}${sep}${fmt_leading}"
+    row = "${row}${sep}${fmt_npr}${sep}${fmt_intl}${sep}${general}"
+    for (t = 0; t < nty; t++) {
+        v, _ = list.get(typ_pat, t)
+        row = "${row}${sep}${v}"
+    }
+    return row
+}
+
+// Escape a value for embedding in a double-quoted .ae string literal.
+// The 0x1F separator is emitted as the 4-char sequence \x1f so the literal
+// stays printable-ASCII.
+//
+// IMPORTANT: build the escaped output with string.concat + from_char, NOT with
+// "${out}\\..." interpolation. Aether's escape handling inside an interpolated
+// string collapses "\\\\" to a SINGLE backslash, so an interpolation-built
+// escaper silently drops the doubling and every "\d" in a regex loses its
+// backslash — which reads back as a literal 'd' and makes every isValidNumber
+// check fail. from_char(92) is an unambiguous literal backslash.
+fn esc(s: string) -> string {
+    bs = string.from_char(92)   // backslash
+    q = string.from_char(34)    // double quote
+    out = ""
+    n = string.length(s)
+    for (i = 0; i < n; i++) {
+        c = string.char_at(s, i)
+        if c == 34 { out = string.concat(out, string.concat(bs, q)) }        // \"
+        else if c == 92 { out = string.concat(out, string.concat(bs, bs)) }  // \\
+        else if c == 31 { out = string.concat(out, string.concat(bs, "x1f")) } // \x1f US
+        else if c == 30 { out = string.concat(out, string.concat(bs, "x1e")) } // \x1e RS
+        else if c == 29 { out = string.concat(out, string.concat(bs, "x1d")) } // \x1d GS
+        else { out = string.concat(out, string.substring(s, i, i + 1)) }
+    }
+    return out
+}

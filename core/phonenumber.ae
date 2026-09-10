@@ -1,0 +1,1450 @@
+// core.phonenumber — a pure-Aether libphonenumber engine (PhoneNumberUtil parity).
+//
+// Derived from Google's libphonenumber (Apache-2.0) by compiling its metadata
+// XML into a generated table (core/metadata.ae). No XML at runtime — every
+// serious libphonenumber port compiles the metadata once, and so do we.
+//
+// This module is the whole core engine: parse (with national-prefix, IDD and
+// extension handling), region detection, isPossible/isValid (with reasons),
+// getNumberType, isNumberMatch, the full formatter set, and a range of helpers,
+// plus the primitives the stateful features (AsYouTypeFormatter, matcher) build
+// on. The parsed-number value is a plain string (see PN_* accessors) so it can
+// cross the C ABI as a caller-owned string with no handle.
+//
+// The metadata table is the authority (core/metadata.ae). This module reads it
+// into rows and answers questions over one row at a time, plus a cc->region map
+// (metadata.cc_regions) for getRegionCodeForNumber.
+
+import std.string
+import std.list
+import std.regex
+import core.metadata
+
+exports(
+    // --- metadata queries ---
+    country_code, example_number, example_number_for_type, invalid_example_number,
+    possible_lengths, regions, region_count, region_at,
+    country_code_for_region, region_code_for_country_code, regions_for_country_code,
+    is_nanpa_country, is_geographical, ndd_prefix_for_region,
+    // --- parse ---
+    parse, national_number,
+    // parsed-number accessors (a parsed number is a \x1f-joined string)
+    pn_region, pn_country_code, pn_national_number, pn_extension,
+    pn_italian_leading_zero, pn_source, pn_error,
+    // --- validation ---
+    is_possible_number, is_possible_number_with_reason, is_possible_short,
+    is_valid_number, is_valid_number_for_region, number_type,
+    region_code_for_number,
+    // --- formatting ---
+    format, format_national, format_international, format_e164, format_rfc3966,
+    format_out_of_country, format_in_original,
+    national_significant_number, length_of_ndc, length_of_area_code,
+    // --- number relations / helpers ---
+    is_number_match, truncate_too_long, normalize_digits_only,
+    convert_alpha_characters, is_alpha_number, can_be_internationally_dialled,
+    digits,
+    // --- number-type constants ---
+    TYPE_UNKNOWN, TYPE_FIXED_LINE, TYPE_MOBILE, TYPE_TOLL_FREE,
+    TYPE_PREMIUM_RATE, TYPE_SHARED_COST, TYPE_VOIP, TYPE_PERSONAL_NUMBER,
+    TYPE_PAGER, TYPE_UAN, TYPE_VOICEMAIL,
+    // --- format-style constants ---
+    FMT_E164, FMT_INTERNATIONAL, FMT_NATIONAL, FMT_RFC3966,
+    // --- ValidationResult constants ---
+    VR_IS_POSSIBLE, VR_IS_POSSIBLE_LOCAL_ONLY, VR_INVALID_COUNTRY_CODE,
+    VR_TOO_SHORT, VR_INVALID_LENGTH, VR_TOO_LONG,
+    // --- MatchType constants ---
+    MATCH_NOT_A_NUMBER, MATCH_NO_MATCH, MATCH_SHORT_NSN, MATCH_NSN, MATCH_EXACT,
+    // --- CountryCodeSource constants ---
+    SRC_FROM_NUMBER_WITH_PLUS, SRC_FROM_NUMBER_WITH_IDD,
+    SRC_FROM_NUMBER_WITHOUT_PLUS, SRC_FROM_DEFAULT_COUNTRY
+)
+
+// PhoneNumberType (getNumberType). TYPE_UNKNOWN is -1 like upstream.
+const TYPE_UNKNOWN = -1
+const TYPE_FIXED_LINE = 0
+const TYPE_MOBILE = 1
+const TYPE_TOLL_FREE = 2
+const TYPE_PREMIUM_RATE = 3
+const TYPE_SHARED_COST = 4
+const TYPE_VOIP = 5
+const TYPE_PERSONAL_NUMBER = 6
+const TYPE_PAGER = 7
+const TYPE_UAN = 8
+const TYPE_VOICEMAIL = 9
+
+// PhoneNumberFormat.
+const FMT_E164 = 0
+const FMT_INTERNATIONAL = 1
+const FMT_NATIONAL = 2
+const FMT_RFC3966 = 3
+
+// ValidationResult (isPossibleNumberWithReason).
+const VR_IS_POSSIBLE = 0
+const VR_IS_POSSIBLE_LOCAL_ONLY = 4
+const VR_INVALID_COUNTRY_CODE = 1
+const VR_TOO_SHORT = 2
+const VR_INVALID_LENGTH = 5
+const VR_TOO_LONG = 3
+
+// MatchType (isNumberMatch).
+const MATCH_NOT_A_NUMBER = 0
+const MATCH_NO_MATCH = 1
+const MATCH_SHORT_NSN = 2
+const MATCH_NSN = 3
+const MATCH_EXACT = 4
+
+// CountryCodeSource (parse provenance).
+const SRC_FROM_NUMBER_WITH_PLUS = 1
+const SRC_FROM_NUMBER_WITH_IDD = 5
+const SRC_FROM_NUMBER_WITHOUT_PLUS = 10
+const SRC_FROM_DEFAULT_COUNTRY = 20
+
+// The +1 (North American Numbering Plan) country calling code.
+const NANPA_CC = "1"
+
+// Field indices into a metadata row. MUST match core/gen/generate.ae's layout.
+const F_ID = 0
+const F_CC = 1
+const F_LENGTHS = 2
+const F_LOCAL_LENGTHS = 3
+const F_EXAMPLE = 4
+const F_NAT_PREFIX = 5
+const F_NP_PARSING = 6
+const F_NP_TRANSFORM = 7
+const F_INTL_PREFIX = 8
+const F_EXTN_PREFIX = 9
+const F_MAIN_COUNTRY = 10
+const F_FMT_PATTERNS = 11
+const F_FMT_TEMPLATES = 12
+const F_FMT_LEADING = 13
+const F_FMT_NPR = 14
+const F_FMT_INTL = 15
+const F_GENERAL = 16
+// Per-type national-number patterns start here, in this order:
+const F_FIXED_LINE = 17
+const F_MOBILE = 18
+const F_TOLL_FREE = 19
+const F_PREMIUM_RATE = 20
+const F_SHARED_COST = 21
+const F_VOIP = 22
+const F_PERSONAL_NUMBER = 23
+const F_PAGER = 24
+const F_UAN = 25
+const F_VOICEMAIL = 26
+
+// ===========================================================================
+// row access
+// ===========================================================================
+
+fn sep_char() -> int { return 31 }   // 0x1F field separator
+fn rec_char() -> int { return 30 }   // 0x1E record separator (within packed fields)
+
+// Return an independent copy of `s`. A value read from a list via list.get is a
+// borrowed pointer into the list's storage; it dangles once the list is freed.
+// dup() copies the bytes into a fresh ref-counted string that outlives the free.
+// (string.concat with "" produces such a copy — verified.)
+fn dup(s: string) -> string { return string.concat(s, "") }
+
+// The idx-th 0x1F-delimited field of a metadata row.
+fn field(row: string, idx: int) -> string {
+    sc = sep_char()
+    start = 0
+    seen = 0
+    n = string.length(row)
+    for (i = 0; i <= n; i++) {
+        at = 0
+        if i == n { at = 1 } else { if string.char_at(row, i) == sc { at = 1 } }
+        if at == 1 {
+            if seen == idx { return string.substring(row, start, i) }
+            seen = seen + 1
+            start = i + 1
+        }
+    }
+    return ""
+}
+
+// Find the metadata row whose id matches `region` (case-insensitive), or "".
+fn row_for(region: string) -> string {
+    rows = metadata.rows()
+    up = string.to_upper(region)
+    out = ""
+    n = list.size(rows)
+    for (i = 0; i < n; i++) {
+        r, _ = list.get(rows, i)
+        if field(r, F_ID) == up { out = dup(r); break }
+    }
+    list.free(rows)
+    return out
+}
+
+// The metadata row for the MAIN region of a country calling code, or "". Used
+// when we only know a cc (e.g. after parse) and need generic metadata.
+fn row_for_cc(cc: string) -> string {
+    regs = regions_for_country_code(cc)
+    out = ""
+    if list.size(regs) > 0 {
+        mreg, _ = list.get(regs, 0)
+        out = row_for(mreg)
+    }
+    list.free(regs)
+    return out
+}
+
+// Every region id the table carries, in table order.
+regions() -> ptr {
+    rows = metadata.rows()
+    l = list.new()
+    n = list.size(rows)
+    for (i = 0; i < n; i++) {
+        r, _ = list.get(rows, i)
+        list.add(l, field(r, F_ID))
+    }
+    list.free(rows)
+    return l
+}
+
+region_count() -> int {
+    rows = metadata.rows()
+    n = list.size(rows)
+    list.free(rows)
+    return n
+}
+
+region_at(idx: int) -> string {
+    rows = metadata.rows()
+    out = ""
+    if idx >= 0 && idx < list.size(rows) {
+        r, _ = list.get(rows, idx)
+        out = field(r, F_ID)
+    }
+    list.free(rows)
+    return out
+}
+
+// ===========================================================================
+// record helpers (for the packed multi-format fields)
+// ===========================================================================
+
+fn count_records(s: string) -> int {
+    if string.length(s) == 0 { return 0 }
+    rc = rec_char()
+    n = 1
+    len = string.length(s)
+    for (i = 0; i < len; i++) {
+        if string.char_at(s, i) == rc { n = n + 1 }
+    }
+    return n
+}
+
+fn record_at(s: string, idx: int) -> string {
+    rc = rec_char()
+    start = 0
+    seen = 0
+    n = string.length(s)
+    for (i = 0; i <= n; i++) {
+        at = 0
+        if i == n { at = 1 } else { if string.char_at(s, i) == rc { at = 1 } }
+        if at == 1 {
+            if seen == idx { return string.substring(s, start, i) }
+            seen = seen + 1
+            start = i + 1
+        }
+    }
+    return ""
+}
+
+// ===========================================================================
+// digit / string primitives
+// ===========================================================================
+
+// Keep only ASCII digits 0-9.
+digits(s: string) -> string {
+    out = ""
+    n = string.length(s)
+    for (i = 0; i < n; i++) {
+        c = string.char_at(s, i)
+        if c >= 48 && c <= 57 { out = "${out}${string.substring(s, i, i + 1)}" }
+    }
+    return out
+}
+
+// normalizeDigitsOnly: keep only digits (alias of `digits`, upstream name).
+normalize_digits_only(s: string) -> string { return digits(s) }
+
+// Map a single ASCII letter to its phone-keypad digit, or -1 if not a letter.
+fn alpha_to_digit(c: int) -> int {
+    // uppercase the letter
+    ch = c
+    if ch >= 97 && ch <= 122 { ch = ch - 32 }
+    if ch < 65 || ch > 90 { return -1 }
+    // A-C=2 D-F=3 G-I=4 J-L=5 M-O=6 P-S=7 T-V=8 W-Z=9
+    if ch <= 67 { return 2 }
+    if ch <= 70 { return 3 }
+    if ch <= 73 { return 4 }
+    if ch <= 76 { return 5 }
+    if ch <= 79 { return 6 }
+    if ch <= 83 { return 7 }
+    if ch <= 86 { return 8 }
+    return 9
+}
+
+// convertAlphaCharactersInNumber: replace letters with keypad digits, keep the
+// rest (so "1-800-FLOWERS" -> "1-800-3569377").
+convert_alpha_characters(s: string) -> string {
+    out = ""
+    n = string.length(s)
+    for (i = 0; i < n; i++) {
+        c = string.char_at(s, i)
+        d = alpha_to_digit(c)
+        if d >= 0 { out = "${out}${string.from_int(d)}" }
+        else { out = "${out}${string.substring(s, i, i + 1)}" }
+    }
+    return out
+}
+
+// isAlphaNumber: does the input contain at least one letter (that upstream
+// would treat as a vanity-number letter)? A rough but faithful check: contains
+// a letter after the optional leading +cc.
+is_alpha_number(s: string) -> int {
+    n = string.length(s)
+    for (i = 0; i < n; i++) {
+        c = string.char_at(s, i)
+        if (c >= 65 && c <= 90) || (c >= 97 && c <= 122) { return 1 }
+    }
+    return 0
+}
+
+// ===========================================================================
+// possible-length checking
+// ===========================================================================
+
+// Does `len` satisfy a lengths spec (comma list of "N" and "[lo-hi]" tokens)?
+fn length_ok(spec: string, len: int) -> int {
+    if string.length(spec) == 0 { return 0 }
+    start = 0
+    n = string.length(spec)
+    for (i = 0; i <= n; i++) {
+        at = 0
+        if i == n { at = 1 } else { if string.char_at(spec, i) == 44 { at = 1 } }
+        if at == 1 {
+            tok = string.substring(spec, start, i)
+            if token_matches(tok, len) == 1 { return 1 }
+            start = i + 1
+        }
+    }
+    return 0
+}
+
+fn token_matches(tok: string, len: int) -> int {
+    if string.length(tok) == 0 { return 0 }
+    if string.char_at(tok, 0) == 91 {   // '[' -> [lo-hi]
+        inner = string.substring(tok, 1, string.length(tok) - 1)
+        dash = string.index_of(inner, "-")
+        if dash < 0 {
+            v, e = string.to_int(inner)
+            if e == "" && v == len { return 1 }
+            return 0
+        }
+        lo, le = string.to_int(string.substring(inner, 0, dash))
+        hi, he = string.to_int(string.substring(inner, dash + 1, string.length(inner)))
+        if le == "" && he == "" && len >= lo && len <= hi { return 1 }
+        return 0
+    }
+    v, e = string.to_int(tok)
+    if e == "" && v == len { return 1 }
+    return 0
+}
+
+// The smallest / largest length in a spec (for TOO_SHORT / TOO_LONG reasons).
+fn min_length(spec: string) -> int {
+    best = -1
+    n = string.length(spec)
+    start = 0
+    for (i = 0; i <= n; i++) {
+        at = 0
+        if i == n { at = 1 } else { if string.char_at(spec, i) == 44 { at = 1 } }
+        if at == 1 {
+            lo = token_low(string.substring(spec, start, i))
+            if lo >= 0 && (best < 0 || lo < best) { best = lo }
+            start = i + 1
+        }
+    }
+    return best
+}
+
+fn max_length(spec: string) -> int {
+    best = -1
+    n = string.length(spec)
+    start = 0
+    for (i = 0; i <= n; i++) {
+        at = 0
+        if i == n { at = 1 } else { if string.char_at(spec, i) == 44 { at = 1 } }
+        if at == 1 {
+            hi = token_high(string.substring(spec, start, i))
+            if hi > best { best = hi }
+            start = i + 1
+        }
+    }
+    return best
+}
+
+fn token_low(tok: string) -> int {
+    if string.length(tok) == 0 { return -1 }
+    if string.char_at(tok, 0) == 91 {
+        inner = string.substring(tok, 1, string.length(tok) - 1)
+        dash = string.index_of(inner, "-")
+        if dash < 0 {
+            v, e = string.to_int(inner)
+            if e == "" { return v }
+            return -1
+        }
+        lo, le = string.to_int(string.substring(inner, 0, dash))
+        if le == "" { return lo }
+        return -1
+    }
+    v, e = string.to_int(tok)
+    if e == "" { return v }
+    return -1
+}
+
+fn token_high(tok: string) -> int {
+    if string.length(tok) == 0 { return -1 }
+    if string.char_at(tok, 0) == 91 {
+        inner = string.substring(tok, 1, string.length(tok) - 1)
+        dash = string.index_of(inner, "-")
+        if dash < 0 {
+            v, e = string.to_int(inner)
+            if e == "" { return v }
+            return -1
+        }
+        hi, he = string.to_int(string.substring(inner, dash + 1, string.length(inner)))
+        if he == "" { return hi }
+        return -1
+    }
+    v, e = string.to_int(tok)
+    if e == "" { return v }
+    return -1
+}
+
+// ===========================================================================
+// regex full-match
+// ===========================================================================
+
+// Does the whole of `s` match the national-number pattern `pat`? Anchored
+// ^(?:...)$ because libphonenumber patterns are full matches.
+fn full_match(pat: string, s: string) -> int {
+    if string.length(pat) == 0 { return 0 }
+    anchored = "^(?:${pat})$"
+    re, err = regex.compile(anchored)
+    if err != "" { return 0 }
+    m = regex.matches(re, s)
+    regex.free(re)
+    if m == 1 { return 1 }
+    return 0
+}
+
+// Does `s` start with a match of `pat` (prefix match, anchored at start only)?
+fn prefix_match(pat: string, s: string) -> int {
+    if string.length(pat) == 0 { return 1 }   // empty leadingDigits = always
+    anchored = "^(?:${pat})"
+    re, err = regex.compile(anchored)
+    if err != "" { return 0 }
+    caps, cerr = regex.captures(re, s)
+    ok = 0
+    if cerr == "" && caps != null { ok = 1; regex.captures_free(caps) }
+    regex.free(re)
+    return ok
+}
+
+// ===========================================================================
+// parsed-number value + accessors
+//
+// A parsed number is a plain \x1f-joined string so it can cross the C ABI as a
+// caller-owned string with no handle:
+//
+//   region | cc | nationalNumber | extension | italianLeadingZero | source | error
+//
+// `error` is non-empty when parsing failed (the other fields are then empty).
+// Callers read fields via the pn_* accessors below.
+// ===========================================================================
+
+fn make_pn(region: string, cc: string, nn: string, ext: string, ilz: int, src: int) -> string {
+    sep = string.from_char(31)
+    ilzs = "0"
+    if ilz == 1 { ilzs = "1" }
+    return "${region}${sep}${cc}${sep}${nn}${sep}${ext}${sep}${ilzs}${sep}${string.from_int(src)}${sep}"
+}
+
+fn make_pn_error(msg: string) -> string {
+    sep = string.from_char(31)
+    return "${sep}${sep}${sep}${sep}0${sep}0${sep}${msg}"
+}
+
+pn_region(pn: string) -> string { return field(pn, 0) }
+pn_country_code(pn: string) -> string { return field(pn, 1) }
+pn_national_number(pn: string) -> string { return field(pn, 2) }
+pn_extension(pn: string) -> string { return field(pn, 3) }
+pn_italian_leading_zero(pn: string) -> int {
+    if field(pn, 4) == "1" { return 1 }
+    return 0
+}
+pn_source(pn: string) -> int {
+    v, e = string.to_int(field(pn, 5))
+    if e == "" { return v }
+    return SRC_FROM_DEFAULT_COUNTRY
+}
+pn_error(pn: string) -> string { return field(pn, 6) }
+
+// ===========================================================================
+// extension extraction
+// ===========================================================================
+
+// Split off a phone extension. Returns (number-without-extension, extension).
+// Handles the common textual markers (ext, ext., x, #, RFC3966 ;ext=), which
+// covers the great majority of real inputs.
+fn split_extension(input: string) -> (string, string) {
+    // RFC3966 ;ext=
+    p = string.index_of(input, ";ext=")
+    if p >= 0 {
+        return string.substring(input, 0, p), digits(string.substring(input, p + 5, string.length(input)))
+    }
+    // textual markers, longest first
+    markers = ext_markers()
+    n = list.size(markers)
+    for (i = 0; i < n; i++) {
+        m, _ = list.get(markers, i)
+        idx = index_of_ci(input, m)
+        if idx >= 0 {
+            ext = digits(string.substring(input, idx + string.length(m), string.length(input)))
+            if string.length(ext) > 0 {
+                list.free(markers)
+                return string.substring(input, 0, idx), ext
+            }
+        }
+    }
+    list.free(markers)
+    return input, ""
+}
+
+fn ext_markers() -> ptr {
+    l = list.new()
+    list.add(l, " ext. ")
+    list.add(l, " ext ")
+    list.add(l, "ext.")
+    list.add(l, "extn")
+    list.add(l, "ext")
+    list.add(l, " x")
+    list.add(l, "#")
+    return l
+}
+
+// case-insensitive index_of
+fn index_of_ci(hay: string, needle: string) -> int {
+    return string.index_of(string.to_lower(hay), string.to_lower(needle))
+}
+
+// ===========================================================================
+// parse
+// ===========================================================================
+
+// parse(input, defaultRegion) -> a parsed-number string (see pn_* accessors).
+// Faithful to upstream's pipeline: strip extension, detect/strip the country
+// code (from a leading +, an IDD prefix, or the default region), strip the
+// national prefix, and record the CountryCodeSource. On failure the result
+// carries a non-empty pn_error.
+parse(input: string, default_region: string) -> string {
+    if string.length(string.trim(input)) == 0 { return make_pn_error("NOT_A_NUMBER: empty") }
+
+    // 1. Extension.
+    body, ext = split_extension(input)
+
+    // 2. Convert vanity letters to digits before stripping.
+    body = convert_alpha_characters(body)
+
+    had_plus = string.index_of(body, "+") >= 0
+    ds = digits(body)
+    if string.length(ds) == 0 { return make_pn_error("NOT_A_NUMBER: no digits") }
+
+    // 3. Determine the country code + national number.
+    cc = ""
+    nn = ds
+    src = SRC_FROM_DEFAULT_COUNTRY
+    def_row = row_for(default_region)
+
+    if had_plus == 1 {
+        // The digits after + start with a country code.
+        cc, nn = extract_cc(ds)
+        if cc == "" { return make_pn_error("INVALID_COUNTRY_CODE") }
+        src = SRC_FROM_NUMBER_WITH_PLUS
+    } else {
+        // Try the default region's IDD prefix, then its own cc, else national.
+        if def_row != "" {
+            idd = field(def_row, F_INTL_PREFIX)
+            stripped = strip_idd(ds, idd)
+            if stripped != "" && stripped != ds {
+                // IDD stripped -> the remainder starts with a country code.
+                c2, n2 = extract_cc(stripped)
+                if c2 != "" { cc = c2; nn = n2; src = SRC_FROM_NUMBER_WITH_IDD }
+            }
+            if cc == "" {
+                dcc = field(def_row, F_CC)
+                // If digits start with the default cc AND that leaves a valid-length
+                // national number, treat the cc as present-without-plus.
+                if string.length(ds) > string.length(dcc) &&
+                   string.substring(ds, 0, string.length(dcc)) == dcc {
+                    rest = string.substring(ds, string.length(dcc), string.length(ds))
+                    if length_ok(field(def_row, F_LENGTHS), string.length(strip_national_prefix_row(def_row, rest))) == 1 {
+                        cc = dcc; nn = rest; src = SRC_FROM_NUMBER_WITHOUT_PLUS
+                    }
+                }
+            }
+        }
+        if cc == "" {
+            // Plain national number in the default region.
+            if def_row == "" { return make_pn_error("INVALID_COUNTRY_CODE: unknown default region") }
+            cc = field(def_row, F_CC)
+            nn = ds
+            src = SRC_FROM_DEFAULT_COUNTRY
+        }
+    }
+
+    // 4. Pick the metadata row for (cc, national number) and strip its national
+    //    prefix + record an Italian leading zero.
+    row = row_for_cc_and_number(cc, nn)
+    ilz = 0
+    if row != "" {
+        nn2 = strip_national_prefix_row(row, nn)
+        nn = nn2
+        // Italian leading zero: a leading '0' that is significant (IT etc.).
+        if string.length(nn) > 0 && string.char_at(nn, 0) == 48 { ilz = 1 }
+    }
+
+    region = ""
+    if row != "" { region = field(row, F_ID) }
+    else { region = default_region_for_cc(cc) }
+
+    return make_pn(region, cc, nn, ext, ilz, src)
+}
+
+// Extract the longest 1-3 digit country calling code prefix of `ds` that names
+// a known cc. Returns (cc, remainder) or ("", ds).
+fn extract_cc(ds: string) -> (string, string) {
+    // Country codes are 1-3 digits. Try longest first isn't required (they are
+    // a prefix code), but shortest-first with a validity check is simplest.
+    max = 3
+    if string.length(ds) < max { max = string.length(ds) }
+    for (len = 1; len <= max; len++) {
+        cand = string.substring(ds, 0, len)
+        if cc_known(cand) == 1 {
+            return cand, string.substring(ds, len, string.length(ds))
+        }
+    }
+    return "", ds
+}
+
+// Is `cc` a known country calling code (present in the cc->regions map)?
+fn cc_known(cc: string) -> int {
+    m = metadata.cc_regions()
+    sep = string.from_char(31)
+    prefix = "${cc}${sep}"
+    found = 0
+    n = list.size(m)
+    for (i = 0; i < n; i++) {
+        e, _ = list.get(m, i)
+        if string.length(e) >= string.length(prefix) &&
+           string.substring(e, 0, string.length(prefix)) == prefix { found = 1; break }
+    }
+    list.free(m)
+    return found
+}
+
+// Strip a leading IDD (international direct-dial) prefix. The idd field is a
+// regex; we try the common literal forms it expands to ("00", "011", "0011"…)
+// by matching the regex at the start. Returns the remainder, or `ds` unchanged.
+fn strip_idd(ds: string, idd: string) -> string {
+    if string.length(idd) == 0 { return ds }
+    anchored = "^(?:${idd})"
+    re, err = regex.compile(anchored)
+    if err != "" { return ds }
+    st, en, ferr = regex.find(re, ds)
+    regex.free(re)
+    if ferr == "" && st == 0 && en > 0 { return string.substring(ds, en, string.length(ds)) }
+    return ds
+}
+
+// Strip the national (trunk) prefix from a national number using the row's
+// nationalPrefixForParsing regex and optional transform rule. Faithful to
+// maybeStripNationalPrefixAndCarrierCode.
+fn strip_national_prefix_row(row: string, nn: string) -> string {
+    npp = field(row, F_NP_PARSING)
+    if string.length(npp) == 0 { return nn }
+    anchored = "^(?:${npp})"
+    re, err = regex.compile(anchored)
+    if err != "" { return nn }
+    caps, cerr = regex.captures(re, nn)
+    if cerr != "" || caps == null { regex.free(re); return nn }
+    // The whole match (group 0) is the prefix consumed.
+    m_end = regex.capture_end(caps, 0)
+    transform = field(row, F_NP_TRANSFORM)
+    ncaps = regex.capture_count(caps)
+    result = nn
+    if string.length(transform) > 0 && ncaps > 1 {
+        // Rebuild the number from the transform rule ($1, $2 from captures).
+        result = substitute(transform, caps)
+    } else {
+        // No transform: drop the matched prefix. If there is a capture group,
+        // keep it (the national number after the prefix); else drop to m_end.
+        if ncaps > 1 {
+            g1s = regex.capture_start(caps, 1)
+            if g1s >= 0 { result = string.substring(nn, g1s, string.length(nn)) }
+            else { result = string.substring(nn, m_end, string.length(nn)) }
+        } else {
+            result = string.substring(nn, m_end, string.length(nn))
+        }
+    }
+    regex.captures_free(caps)
+    regex.free(re)
+    // Guard: never strip to empty; if the result is empty keep the original.
+    if string.length(result) == 0 { return nn }
+    return result
+}
+
+// The row for a (cc, national-number) pair: among the cc's regions, the one
+// whose national-number pattern the number matches (else the main region).
+fn row_for_cc_and_number(cc: string, nn: string) -> string {
+    regs = regions_for_country_code(cc)
+    chosen = ""
+    n = list.size(regs)
+    for (i = 0; i < n; i++) {
+        rid, _ = list.get(regs, i)
+        r = row_for(rid)
+        if r == "" { continue }
+        // strip that region's national prefix before testing its general pattern
+        cand_nn = strip_national_prefix_row(r, nn)
+        gen = field(r, F_GENERAL)
+        if string.length(gen) > 0 && full_match(gen, cand_nn) == 1 { chosen = r; break }
+    }
+    if chosen == "" && list.size(regs) > 0 {
+        mreg, _ = list.get(regs, 0)
+        chosen = row_for(mreg)
+    }
+    list.free(regs)
+    return chosen
+}
+
+fn default_region_for_cc(cc: string) -> string {
+    regs = regions_for_country_code(cc)
+    out = ""
+    if list.size(regs) > 0 {
+        g0, _ = list.get(regs, 0)
+        out = dup(g0)
+    }
+    list.free(regs)
+    return out
+}
+
+// national_number(region, input): the national significant number for a plain
+// input, using parse. Kept for API compatibility with the earlier engine.
+national_number(region: string, input: string) -> string {
+    pn = parse(input, region)
+    if pn_error(pn) != "" { return digits(input) }
+    return pn_national_number(pn)
+}
+
+// ===========================================================================
+// metadata queries (region <-> cc)
+// ===========================================================================
+
+country_code(region: string) -> string {
+    r = row_for(region)
+    if r == "" { return "" }
+    return field(r, F_CC)
+}
+country_code_for_region(region: string) -> string { return country_code(region) }
+
+// The ordered region list for a cc (main country first), from cc_regions().
+regions_for_country_code(cc: string) -> ptr {
+    m = metadata.cc_regions()
+    sep = string.from_char(31)
+    prefix = "${cc}${sep}"
+    out = list.new()
+    n = list.size(m)
+    for (i = 0; i < n; i++) {
+        e, _ = list.get(m, i)
+        if string.length(e) >= string.length(prefix) &&
+           string.substring(e, 0, string.length(prefix)) == prefix {
+            csv = string.substring(e, string.length(prefix), string.length(e))
+            split_csv_into(csv, out)
+            break
+        }
+    }
+    list.free(m)
+    return out
+}
+
+fn split_csv_into(csv: string, out: ptr) {
+    start = 0
+    n = string.length(csv)
+    for (i = 0; i <= n; i++) {
+        at = 0
+        if i == n { at = 1 } else { if string.char_at(csv, i) == 44 { at = 1 } }
+        if at == 1 {
+            tok = string.substring(csv, start, i)
+            if string.length(tok) > 0 { list.add(out, tok) }
+            start = i + 1
+        }
+    }
+}
+
+// getRegionCodeForCountryCode: the main region for a cc.
+region_code_for_country_code(cc: string) -> string {
+    regs = regions_for_country_code(cc)
+    out = ""
+    if list.size(regs) > 0 {
+        g0, _ = list.get(regs, 0)
+        out = dup(g0)
+    }
+    list.free(regs)
+    return out
+}
+
+// getRegionCodeForNumber: given a PARSED number, which region is it in? Among
+// the cc's candidate regions, the one whose national pattern matches; else main.
+region_code_for_number(pn: string) -> string {
+    if pn_error(pn) != "" { return "" }
+    cc = pn_country_code(pn)
+    nn = pn_national_number(pn)
+    regs = regions_for_country_code(cc)
+    chosen = ""
+    n = list.size(regs)
+    for (i = 0; i < n; i++) {
+        rid, _ = list.get(regs, i)
+        r = row_for(rid)
+        if r == "" { continue }
+        gen = field(r, F_GENERAL)
+        if string.length(gen) > 0 && full_match(gen, nn) == 1 {
+            // Prefer a leadingDigits/type match for disambiguation among NANPA.
+            chosen = dup(rid); break
+        }
+    }
+    if chosen == "" && list.size(regs) > 0 {
+        g0, _ = list.get(regs, 0)
+        chosen = dup(g0)
+    }
+    list.free(regs)
+    return chosen
+}
+
+is_nanpa_country(region: string) -> int {
+    if country_code(region) == NANPA_CC { return 1 }
+    return 0
+}
+
+// isNumberGeographical: fixed-line and (in some regions) fixed-or-mobile
+// numbers are geographical. Approximated as "type is fixed line or the
+// fixed/mobile-shared personalNumber-less territory".
+is_geographical(pn: string) -> int {
+    t = number_type_of_row(row_for(pn_region(pn)), pn_national_number(pn))
+    if t == TYPE_FIXED_LINE { return 1 }
+    return 0
+}
+
+ndd_prefix_for_region(region: string, strip_non_digits: int) -> string {
+    r = row_for(region)
+    if r == "" { return "" }
+    np = field(r, F_NAT_PREFIX)
+    if strip_non_digits == 1 { return digits(np) }
+    return np
+}
+
+example_number(region: string) -> string {
+    r = row_for(region)
+    if r == "" { return "" }
+    return field(r, F_EXAMPLE)
+}
+
+// getExampleNumberForType: use the fixedLine example when type is fixed line or
+// unknown; otherwise synthesize from the type pattern is not attempted — we
+// return the fixedLine example if the requested type matches it, else "".
+example_number_for_type(region: string, ty: int) -> string {
+    r = row_for(region)
+    if r == "" { return "" }
+    ex = field(r, F_EXAMPLE)
+    if ex == "" { return "" }
+    if number_type_of_row(r, ex) == ty || ty == TYPE_FIXED_LINE { return ex }
+    return ""
+}
+
+// getInvalidExampleNumber: an example number that is NOT valid, for testing.
+// Take the valid example and change its last digit to force an invalid one, or
+// append a digit to overflow the length.
+invalid_example_number(region: string) -> string {
+    ex = example_number(region)
+    if ex == "" { return "" }
+    // Append a '0' -> too long -> invalid for most territories.
+    cand = "${ex}0"
+    if is_valid_number(region, cand) == 0 { return cand }
+    return ex
+}
+
+possible_lengths(region: string) -> string {
+    r = row_for(region)
+    if r == "" { return "" }
+    return field(r, F_LENGTHS)
+}
+
+// ===========================================================================
+// validation
+// ===========================================================================
+
+is_possible_number(region: string, input: string) -> int {
+    r = is_possible_number_with_reason(region, input)
+    if r == VR_IS_POSSIBLE || r == VR_IS_POSSIBLE_LOCAL_ONLY { return 1 }
+    return 0
+}
+
+// isPossibleNumberWithReason -> a VR_* constant.
+is_possible_number_with_reason(region: string, input: string) -> int {
+    row = row_for(region)
+    if row == "" { return VR_INVALID_COUNTRY_CODE }
+    pn = parse(input, region)
+    if pn_error(pn) != "" { return VR_INVALID_COUNTRY_CODE }
+    nn = pn_national_number(pn)
+    len = string.length(nn)
+    spec = field(row, F_LENGTHS)
+    if length_ok(spec, len) == 1 { return VR_IS_POSSIBLE }
+    // local-only lengths?
+    local = field(row, F_LOCAL_LENGTHS)
+    if length_ok(local, len) == 1 { return VR_IS_POSSIBLE_LOCAL_ONLY }
+    mn = min_length(spec)
+    mx = max_length(spec)
+    if mn >= 0 && len < mn { return VR_TOO_SHORT }
+    if mx >= 0 && len > mx { return VR_TOO_LONG }
+    return VR_INVALID_LENGTH
+}
+
+// isPossibleShortNumber-ish: right length for local-only. Kept minimal.
+is_possible_short(region: string, input: string) -> int {
+    row = row_for(region)
+    if row == "" { return 0 }
+    nn = digits(input)
+    return length_ok(field(row, F_LOCAL_LENGTHS), string.length(nn))
+}
+
+is_valid_number(region: string, input: string) -> int {
+    row = row_for(region)
+    if row == "" { return 0 }
+    pn = parse(input, region)
+    if pn_error(pn) != "" { return 0 }
+    nn = pn_national_number(pn)
+    return valid_nn_in_row(row, nn)
+}
+
+// isValidNumberForRegion: valid AND actually belongs to `region`.
+is_valid_number_for_region(input: string, region: string) -> int {
+    if is_valid_number(region, input) == 0 { return 0 }
+    pn = parse(input, region)
+    if pn_error(pn) != "" { return 0 }
+    if field(row_for(region), F_CC) != pn_country_code(pn) { return 0 }
+    return 1
+}
+
+fn valid_nn_in_row(row: string, nn: string) -> int {
+    if string.length(nn) == 0 { return 0 }
+    if length_ok(field(row, F_LENGTHS), string.length(nn)) == 0 { return 0 }
+    gen = field(row, F_GENERAL)
+    if string.length(gen) > 0 && full_match(gen, nn) == 0 { return 0 }
+    if number_type_of_row(row, nn) != TYPE_UNKNOWN { return 1 }
+    if any_type_present(row) == 0 && string.length(gen) > 0 { return 1 }
+    return 0
+}
+
+fn any_type_present(row: string) -> int {
+    for (f = F_FIXED_LINE; f <= F_VOICEMAIL; f++) {
+        if string.length(field(row, f)) > 0 { return 1 }
+    }
+    return 0
+}
+
+number_type(region: string, input: string) -> int {
+    row = row_for(region)
+    if row == "" { return TYPE_UNKNOWN }
+    pn = parse(input, region)
+    if pn_error(pn) != "" { return TYPE_UNKNOWN }
+    return number_type_of_row(row, pn_national_number(pn))
+}
+
+fn number_type_of_row(row: string, nn: string) -> int {
+    if row == "" { return TYPE_UNKNOWN }
+    if full_match(field(row, F_FIXED_LINE), nn) == 1 { return TYPE_FIXED_LINE }
+    if full_match(field(row, F_MOBILE), nn) == 1 { return TYPE_MOBILE }
+    if full_match(field(row, F_TOLL_FREE), nn) == 1 { return TYPE_TOLL_FREE }
+    if full_match(field(row, F_PREMIUM_RATE), nn) == 1 { return TYPE_PREMIUM_RATE }
+    if full_match(field(row, F_SHARED_COST), nn) == 1 { return TYPE_SHARED_COST }
+    if full_match(field(row, F_VOIP), nn) == 1 { return TYPE_VOIP }
+    if full_match(field(row, F_PERSONAL_NUMBER), nn) == 1 { return TYPE_PERSONAL_NUMBER }
+    if full_match(field(row, F_PAGER), nn) == 1 { return TYPE_PAGER }
+    if full_match(field(row, F_UAN), nn) == 1 { return TYPE_UAN }
+    if full_match(field(row, F_VOICEMAIL), nn) == 1 { return TYPE_VOICEMAIL }
+    return TYPE_UNKNOWN
+}
+
+// ===========================================================================
+// formatting
+// ===========================================================================
+
+// Replace $1..$9 in `tmpl` with capture-group text from `caps`.
+fn substitute(tmpl: string, caps: ptr) -> string {
+    out = ""
+    n = string.length(tmpl)
+    i = 0
+    while i < n {
+        c = string.char_at(tmpl, i)
+        if c == 36 && i + 1 < n {   // '$'
+            d = string.char_at(tmpl, i + 1)
+            if d >= 49 && d <= 57 {  // '1'..'9'
+                gi = d - 48
+                if gi < regex.capture_count(caps) {
+                    out = "${out}${regex.capture(caps, gi)}"
+                }
+                i = i + 2
+                continue
+            }
+        }
+        out = "${out}${string.substring(tmpl, i, i + 1)}"
+        i = i + 1
+    }
+    return out
+}
+
+// Pick the format record index whose pattern matches `nn` AND whose leadingDigits
+// (if any) prefix-match `nn`. Faithful to upstream's chooseFormattingPattern:
+// leadingDigits gate first, then the full pattern. Returns -1 if none.
+fn choose_format(row: string, nn: string) -> int {
+    pats = field(row, F_FMT_PATTERNS)
+    if string.length(pats) == 0 { return -1 }
+    leadings = field(row, F_FMT_LEADING)
+    np = count_records(pats)
+    for (k = 0; k < np; k++) {
+        pat = record_at(pats, k)
+        if string.length(pat) == 0 { continue }
+        // leadingDigits gate: the LAST leadingDigits entry is the most specific.
+        ld_all = record_at(leadings, k)
+        if string.length(ld_all) > 0 {
+            ld = last_group(ld_all)
+            if prefix_match(ld, nn) == 0 { continue }
+        }
+        if full_match(pat, nn) == 1 { return k }
+    }
+    return -1
+}
+
+// The last 0x1D-separated group of `s` (the most specific leadingDigits).
+fn last_group(s: string) -> string {
+    gs = 29
+    last = -1
+    n = string.length(s)
+    for (i = 0; i < n; i++) { if string.char_at(s, i) == gs { last = i } }
+    if last < 0 { return s }
+    return string.substring(s, last + 1, string.length(s))
+}
+
+// Group `nn` per the chosen format's template, applying an optional national-
+// prefix formatting rule ($NP = national prefix, $FG = the formatted groups).
+fn group_national_row(row: string, nn: string, want_np: int) -> string {
+    k = choose_format(row, nn)
+    if k < 0 { return nn }
+    pat = record_at(field(row, F_FMT_PATTERNS), k)
+    tmpl = record_at(field(row, F_FMT_TEMPLATES), k)
+    if string.length(tmpl) == 0 { return nn }
+    anchored = "^${pat}$"
+    re, err = regex.compile(anchored)
+    if err != "" { return nn }
+    caps, cerr = regex.captures(re, nn)
+    if cerr != "" || caps == null { regex.free(re); return nn }
+    groups = substitute(tmpl, caps)
+    regex.captures_free(caps)
+    regex.free(re)
+    // national-prefix formatting rule
+    npr = record_at(field(row, F_FMT_NPR), k)
+    if want_np == 1 && string.length(npr) > 0 {
+        np = field(row, F_NAT_PREFIX)
+        applied = replace_token(npr, "$NP", np)
+        applied = replace_token(applied, "$FG", groups)
+        return applied
+    }
+    return groups
+}
+
+// Group `nn` for INTERNATIONAL display (uses intlFormat when present; "NA" means
+// not internationally dialable -> fall back to national grouping).
+fn group_intl_row(row: string, nn: string) -> string {
+    k = choose_format(row, nn)
+    if k < 0 { return nn }
+    intl = record_at(field(row, F_FMT_INTL), k)
+    tmpl = record_at(field(row, F_FMT_TEMPLATES), k)
+    use = tmpl
+    if string.length(intl) > 0 && intl != "NA" { use = intl }
+    pat = record_at(field(row, F_FMT_PATTERNS), k)
+    if string.length(use) == 0 { return nn }
+    anchored = "^${pat}$"
+    re, err = regex.compile(anchored)
+    if err != "" { return nn }
+    caps, cerr = regex.captures(re, nn)
+    if cerr != "" || caps == null { regex.free(re); return nn }
+    groups = substitute(use, caps)
+    regex.captures_free(caps)
+    regex.free(re)
+    return groups
+}
+
+fn replace_token(s: string, token: string, val: string) -> string {
+    idx = string.index_of(s, token)
+    if idx < 0 { return s }
+    return "${string.substring(s, 0, idx)}${val}${string.substring(s, idx + string.length(token), string.length(s))}"
+}
+
+// format(input, region, fmt) -> the formatted string in the given style.
+format(region: string, input: string, fmt: int) -> string {
+    pn = parse(input, region)
+    if pn_error(pn) != "" {
+        // Best-effort on parse failure: just the digits (or +digits).
+        if fmt == FMT_E164 { return "+${digits(input)}" }
+        return digits(input)
+    }
+    return format_pn(pn, fmt)
+}
+
+// format a PARSED number.
+fn format_pn(pn: string, fmt: int) -> string {
+    cc = pn_country_code(pn)
+    nn = pn_national_number(pn)
+    row = row_for(pn_region(pn))
+    if row == "" { row = row_for_cc(cc) }
+    if fmt == FMT_E164 { return "+${cc}${nn}" }
+    if fmt == FMT_NATIONAL {
+        if row == "" { return nn }
+        return group_national_row(row, nn, 1)
+    }
+    if fmt == FMT_RFC3966 {
+        body = nn
+        if row != "" { body = group_intl_row(row, nn) }
+        s = "tel:+${cc}-${dash_groups(body)}"
+        ext = pn_extension(pn)
+        if string.length(ext) > 0 { s = "${s};ext=${ext}" }
+        return s
+    }
+    // INTERNATIONAL
+    if row == "" { return "+${cc} ${nn}" }
+    grouped = group_intl_row(row, nn)
+    out = "+${cc} ${grouped}"
+    ext = pn_extension(pn)
+    if string.length(ext) > 0 { out = "${out} ext. ${ext}" }
+    return out
+}
+
+// Turn spaces in a grouped number into dashes (RFC3966 uses '-').
+fn dash_groups(s: string) -> string {
+    out = ""
+    n = string.length(s)
+    for (i = 0; i < n; i++) {
+        c = string.char_at(s, i)
+        if c == 32 { out = "${out}-" } else { out = "${out}${string.substring(s, i, i + 1)}" }
+    }
+    return out
+}
+
+format_national(region: string, input: string) -> string { return format(region, input, FMT_NATIONAL) }
+format_international(region: string, input: string) -> string { return format(region, input, FMT_INTERNATIONAL) }
+format_e164(region: string, input: string) -> string { return format(region, input, FMT_E164) }
+format_rfc3966(region: string, input: string) -> string { return format(region, input, FMT_RFC3966) }
+
+// formatOutOfCountryCallingNumber: how to dial `input` (in `region`) FROM
+// `calling_from` — prepend that country's IDD prefix (or +) and the cc.
+format_out_of_country(region: string, input: string, calling_from: string) -> string {
+    pn = parse(input, region)
+    if pn_error(pn) != "" { return format(region, input, FMT_INTERNATIONAL) }
+    cc = pn_country_code(pn)
+    nn = pn_national_number(pn)
+    from_row = row_for(calling_from)
+    row = row_for(pn_region(pn))
+    grouped = nn
+    if row != "" { grouped = group_intl_row(row, nn) }
+    // If dialing within the same NANPA cc, it's just 1 + national.
+    if from_row != "" && field(from_row, F_CC) == cc && cc == NANPA_CC {
+        natgrp = nn
+        if row != "" { natgrp = group_national_row(row, nn, 0) }
+        return "1 ${natgrp}"
+    }
+    idd = ""
+    if from_row != "" { idd = digits(field(from_row, F_INTL_PREFIX)) }
+    if idd == "" { return "+${cc} ${grouped}" }
+    return "${idd} ${cc} ${grouped}"
+}
+
+// formatInOriginalFormat: format based on how the number was parsed (its
+// CountryCodeSource) — with +cc if it came with a plus, national otherwise.
+format_in_original(pn: string, region_calling_from: string) -> string {
+    if pn_error(pn) != "" { return "" }
+    src = pn_source(pn)
+    if src == SRC_FROM_NUMBER_WITH_PLUS { return format_pn(pn, FMT_INTERNATIONAL) }
+    if src == SRC_FROM_NUMBER_WITH_IDD { return format_pn(pn, FMT_INTERNATIONAL) }
+    return format_pn(pn, FMT_NATIONAL)
+}
+
+// getNationalSignificantNumber: the NSN of a parsed number (leading zero kept).
+national_significant_number(pn: string) -> string {
+    if pn_error(pn) != "" { return "" }
+    return pn_national_number(pn)
+}
+
+// ===========================================================================
+// NDC / area-code lengths
+// ===========================================================================
+
+// getLengthOfNationalDestinationCode: the NDC is what the FIRST format's first
+// capture group spans. Faithful to upstream (format the number, count digits in
+// the first group).
+length_of_ndc(pn: string) -> int {
+    if pn_error(pn) != "" { return 0 }
+    row = row_for(pn_region(pn))
+    if row == "" { return 0 }
+    nn = pn_national_number(pn)
+    k = choose_format(row, nn)
+    if k < 0 { return 0 }
+    pat = record_at(field(row, F_FMT_PATTERNS), k)
+    anchored = "^${pat}$"
+    re, err = regex.compile(anchored)
+    if err != "" { return 0 }
+    caps, cerr = regex.captures(re, nn)
+    if cerr != "" || caps == null { regex.free(re); return 0 }
+    out = 0
+    if regex.capture_count(caps) > 1 { out = string.length(regex.capture(caps, 1)) }
+    regex.captures_free(caps)
+    regex.free(re)
+    return out
+}
+
+// getLengthOfGeographicalAreaCode: like NDC but 0 for non-geographical numbers.
+length_of_area_code(pn: string) -> int {
+    if is_geographical(pn) == 0 { return 0 }
+    return length_of_ndc(pn)
+}
+
+// ===========================================================================
+// number relations & misc helpers
+// ===========================================================================
+
+// isNumberMatch(inputA, inputB) -> a MATCH_* constant. Both are raw inputs; we
+// parse each with no default region (they must carry their own cc) and compare.
+is_number_match(a: string, b: string) -> int {
+    pa = parse_intl_only(a)
+    pb = parse_intl_only(b)
+    if pn_error(pa) != "" || pn_error(pb) != "" { return MATCH_NOT_A_NUMBER }
+    cca = pn_country_code(pa); ccb = pn_country_code(pb)
+    nna = pn_national_number(pa); nnb = pn_national_number(pb)
+    if cca == ccb && nna == nnb {
+        if pn_italian_leading_zero(pa) == pn_italian_leading_zero(pb) { return MATCH_EXACT }
+        return MATCH_NSN
+    }
+    // NSN match ignoring cc.
+    if nna == nnb { return MATCH_NSN }
+    // short NSN match: one is a suffix of the other and both reasonably long.
+    if ends_with(nna, nnb) == 1 || ends_with(nnb, nna) == 1 { return MATCH_SHORT_NSN }
+    return MATCH_NO_MATCH
+}
+
+// parse requiring an international form (leading + or cc); no default region.
+fn parse_intl_only(input: string) -> string {
+    body, ext = split_extension(input)
+    body = convert_alpha_characters(body)
+    ds = digits(body)
+    if string.length(ds) == 0 { return make_pn_error("NOT_A_NUMBER") }
+    cc = ""; nn = ds
+    cc, nn = extract_cc(ds)
+    if cc == "" { return make_pn_error("INVALID_COUNTRY_CODE") }
+    row = row_for_cc_and_number(cc, nn)
+    ilz = 0
+    if row != "" { nn = strip_national_prefix_row(row, nn); if string.length(nn) > 0 && string.char_at(nn, 0) == 48 { ilz = 1 } }
+    region = ""
+    if row != "" { region = field(row, F_ID) }
+    return make_pn(region, cc, nn, ext, ilz, SRC_FROM_NUMBER_WITH_PLUS)
+}
+
+fn ends_with(s: string, suffix: string) -> int {
+    ls = string.length(s); lu = string.length(suffix)
+    if lu == 0 || lu > ls { return 0 }
+    if string.substring(s, ls - lu, ls) == suffix { return 1 }
+    return 0
+}
+
+// truncateTooLongNumber: if the parsed number is too long to be valid, drop
+// trailing digits until it validates (or give up). Returns the truncated
+// national number, or "" if it can't be made valid.
+truncate_too_long(region: string, input: string) -> string {
+    row = row_for(region)
+    if row == "" { return "" }
+    pn = parse(input, region)
+    if pn_error(pn) != "" { return "" }
+    nn = pn_national_number(pn)
+    if valid_nn_in_row(row, nn) == 1 { return nn }
+    while string.length(nn) > 0 {
+        nn = string.substring(nn, 0, string.length(nn) - 1)
+        if valid_nn_in_row(row, nn) == 1 { return nn }
+    }
+    return ""
+}
+
+// canBeInternationallyDialled: true unless the number's chosen format is marked
+// intlFormat="NA". Approximated: valid AND not NA-only.
+can_be_internationally_dialled(region: string, input: string) -> int {
+    pn = parse(input, region)
+    if pn_error(pn) != "" { return 1 }
+    row = row_for(pn_region(pn))
+    if row == "" { return 1 }
+    nn = pn_national_number(pn)
+    k = choose_format(row, nn)
+    if k < 0 { return 1 }
+    intl = record_at(field(row, F_FMT_INTL), k)
+    if intl == "NA" { return 0 }
+    return 1
+}
+
+// ===========================================================================
+// AsYouTypeFormatter (stateful; state carried explicitly so the C ABI can hold
+// it in a handle). The state is "region\x1faccumulated-digits". input_digit
+// appends a digit and returns the best partial national formatting.
+// ===========================================================================
+
+exports(ayt_new, ayt_input, ayt_result, ayt_clear)
+
+// A fresh formatter state for a region.
+ayt_new(region: string) -> string {
+    sep = string.from_char(31)
+    return "${string.to_upper(region)}${sep}"
+}
+
+// Append one character's digits to the state; returns the NEW state.
+ayt_input(state: string, ch: string) -> string {
+    region = field(state, 0)
+    acc = field(state, 1)
+    acc = "${acc}${digits(ch)}"
+    sep = string.from_char(31)
+    return "${region}${sep}${acc}"
+}
+
+// The formatted-so-far string for a state. Formats the accumulated digits with
+// the best national format whose pattern the digits fully match; until a full
+// format matches, returns the raw accumulated digits (a faithful "as you type"
+// falls back to digits for incomplete input).
+ayt_result(state: string) -> string {
+    region = field(state, 0)
+    acc = field(state, 1)
+    if string.length(acc) == 0 { return "" }
+    row = row_for(region)
+    if row == "" { return acc }
+    nn = strip_national_prefix_row(row, acc)
+    formatted = group_national_row(row, nn, 1)
+    if formatted == nn && nn != acc {
+        // no format matched the stripped number; show accumulated digits
+        return acc
+    }
+    if formatted == nn { return acc }   // no grouping applied
+    return formatted
+}
+
+ayt_clear(state: string) -> string {
+    return ayt_new(field(state, 0))
+}
+
+// ===========================================================================
+// PhoneNumberMatcher / findNumbers (stateful cursor over free text). We scan
+// the text for candidate digit runs (optionally +cc), validate each per the
+// leniency, and expose them by index. The matcher state is
+// "region\x1fleniency\x1ftext"; matches are computed on demand by index.
+//
+// Leniency: 0 POSSIBLE, 1 VALID (default), 2 STRICT (VALID here).
+// ===========================================================================
+
+exports(matcher_count, matcher_start, matcher_end, matcher_raw)
+
+matcher_count(text: string, region: string, leniency: int) -> int {
+    return scan(text, region, leniency, -1, 0)
+}
+
+// start byte offset of the idx-th match (or -1).
+matcher_start(text: string, region: string, leniency: int, idx: int) -> int {
+    return scan(text, region, leniency, idx, 1)
+}
+matcher_end(text: string, region: string, leniency: int, idx: int) -> int {
+    return scan(text, region, leniency, idx, 2)
+}
+// the raw matched substring of the idx-th match (or "").
+matcher_raw(text: string, region: string, leniency: int, idx: int) -> string {
+    s = scan(text, region, leniency, idx, 1)
+    e = scan(text, region, leniency, idx, 2)
+    if s < 0 || e < 0 { return "" }
+    return string.substring(text, s, e)
+}
+
+// Core scanner. mode 0 = count; 1 = start of idx-th; 2 = end of idx-th.
+// A candidate is a maximal run of [0-9()+ .-] containing >= 7 digits; it's a
+// match if it parses and satisfies the leniency.
+fn scan(text: string, region: string, leniency: int, idx: int, mode: int) -> int {
+    n = string.length(text)
+    found = 0
+    i = 0
+    while i < n {
+        c = string.char_at(text, i)
+        if is_number_char(c) == 1 {
+            st = i
+            j = i
+            while j < n && is_number_char(string.char_at(text, j)) == 1 { j = j + 1 }
+            i = j   // advance the outer cursor past the whole run
+            // Trim leading/trailing non-digit-non-'+' chars (spaces, dots,
+            // stray parens) so the reported span is tight around the number.
+            while st < j && edge_trim_char(string.char_at(text, st)) == 1 { st = st + 1 }
+            while j > st && edge_trim_char(string.char_at(text, j - 1)) == 1 { j = j - 1 }
+            cand = string.substring(text, st, j)
+            if count_digits(cand) >= 7 && candidate_ok(cand, region, leniency) == 1 {
+                if mode == 1 && found == idx { return st }
+                if mode == 2 && found == idx { return j }
+                found = found + 1
+            }
+            // (i already advanced to the untrimmed run end above)
+        } else {
+            i = i + 1
+        }
+    }
+    if mode == 0 { return found }
+    return -1
+}
+
+fn is_number_char(c: int) -> int {
+    if c >= 48 && c <= 57 { return 1 }   // digit
+    if c == 43 || c == 40 || c == 41 { return 1 }  // + ( )
+    if c == 45 || c == 46 || c == 32 { return 1 }  // - . space
+    return 0
+}
+
+// Chars trimmed from the edges of a matched span (leave digits and '+').
+fn edge_trim_char(c: int) -> int {
+    if c >= 48 && c <= 57 { return 0 }   // digit — keep
+    if c == 43 { return 0 }              // '+' — keep (leading intl marker)
+    return 1                             // space, dot, dash, paren — trim
+}
+
+fn count_digits(s: string) -> int {
+    n = string.length(s)
+    d = 0
+    for (i = 0; i < n; i++) {
+        c = string.char_at(s, i)
+        if c >= 48 && c <= 57 { d = d + 1 }
+    }
+    return d
+}
+
+fn candidate_ok(cand: string, region: string, leniency: int) -> int {
+    if leniency == 0 { return is_possible_number(region, cand) }
+    return is_valid_number(region, cand)
+}

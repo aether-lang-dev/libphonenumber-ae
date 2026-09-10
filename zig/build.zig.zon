@@ -1,0 +1,21 @@
+// Package manifest, so another Zig project can depend on this binding by URL
+// or path. There are no `.dependencies` and there never will be: the binding
+// needs libc and the engine .so, neither of which is a Zig package.
+//
+// A consumer still has to link the engine itself — a Zig module carries source,
+// not link flags. See the README's "Using it from another project".
+.{
+    .name = .phonenumber_ae,
+    .version = "0.1.0",
+    // A stable per-package id. Do not change it — it is how a consumer's
+    // dependency graph identifies this package across renames.
+    .fingerprint = 0x69f832e2fc7e4af8,
+    .minimum_zig_version = "0.16.0",
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        "example",
+        "README.md",
+    },
+}

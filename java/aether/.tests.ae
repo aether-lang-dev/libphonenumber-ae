@@ -1,0 +1,43 @@
+// Java binding tests (FFM / Panama, JDK 22+).
+//
+// The binding classes come from java/aether/.build.ae — the same node the
+// kotlin/groovy/clojure layers dep, so the JVM family all compile against one
+// set of classes rather than four private copies. ConformanceTest.java sits
+// flat alongside the binding sources, so java.javac already compiles it into
+// the same class set; there is no separate test-compile step to configure.
+//
+// Deliberately NOT java.junit: ConformanceTest is a plain `main` runner with no
+// JUnit dependency, so the suite needs nothing but a JDK and cannot fail on
+// artifact resolution. The class is written so wrapping the checks in @Test is
+// mechanical if that ever changes.
+// (No Maven: java/pom.xml belongs to the upstream Google project in this repo
+// and is left untouched. This binding is built by aeb/javac, flat, like the
+// javascript/aether/ sibling.)
+//
+// The engine path IS passed by hand, and has to be. Native.openLibrary() uses
+// Panama's SymbolLookup.libraryLookup, which goes through the OS loader directly
+// and never consults java.library.path. Its candidates are
+// $LIBPHONENUMBER_AE_LIB, -Dlibphonenumber_ae.lib, ./native/<lib>, then the bare
+// name. So the leaf hands it the path as the env var LIBPHONENUMBER_AE_LIB.
+import bldr
+import java
+import std.os
+import bldr (dep, dep_artifact, _get)
+
+aeb(cap) {
+    bldr.build() {
+        dep("core/.build.ae")
+        dep("java/aether/.build.ae")
+        lib = dep_artifact("core/.build.ae", "shared_lib")
+        classes = dep_artifact("java/aether/.build.ae", "jvm_classpath_deps_including_transitive")
+        root = _get("root")
+
+        rc = os.system("cd \"${root}/java/aether\" && LIBPHONENUMBER_AE_LIB=\"${lib}\" java --enable-native-access=ALL-UNNAMED -cp \"${classes}\" org.libphonenumber.ae.ConformanceTest")
+        if rc != 0 {
+            println("java: conformance suite reported failures")
+            return 1
+        }
+        println("java: PASS (v2) — 34-check conformance")
+        return 0
+    }
+}

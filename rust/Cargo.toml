@@ -1,0 +1,12 @@
+[package]
+name = "phonenumber_ae"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.70"
+description = "Validate and format international phone numbers — a binding over the shared Aether phonenumber engine."
+license = "Apache-2.0"
+keywords = ["phone", "phonenumber", "libphonenumber", "e164", "api-bindings"]
+categories = ["internationalization", "api-bindings"]
+
+[dependencies]
+libloading = "0.8"

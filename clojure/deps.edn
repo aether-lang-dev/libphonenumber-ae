@@ -1,0 +1,36 @@
+;; Clojure CLI build for downstream consumers.
+;;
+;; The in-tree conformance run (clojure/.tests.ae) does NOT need this file: it
+;; finds a Clojure runtime itself and runs the suite with clojure.main, so it
+;; works offline and cannot fail resolving anything. deps.edn is here so a
+;; project using the Clojure CLI can depend on this layer the usual way.
+;;
+;; Note what is NOT declared: any FFI dependency. This layer reaches the engine
+;; through the Java binding (org.libphonenumber.ae/libphonenumber-ae) and
+;; nothing else — one JVM binding to the engine, three idiomatic layers over it.
+{:paths ["src"]
+
+ :deps {org.clojure/clojure {:mvn/version "1.11.3"}
+        ;; The one and only route to the engine — the aeb/javac-built Aether
+        ;; Java binding (java/src/main/java/org/libphonenumber/ae). It is not a
+        ;; published Maven artifact; use the :local-java alias below to depend on
+        ;; its compiled classes straight from the working tree. (NB: java/pom.xml
+        ;; in this repo is the UPSTREAM Google project's, not this binding's.)
+        org.libphonenumber.ae/libphonenumber-ae {:mvn/version "1.0.0"}}
+
+ :aliases
+ {;; `clojure -M:test` — the conformance suite.
+  ;;
+  ;; --enable-native-access is required by FFM; without it the JVM warns today
+  ;; and will refuse in a future release. LIBPHONENUMBER_AE_LIB must point at the
+  ;; engine .so (aeb sets it for you; see the README for a manual run).
+  :test
+  {:extra-paths ["test"]
+   :jvm-opts ["--enable-native-access=ALL-UNNAMED"]
+   :main-opts ["-m" "org.libphonenumber.ae.conformance-test"]}
+
+  ;; Depend on the Java binding straight from the working tree rather than a
+  ;; published artifact — handy while developing the two together.
+  :local-java
+  {:override-deps {org.libphonenumber.ae/libphonenumber-ae
+                   {:local/root "../target/.aeb/java-classes"}}}}}

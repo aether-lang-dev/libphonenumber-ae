@@ -1,0 +1,86 @@
+// Haskell binding tests (GHC FFI). Like nim/ and go/ and unlike the
+// dlopen-based bindings, this one LINKS the engine, so the .so must exist at
+// BUILD time as well as run time. We dep the shared engine node and stage its
+// artifact into haskell/native/ so both the link and the baked-in rpath resolve
+// no matter where aeb put the artifact.
+//
+// The conformance suite is a plain assertion runner (haskell/test/Conformance.hs)
+// with its own exit code, depending on nothing but `base` and `bytestring` —
+// both of which ship inside GHC. That is deliberate: it lets `runghc` drive the
+// whole suite with no `cabal update`, no network, and no package store, the same
+// offline posture as the rust/dotnet leaves here.
+//
+// This node SKIPS LOUDLY (exit 0, a clear `haskell: SKIPPED` line) when GHC is
+// absent — a box without it has a missing toolchain, not a broken binding. On
+// THIS box ghc is not installed, so it skips.
+import bldr
+import std.os
+
+aeb(cap) {
+    bldr.build() {
+        dep("core/.build.ae")
+        lib = dep_artifact("core/.build.ae", "shared_lib")
+        root = _get("root")
+
+        // GHC is a multi-gigabyte install; skip honestly rather than fail the DAG.
+        // `cabal` alone is not enough — it is a build tool, not a compiler.
+        have = os.system("command -v ghc >/dev/null 2>&1")
+        if have != 0 {
+            println("haskell: SKIPPED — ghc not installed (no GHC toolchain on PATH)")
+            return 0
+        }
+
+        // runghc ships alongside ghc in every distribution of it, but check
+        // rather than assume: a stripped container image can carry the compiler
+        // without the script runner. Fall back to cabal only if it is present.
+        runner = os.system("command -v runghc >/dev/null 2>&1")
+        if runner != 0 {
+            cabal = os.system("command -v cabal >/dev/null 2>&1")
+            if cabal != 0 {
+                println("haskell: SKIPPED — ghc is present but neither runghc nor cabal is (incomplete GHC install)")
+                return 0
+            }
+        }
+
+        // Stage the engine where the .cabal's extra-lib-dirs and the rpath both
+        // point. The compile below links against it by name.
+        dest = "${root}/haskell/native"
+        _m = os.system("mkdir -p \"${dest}\"")
+        cp = os.system("cp -f \"${lib}\" \"${dest}/libphonenumber_ae.so\"")
+        if cp != 0 {
+            println("haskell: could not stage the engine into haskell/native")
+            return 1
+        }
+
+        // Drive the suite with runghc by preference, NOT cabal. cabal wants a
+        // package database and, on a cold box, a `cabal update`. runghc compiles
+        // the modules in-place from base + bytestring alone, both inside GHC.
+        //
+        //   -isrc -itest       the two source roots
+        //   -Lnative           find libphonenumber_ae at link time
+        //   -lphonenumber_ae   ... and link it
+        //   -optl-Wl,-rpath,…  so the loader finds it at run time too
+        //
+        // LD_LIBRARY_PATH is belt-and-braces next to the rpath: runghc runs the
+        // program through the bytecode interpreter, which resolves the engine
+        // through the ordinary loader search path.
+        if runner == 0 {
+            rc = os.system("cd \"${root}/haskell\" && LD_LIBRARY_PATH=\"${dest}:$LD_LIBRARY_PATH\" runghc -isrc -itest -Lnative -L../core/native -lphonenumber_ae -optl-Wl,-rpath,${dest} test/Conformance.hs")
+            if rc != 0 {
+                println("haskell: conformance suite reported failures")
+                return 1
+            }
+            println("haskell: PASS — v2 conformance (parse, formats, AsYouType, matcher)")
+            return 0
+        }
+
+        // Fallback: cabal. --offline keeps it from reaching for the network.
+        rc = os.system("cd \"${root}/haskell\" && LD_LIBRARY_PATH=\"${dest}:$LD_LIBRARY_PATH\" cabal test conformance --offline --test-show-details=direct")
+        if rc != 0 {
+            println("haskell: conformance suite reported failures (or `cabal --offline` could not resolve base/bytestring from a cold store)")
+            return 1
+        }
+        println("haskell: PASS — v2 conformance (parse, formats, AsYouType, matcher)")
+        return 0
+    }
+}

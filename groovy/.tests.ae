@@ -1,0 +1,42 @@
+// Groovy binding tests.
+//
+// The Groovy layer is NOT a second FFI: it compiles against the Java binding's
+// classes (bldr.dep java/aether/.build.ae -> the standard JVM classpath artifact) and
+// reaches the engine through them. So this node deps BOTH java/aether/.build.ae (for
+// the classpath) and core/.build.ae (for the .so that LIBPHONENUMBER_AE_LIB
+// points at).
+//
+// Toolchain note. groovyc LOADS the classes it compiles against into its own
+// JVM, so it needs to be Groovy 4+ running on a JDK 22+ VM — the Java binding's
+// classes are JDK 22+ bytecode because the FFM API requires it. Debian's groovy
+// 2.4 on JDK 17 cannot read them. groovy/run-tests.sh probes for a capable
+// toolchain and verifies it by compiling AND running against the real classes;
+// if there is none, this node SKIPS rather than reporting a false pass.
+import bldr
+import std.os
+
+aeb(cap) {
+    bldr.build() {
+        dep("core/.build.ae")
+        dep("java/aether/.build.ae")
+        lib = dep_artifact("core/.build.ae", "shared_lib")
+        classes = dep_artifact("java/aether/.build.ae", "jvm_classpath_deps_including_transitive")
+        root = _get("root")
+
+        out = "${root}/target/.aeb/groovy-classes"
+
+        rc = os.system("cd \"${root}/groovy\" && PN_JAVA_CLASSES=\"${classes}\" PN_OUT=\"${out}\" LIBPHONENUMBER_AE_LIB=\"${lib}\" ./run-tests.sh")
+        if rc == 77 {
+            // 77 is this monorepo's "toolchain absent" code, chosen because no
+            // compiler or JVM uses it for a real failure.
+            println("groovy: SKIPPED — no Groovy 4+ toolchain on a JDK 22+ VM")
+            return 0
+        }
+        if rc != 0 {
+            println("groovy: conformance suite reported failures")
+            return 1
+        }
+        println("groovy: PASS (v2) — 34-check conformance")
+        return 0
+    }
+}

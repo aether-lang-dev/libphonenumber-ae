@@ -1,0 +1,5 @@
+# The staged copy of the shared native engine is a build artifact — core/.build.ae
+# builds it and go/.tests.ae stages it into native/ before running the tests.
+native/*.so
+native/*.dylib
+native/*.dll

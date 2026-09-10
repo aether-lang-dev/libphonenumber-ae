@@ -1,0 +1,43 @@
+PhoneNumberMetadata.xml — provenance and attribution
+=====================================================
+
+The metadata generator (generate.ae) reads the XML at the repository's own
+canonical location:
+
+    resources/PhoneNumberMetadata.xml
+
+That file IS Google libphonenumber's authoritative metadata — this repository
+is a fork of google/libphonenumber, so the file is already present and
+maintained upstream. The Aether port does NOT vendor a second copy; it compiles
+the in-tree one into core/metadata.ae.
+
+  Source:  https://github.com/google/libphonenumber
+  File:    resources/PhoneNumberMetadata.xml
+  Format:  see resources/phonemetadata.proto for the schema the XML mirrors
+
+License
+-------
+libphonenumber is licensed under the Apache License, Version 2.0.
+Copyright (C) 2009 The Libphonenumber Authors.
+
+The file retains its own Apache-2.0 copyright header (see the top of the XML
+itself). The full license text is the repository's LICENSE (Apache-2.0).
+
+libphonenumber ships NO NOTICE file, so Apache-2.0 section 4(d) imposes no
+additional notice-carrying obligation. This PROVENANCE file records where the
+generator's input comes from and what fraction of it the Aether port consumes.
+
+What the generator consumes
+---------------------------
+Per territory: id, country calling code, the possible-lengths union
+(isPossibleNumber), an example number, one display format (pattern + template),
+the generalDesc national-number pattern, and the per-type national-number
+patterns (fixedLine, mobile, tollFree, premiumRate, sharedCost, voip,
+personalNumber, pager, uan, voicemail) — enough for isPossibleNumber,
+isValidNumber, getNumberType and a national/international/E.164 formatter.
+
+NOT consumed: leadingDigits routing between multiple <numberFormat> entries
+(only the first format is captured as a display hint), carrier/geocoding
+metadata (separate XML files), and the alternate-formats and short-number
+metadata. Extending the generator to carry these needs no new fetch — the whole
+XML is already in-tree.

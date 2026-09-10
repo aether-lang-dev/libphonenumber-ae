@@ -1,0 +1,4 @@
+# Nim build artifacts — see the README.
+.nimcache/
+tests/tconformance
+*.exe

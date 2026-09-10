@@ -1,0 +1,78 @@
+// Lua binding tests (a Lua 5.4 C extension that dlopen's the engine). Unlike
+// the linked bindings (nim/zig/go), the extension is NOT on the engine's link
+// line — it loads it at run time — so the engine path is threaded in via
+// LIBPHONENUMBER_AE_LIB, the same env var every other runtime-loading binding
+// uses.
+//
+// The suite is a plain assertion runner (lua/test/conformance.lua) whose exit
+// code is the result — Lua 5.4 ships no de-facto-standard test framework, so
+// there is nothing to install and no package fetch.
+//
+// This node SKIPS LOUDLY (exit 0, a clear `lua: SKIPPED` line) when there is no
+// C compiler, or no Lua 5.4 to run against — rather than failing the DAG for a
+// missing toolchain. On THIS box lua5.4 is not installed, so it skips.
+//
+// All the pkg-config probing is done inside the shell commands (via $(...))
+// rather than captured into aeb variables, so this leans on nothing but
+// os.system — exactly as the go/rust/python leaves here do.
+import bldr
+import std.os
+
+aeb(cap) {
+    bldr.build() {
+        dep("core/.build.ae")
+        lib = dep_artifact("core/.build.ae", "shared_lib")
+        root = _get("root")
+
+        // A C compiler is required to build the extension at all.
+        cc = os.system("command -v cc >/dev/null 2>&1")
+        if cc != 0 {
+            println("lua: SKIPPED — no C compiler (cc not on PATH)")
+            return 0
+        }
+
+        // Lua 5.4 development headers are required to compile the extension.
+        havehdr = os.system("pkg-config --exists lua5.4 2>/dev/null || pkg-config --exists lua-5.4 2>/dev/null || test -f /usr/include/lua5.4/lua.h")
+        if havehdr != 0 {
+            println("lua: SKIPPED — Lua 5.4 headers not found (install liblua5.4-dev)")
+            return 0
+        }
+
+        // Build the extension. CFLAGS come from pkg-config with a Debian header
+        // fallback, computed in-shell. `-ldl` for dlopen; deliberately NOT
+        // linking liblua — the host interpreter supplies those symbols, and
+        // linking a second copy is the classic "two Lua VMs in one process"
+        // crash.
+        build_ext = os.system("cd \"${root}/lua\" && CF=\"$(pkg-config --cflags lua5.4 2>/dev/null || pkg-config --cflags lua-5.4 2>/dev/null || echo -I/usr/include/lua5.4)\" && cc -O2 -fPIC -shared $CF src/phonenumber_ae.c -o phonenumber_ae_native.so -ldl")
+        if build_ext != 0 {
+            println("lua: could not build the C extension")
+            return 1
+        }
+
+        // Find something that can RUN a 5.4 extension. A real lua5.4 binary is
+        // preferred; on Debian 12 (headers are 5.4 but the interpreter is 5.3)
+        // build the bundled host/lua54.c instead. If neither is possible, skip
+        // loudly rather than fail.
+        runner = "lua5.4"
+        have54 = os.system("command -v lua5.4 >/dev/null 2>&1")
+        if have54 != 0 {
+            build_host = os.system("cd \"${root}/lua\" && CF=\"$(pkg-config --cflags lua5.4 2>/dev/null || pkg-config --cflags lua-5.4 2>/dev/null || echo -I/usr/include/lua5.4)\" && cc -O2 $CF host/lua54.c -o lua54 -llua5.4 -lm -ldl")
+            if build_host != 0 {
+                println("lua: SKIPPED — no lua5.4 interpreter and could not build the bundled 5.4 host (liblua5.4 missing?)")
+                return 0
+            }
+            runner = "./lua54"
+        }
+
+        // Run. LUA_CPATH finds phonenumber_ae_native.so, LUA_PATH finds the
+        // idiomatic src/phonenumber_ae.lua, and LIBPHONENUMBER_AE_LIB points the
+        // extension's dlopen at the freshly-built engine artifact.
+        rc = os.system("cd \"${root}/lua\" && LUA_CPATH=\"./?.so;;\" LUA_PATH=\"./src/?.lua;;\" LIBPHONENUMBER_AE_LIB=\"${lib}\" ${runner} test/conformance.lua")
+        if rc != 0 {
+            println("lua: conformance suite reported failures")
+            return 1
+        }
+        println("lua: PASS — v2 conformance (parse, formats, AsYouType, matcher)")
+        return 0
+    }
+}

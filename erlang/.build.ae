@@ -1,0 +1,48 @@
+// The canonical BEAM binding: ONE NIF, built ONCE, shared by all three BEAM
+// languages.
+//
+// Output: erlang/_build/phonenumber_ae_nif/ — a plain OTP application:
+//
+//     _build/phonenumber_ae_nif/ebin/phonenumber_ae.beam
+//     _build/phonenumber_ae_nif/ebin/phonenumber_ae_nif.beam
+//     _build/phonenumber_ae_nif/ebin/phonenumber_ae_nif.app
+//     _build/phonenumber_ae_nif/priv/phonenumber_ae_nif.so   (the NIF)
+//     _build/phonenumber_ae_nif/priv/libphonenumber_ae.so    (the engine)
+//
+// elixir/ and gleam/ dep THIS node and put `erlang/_build` on ERL_LIBS, which
+// is how OTP finds an application; they then load the very same compiled
+// phonenumber_ae_nif.beam. There is no second copy of the C anywhere in the
+// monorepo.
+//
+// aeb's `erlang.nif` builder owns the whole job — erl_nif.h discovery via
+// `erl`'s own code:root_dir (right for kerl/asdf/Homebrew, not just Debian),
+// the deliberate omission of -lphonenumber_ae from the NIF link line (a
+// DT_NEEDED there kills the BEAM inside the dynamic linker instead of reporting
+// a clean load error), erlc into ebin/, the verbatim app.src copy, and staging
+// the engine into priv/. A missing toolchain is a first-class SKIP.
+//
+// The phone ABI is stateless string/int in/out — no handle, no callbacks — so
+// this NIF is much smaller than the html-sanitizer sibling it was mirrored
+// from: pure binary<->C-string marshalling with copy-then-free on returns.
+
+import bldr
+import erlang
+import erlang (nif_source, erl_source, app_src, app_name, engine_lib)
+
+aeb(cap) {
+    bldr.build() {
+        dep("core/.build.ae")
+        lib = dep_artifact("core/.build.ae", "shared_lib")
+
+        erlang.nif() {
+            nif_source("c_src/phonenumber_ae_nif.c")
+            erl_source("src/phonenumber_ae_nif.erl")
+            erl_source("src/phonenumber_ae.erl")
+            app_src("src/phonenumber_ae_nif.app.src")
+            app_name("phonenumber_ae_nif")
+            // Staged into priv/ so the app is self-contained; the NIF's load
+            // callback looks there after $LIBPHONENUMBER_AE_LIB.
+            engine_lib(lib)
+        }
+    }
+}

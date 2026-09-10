@@ -1,0 +1,107 @@
+// core_tests/probe — the engine behavioural gate (pure Aether, no C ABI).
+//
+// Proves core/phonenumber.ae directly against the generated metadata. Covers the
+// full PhoneNumberUtil-parity surface: parse, region detection, isPossible/
+// isValid (+reasons), getNumberType, formatting (all styles), isNumberMatch and
+// helpers. Run: ae run core_tests/probe.ae
+
+import std.string
+import core.phonenumber
+
+fn fail(msg: string) {
+    println("FAIL: ${msg}")
+    exit(1)
+}
+fn eq_i(label: string, got: int, want: int) {
+    if got != want { fail("${label}: got ${got}, want ${want}") }
+}
+fn eq_s(label: string, got: string, want: string) {
+    if got != want { fail("${label}: got '${got}', want '${want}'") }
+}
+
+main() {
+    // --- metadata plumbing ---
+    eq_s("US cc", phonenumber.country_code("US"), "1")
+    eq_s("GB cc", phonenumber.country_code("GB"), "44")
+    eq_s("lowercase region", phonenumber.country_code("gb"), "44")
+    eq_s("unknown region", phonenumber.country_code("ZZ"), "")
+    eq_i("US is NANPA", phonenumber.is_nanpa_country("US"), 1)
+    eq_i("GB is not NANPA", phonenumber.is_nanpa_country("GB"), 0)
+
+    // --- region <-> cc ---
+    eq_s("cc 44 main region", phonenumber.region_code_for_country_code("44"), "GB")
+    eq_s("cc 1 main region", phonenumber.region_code_for_country_code("1"), "US")
+
+    // --- parse: plain national, US ---
+    p1 = phonenumber.parse("(201) 555-0123", "US")
+    eq_s("parse US err", phonenumber.pn_error(p1), "")
+    eq_s("parse US cc", phonenumber.pn_country_code(p1), "1")
+    eq_s("parse US nn", phonenumber.pn_national_number(p1), "2015550123")
+    eq_i("parse US source default", phonenumber.pn_source(p1), phonenumber.SRC_FROM_DEFAULT_COUNTRY)
+
+    // --- parse: +cc form ---
+    p2 = phonenumber.parse("+1 201 555 0123", "US")
+    eq_s("parse +1 nn", phonenumber.pn_national_number(p2), "2015550123")
+    eq_i("parse +1 source", phonenumber.pn_source(p2), phonenumber.SRC_FROM_NUMBER_WITH_PLUS)
+    eq_s("parse +1 region", phonenumber.pn_region(p2), "US")
+
+    // --- parse: national prefix stripping (GB '0') ---
+    // GB fixed-line example is 1212345678; dialed nationally as 01212345678.
+    p3 = phonenumber.parse("01212345678", "GB")
+    eq_s("parse GB strip trunk 0", phonenumber.pn_national_number(p3), "1212345678")
+
+    // --- parse: extension ---
+    p4 = phonenumber.parse("+1 201 555 0123 ext 42", "US")
+    eq_s("parse ext nn", phonenumber.pn_national_number(p4), "2015550123")
+    eq_s("parse ext", phonenumber.pn_extension(p4), "42")
+
+    // --- getRegionCodeForNumber ---
+    eq_s("region for parsed +1", phonenumber.region_code_for_number(p2), "US")
+
+    // --- isPossible / isValid + reasons ---
+    eq_i("US possible", phonenumber.is_possible_number("US", "2015550123"), 1)
+    eq_i("US too short reason",
+        phonenumber.is_possible_number_with_reason("US", "201555"), phonenumber.VR_TOO_SHORT)
+    eq_i("US too long reason",
+        phonenumber.is_possible_number_with_reason("US", "20155501234567"), phonenumber.VR_TOO_LONG)
+    eq_i("US possible reason",
+        phonenumber.is_possible_number_with_reason("US", "2015550123"), phonenumber.VR_IS_POSSIBLE)
+
+    eq_i("US valid", phonenumber.is_valid_number("US", "2015550123"), 1)
+    eq_i("US invalid shape", phonenumber.is_valid_number("US", "1015550123"), 0)
+    eq_i("US valid with +1", phonenumber.is_valid_number("US", "+12015550123"), 1)
+    eq_i("GB example valid", phonenumber.is_valid_number("GB", phonenumber.example_number("GB")), 1)
+    eq_i("US valid for region US", phonenumber.is_valid_number_for_region("2015550123", "US"), 1)
+
+    // --- getNumberType ---
+    eq_i("US fixed-line type", phonenumber.number_type("US", "2015550123"), phonenumber.TYPE_FIXED_LINE)
+
+    // --- formatting (leadingDigits-correct) ---
+    eq_s("US national", phonenumber.format_national("US", "2015550123"), "(201) 555-0123")
+    eq_s("US E164", phonenumber.format_e164("US", "2015550123"), "+12015550123")
+    eq_s("US international", phonenumber.format_international("US", "2015550123"), "+1 201-555-0123")
+    eq_s("US rfc3966", phonenumber.format_rfc3966("US", "2015550123"), "tel:+1-201-555-0123")
+
+    // --- isNumberMatch ---
+    eq_i("match exact", phonenumber.is_number_match("+1 201 555 0123", "+12015550123"), phonenumber.MATCH_EXACT)
+    eq_i("match no", phonenumber.is_number_match("+1 201 555 0123", "+1 202 555 0123"), phonenumber.MATCH_NO_MATCH)
+
+    // --- helpers ---
+    eq_s("alpha convert", phonenumber.convert_alpha_characters("1-800-FLOWERS"), "1-800-3569377")
+    eq_i("is alpha", phonenumber.is_alpha_number("1-800-FLOWERS"), 1)
+    eq_s("normalize digits", phonenumber.normalize_digits_only("+1 (201) 555.0123"), "12015550123")
+    eq_s("national significant", phonenumber.national_significant_number(p2), "2015550123")
+
+    // --- breadth: a handful of countries' examples all validate ---
+    check_valid("DE"); check_valid("FR"); check_valid("JP"); check_valid("IN")
+    check_valid("BR"); check_valid("AU"); check_valid("IT"); check_valid("ES"); check_valid("NG")
+
+    println("probe: PASS — parse, region, reasons, type, format, match, helpers")
+    return 0
+}
+
+fn check_valid(region: string) {
+    ex = phonenumber.example_number(region)
+    if ex == "" { fail("${region} has no example") }
+    if phonenumber.is_valid_number(region, ex) != 1 { fail("${region} example not valid: ${ex}") }
+}

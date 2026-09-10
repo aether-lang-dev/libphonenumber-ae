@@ -1,0 +1,33 @@
+// The shared phonenumber engine, built ONCE for the whole monorepo.
+//
+// Output: target/core/lib/libphonenumber_ae.so — every binding's .tests.ae
+// deps this node and then links (cgo/NIF) or loads (ctypes/Fiddle/koffi/FFM,
+// via LIBPHONENUMBER_AE_LIB) that single artifact.
+//
+// Source: core/embed.ae (the aether_pn_embed_* C ABI) imports the local
+// `phonenumber` engine (core/phonenumber.ae + the generated core/metadata.ae)
+// — the WHOLE engine (metadata table, isPossible/isValid, number-type,
+// formatter) is PURE AETHER. The only C is core/_embed_support.c: the
+// caller-owned-string bridge, linked via --extra. There are no callbacks.
+//
+// No caps(): the engine is a pure (region, input) -> answer transform over a
+// baked-in table. It touches no filesystem, no network, no OS. That is a
+// property worth keeping — if this ever needs caps("fs"), something is wrong.
+//
+// aether.shared_lib publishes the whole native-lib wiring set (shared_lib,
+// shared_library, ldlibdeps, shared_library_deps_including_transitive), so a
+// JVM or Go consumer that deps this node finds the .so with no path plumbing.
+
+import bldr
+import aether
+import aether (source, extra_source, output)
+
+aeb(cap) {
+    bldr.build() {
+        aether.shared_lib() {
+            source("embed.ae")
+            extra_source("_embed_support.c")
+            output("libphonenumber_ae.so")
+        }
+    }
+}

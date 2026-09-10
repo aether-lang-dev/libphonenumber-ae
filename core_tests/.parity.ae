@@ -1,0 +1,27 @@
+// Parity oracle gate: runs core_tests/parity.ae, which checks our output against
+// Google's own PhoneNumberUtilTest expected strings. It fails only if the pass
+// count drops below the documented known-good baseline (a NEW divergence), so
+// the gate tracks fidelity honestly without pretending we are byte-identical.
+
+import bldr
+import std.os
+
+aeb(cap) {
+    bldr.build() {
+        root = _get("root")
+        out = "${root}/target/pn_parity"
+        _m = os.system("mkdir -p \"${root}/target\"")
+        rc = os.system("cd \"${root}\" && ae build core_tests/parity.ae -o \"${out}\"")
+        if rc != 0 {
+            println("core_tests: failed to build parity.ae")
+            return 1
+        }
+        rc2 = os.system("\"${out}\"")
+        if rc2 != 0 {
+            println("core_tests: parity regressed below baseline")
+            return 1
+        }
+        println("core_tests: PASS — Google parity baseline held")
+        return 0
+    }
+}

@@ -1,0 +1,29 @@
+{
+    "name": "libphonenumber-ae/phonenumber",
+    "description": "Validate and format international phone numbers. A thin ext-ffi binding over the shared libphonenumber native engine — no phone-number logic lives in PHP.",
+    "type": "library",
+    "license": "Apache-2.0",
+    "homepage": "https://github.com/google/libphonenumber",
+    "keywords": ["phone", "phonenumber", "libphonenumber", "e164", "ffi"],
+    "require": {
+        "php": ">=8.1",
+        "ext-ffi": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "PhoneNumberAe\\": "src/"
+        }
+    },
+    "scripts": {
+        "test": "php tests/conformance.php"
+    },
+    "scripts-descriptions": {
+        "test": "Run the v2 34-check binding conformance suite (no dependencies required)."
+    },
+    "suggest": {
+        "ext-ffi": "Required at run time; the engine is loaded with FFI::cdef."
+    },
+    "config": {
+        "sort-packages": true
+    }
+}

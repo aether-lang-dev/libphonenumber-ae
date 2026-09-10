@@ -1,0 +1,53 @@
+// Go binding tests (cgo). Unlike the dlopen-based bindings, cgo LINKS the
+// engine, so the .so must exist at BUILD time as well as run time. The
+// #cgo LDFLAGS in phonenumber.go already point -L/-rpath at go/native and
+// core/native; we stage the dep'd artifact into go/native so the link and the
+// rpath both resolve no matter where aeb put it.
+//
+// This is the ONE binding that goes fully idiomatic today, because lib/go is
+// the only SDK lib with an `env_var` setter (module.ae) — see
+// aeb/asks/sdk-builders-cannot-set-env-for-the-test-run.md for why the other
+// runtime-loading bindings cannot yet.
+//
+// go_test also derives LD_LIBRARY_PATH itself: it walks its deps for the
+// `shared_library_deps_including_transitive` artifact and dirname's it into
+// the run env (module.ae, builder go_test). core/.build.ae publishes under
+// that name precisely so this works with no plumbing here.
+import bldr
+import std.os
+import go
+import go (env_var)
+
+aeb(cap) {
+    bldr.build() {
+        dep("core/.build.ae")
+        lib = dep_artifact("core/.build.ae", "shared_lib")
+        root = _get("root")
+
+        // Staging is still ours: cgo's LDFLAGS are baked into the .go source, so
+        // the file has to be at the path that source names. An SDK builder cannot
+        // know that.
+        dest = "${root}/go/native"
+        _m = os.system("mkdir -p \"${dest}\"")
+        cp = os.system("cp -f \"${lib}\" \"${dest}/libphonenumber_ae.so\"")
+        if cp != 0 {
+            println("go: could not stage the engine into go/native")
+            return 1
+        }
+
+        // GOFLAGS=-mod=mod keeps this working in a sandbox with no module cache;
+        // the package has no third-party dependencies, so nothing is fetched.
+        rc = go.go_test() {
+            env_var("CGO_ENABLED=1")
+            env_var("GOFLAGS=-mod=mod")
+            env_var("LIBPHONENUMBER_AE_LIB=${lib}")
+        }
+        if rc == 0 {
+            println("go: v2 ABI conformance (34 checks) PASSED")
+        }
+        // Explicit: bldr.build() does not adopt a builder's rc as the block's
+        // implicit return, so without this the node reports FAIL even when
+        // go_test returns 0 and its log says the tests passed.
+        return rc
+    }
+}

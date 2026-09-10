@@ -1,0 +1,53 @@
+// Kotlin layer: a thin idiomatic wrapper over the JAVA binding's classes —
+// there is no second native FFI here. Compile the Kotlin sources against those
+// classes, then run the conformance suite.
+//
+// The classpath comes from java/aether/.build.ae's standard JVM artifact via the dep
+// edge, so nothing is hardcoded.
+//
+// KOTLIN_HOME must point at a real kotlinc >= 2.x. Debian ships kotlinc 1.3,
+// which cannot read the JDK 22+ bytecode the FFM-based Java layer emits (its
+// class files are major version 66+), and only runs under JDK 17 itself — so
+// "kotlinc is on PATH" is NOT the same question as "Kotlin can build this". If
+// no capable Kotlin is installed, this node SKIPS (green) rather than reporting
+// a false pass. KOTLIN_HOME must be a real kotlinc layout:
+// <home>/bin/kotlinc + <home>/lib/kotlin-stdlib.jar.
+
+import bldr
+import bldr (dep, dep_artifact, _get)
+import std.os
+import std.string
+
+aeb(cap) {
+    bldr.build() {
+        dep("core/.build.ae")
+        dep("java/aether/.build.ae")
+        lib = dep_artifact("core/.build.ae", "shared_lib")
+        root = _get("root")
+
+        kh = os.getenv("KOTLIN_HOME")
+        if string.length(kh) == 0 {
+            println("kotlin: SKIPPED — set KOTLIN_HOME to a kotlinc 2.x install")
+            return 0
+        }
+
+        classes = dep_artifact("java/aether/.build.ae", "jvm_classpath_deps_including_transitive")
+        out = "${root}/target/tests/kotlin/test-classes"
+        stdlib = "${kh}/lib/kotlin-stdlib.jar"
+
+        _m = os.system("mkdir -p \"${out}\"")
+        rc_c = os.system("cd \"${root}/kotlin\" && \"${kh}/bin/kotlinc\" -nowarn -cp \"${classes}\" -d \"${out}\" $(find src/main/kotlin src/test/kotlin -name '*.kt')")
+        if rc_c != 0 {
+            println("kotlin: kotlinc failed")
+            return 1
+        }
+
+        rc = os.system("cd \"${root}/kotlin\" && LIBPHONENUMBER_AE_LIB=\"${lib}\" java --enable-native-access=ALL-UNNAMED -cp \"${classes}:${stdlib}:${out}\" org.libphonenumber.ae.kotlin.ConformanceTest")
+        if rc != 0 {
+            println("kotlin: conformance suite reported failures")
+            return 1
+        }
+        println("kotlin: PASS (v2) — 34-check conformance")
+        return 0
+    }
+}
