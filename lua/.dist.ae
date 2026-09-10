@@ -1,0 +1,53 @@
+// The Lua binding's DISTRIBUTION artifact: a luarocks pack .rock if luarocks
+// is present, else a .tar.gz of the module + vendored engine .so.
+//
+// Mirrors java/.jar.ae in shape: dep core/.build.ae, take its freshly-built
+// engine .so via dep_artifact, and assemble a hand-to-someone package under
+// target/dist/. The idiomatic Lua distributable is a rock produced by
+// `luarocks pack` against phonenumber_ae-0.2.0-1.rockspec; when luarocks is
+// absent (as it is on this box) the spec permits a plain-tar package of the
+// module — the C extension source, the pure-Lua front end, the rockspec, and
+// the vendored engine .so.
+//
+// The extension dlopen's the engine at run time (it is not on the link line),
+// so a consumer points LIBPHONENUMBER_AE_LIB at the vendored native/ copy.
+// One .so per package => current-OS-only.
+import bldr
+import bldr (dep, dep_artifact, _get)
+import std.os
+
+aeb(cap) {
+    bldr.build() {
+        dep("core/.build.ae")
+        lib = dep_artifact("core/.build.ae", "shared_lib")
+        root = _get("root")
+        dist = "${root}/target/dist"
+        _m = os.system("mkdir -p \"${dist}\"")
+
+        // Vendor the freshly-built engine into lua/native so the package
+        // carries it; the extension's dlopen honours LIBPHONENUMBER_AE_LIB
+        // pointed here.
+        dest = "${root}/lua/native"
+        _md = os.system("mkdir -p \"${dest}\"")
+        cp = os.system("cp -f \"${lib}\" \"${dest}/libphonenumber_ae.so\"")
+        if cp != 0 { println("lua dist: could not vendor the engine into lua/native"); return 1 }
+
+        // Prefer luarocks' own packer when it is on PATH — it produces the
+        // canonical .rock from the rockspec.
+        have = os.system("command -v luarocks >/dev/null 2>&1")
+        if have == 0 {
+            rc = os.system("cd \"${dist}\" && luarocks pack \"${root}/lua/phonenumber_ae-0.2.0-1.rockspec\"")
+            if rc != 0 { println("lua dist: luarocks pack failed"); return 1 }
+            println("lua dist: target/dist/phonenumber_ae-0.2.0-1.*.rock (luarocks pack)")
+            return 0
+        }
+
+        // Fallback: plain tar of the module sources + rockspec + vendored
+        // engine. Needs no missing toolchain.
+        out = "${dist}/phonenumber-ae-lua.tar.gz"
+        rc = os.system("cd \"${root}/lua\" && tar -czf \"${out}\" phonenumber_ae-0.2.0-1.rockspec src host example test README.md native/libphonenumber_ae.so")
+        if rc != 0 { println("lua dist: failed to build the module tarball"); return 1 }
+        println("lua dist: target/dist/phonenumber-ae-lua.tar.gz (Lua module + rockspec, engine vendored at native/)")
+        return 0
+    }
+}

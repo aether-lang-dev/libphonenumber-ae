@@ -1,0 +1,52 @@
+// The Elixir binding's DISTRIBUTION artifact: a Hex package .tar.
+//
+// The BEAM/Elixir idiom for "here is my package" is a Hex tarball, exactly what
+// `mix hex.build` produces (`<app>-<version>.tar`, here phonenumber_ae-0.1.0.tar).
+// It bundles the Elixir surface (lib/, mix.exs, README) with a checksum and the
+// package metadata Hex requires.
+//
+// This package ships NO native code: the NIF is built once by erlang/.build.ae
+// and loaded at runtime (see mix.exs and the one-engine rule), so there is no C
+// and no second .so to vendor here — the Hex tar is the honest Elixir artifact.
+//
+// `mix hex.build` needs the `hex` archive; if mix (or hex) is absent it cannot
+// build, so a missing toolchain is a first-class SKIP: return 0, no artifact.
+import bldr
+import std.os
+import bldr (dep, _get)
+
+aeb(cap) {
+    bldr.build() {
+        // No mix, no hex.build, no package. Skip loudly rather than fail the DAG
+        // when the toolchain is absent — same contract as elixir/.tests.ae.
+        have = os.system("command -v elixir >/dev/null 2>&1 && command -v mix >/dev/null 2>&1")
+        if have != 0 {
+            println("elixir dist: SKIPPED — elixir not installed (no Elixir/Mix on PATH)")
+            return 0
+        }
+
+        // `mix hex.build` is provided by the hex archive; a bare mix without it
+        // cannot build a Hex package. Probe honestly before committing to a build.
+        hex = os.system("command -v mix >/dev/null 2>&1 && mix help hex.build >/dev/null 2>&1")
+        if hex != 0 {
+            println("elixir dist: SKIPPED — hex not installed (mix archive.install hex)")
+            return 0
+        }
+
+        root = _get("root")
+        dist = "${root}/target/dist"
+        _m = os.system("mkdir -p \"${dist}\"")
+
+        // `mix hex.build` writes <app>-<version>.tar into the CURRENT directory,
+        // so run it in elixir/ then move the artifact into the single dist dir.
+        // Remove any stale copy first so the move below picks the fresh one.
+        _c = os.system("cd \"${root}/elixir\" && rm -f phonenumber_ae-*.tar")
+        b = os.system("cd \"${root}/elixir\" && mix hex.build")
+        if b != 0 { println("elixir dist: mix hex.build failed"); return 1 }
+
+        mv = os.system("mv \"${root}/elixir/\"phonenumber_ae-*.tar \"${dist}/\"")
+        if mv != 0 { println("elixir dist: failed to move the Hex tar into target/dist"); return 1 }
+        println("elixir dist: target/dist/phonenumber_ae-0.1.0.tar (Hex package via mix hex.build)")
+        return 0
+    }
+}

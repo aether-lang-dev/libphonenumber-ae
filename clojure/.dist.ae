@@ -1,0 +1,39 @@
+// The Clojure layer's DISTRIBUTION artifact: a jar of THIS binding's own sources.
+//
+// Like kotlin/ and groovy/, the Clojure layer sits on top of the java binding's
+// classes and does NOT re-bundle the engine .so — java/.jar.ae already ships the
+// self-contained fat jar, and this layer reuses it. The honest hand-to-someone
+// artifact is therefore just the Clojure binding's own code, packaged as a jar
+// under target/dist/. A consumer puts this jar plus the java fat jar (and a
+// Clojure runtime) on the classpath.
+//
+// A Clojure library jar ships .clj SOURCE, not AOT'd classes — clojure.main /
+// require load namespaces from source at the consumer, so a source jar IS the
+// idiomatic Clojure library artifact (the deps.edn coordinates such a jar). No
+// AOT step means no compiler is needed to build it, only `jar` (part of the JDK,
+// always present) — so this node does NOT skip: the artifact is always
+// producible.
+//
+// We still dep core/.build.ae to mirror the exemplar's shape and keep dist
+// ordering consistent; the .so is not vendored into this jar.
+import bldr
+import bldr (dep, _get)
+import std.os
+
+aeb(cap) {
+    bldr.build() {
+        dep("core/.build.ae")
+        root = _get("root")
+        dist = "${root}/target/dist"
+        _m = os.system("mkdir -p \"${dist}\"")
+
+        // jar the binding's own source tree (src/) plus deps.edn coordinates
+        // and README, from within clojure/ so paths inside the jar are
+        // namespace-relative. `jar` is part of the JDK and always present.
+        out = "${dist}/clojure-phonenumber-ae.jar"
+        rc = os.system("cd \"${root}/clojure\" && jar cf \"${out}\" -C src . deps.edn README.md")
+        if rc != 0 { println("clojure dist: jar failed"); return 1 }
+        println("clojure dist: target/dist/clojure-phonenumber-ae.jar (binding sources; layers over java/'s fat jar + a Clojure runtime)")
+        return 0
+    }
+}

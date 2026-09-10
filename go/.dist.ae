@@ -1,0 +1,42 @@
+// The Go binding's DISTRIBUTION artifact: a .tar.gz of the Go module.
+//
+// Mirrors java/.jar.ae in shape: dep core/.build.ae, take its freshly-built
+// engine .so via dep_artifact, and assemble a hand-to-someone package under
+// target/dist/. Go has no binary package format (a "go package" is source the
+// importer builds), so the idiomatic distributable is a source tarball of the
+// module: go.mod + the .go sources + a vendored copy of the engine .so under
+// native/, which is exactly the path the #cgo LDFLAGS (-L/-rpath go/native)
+// already reference, so a consumer who never built the engine can `go build`.
+//
+// One .so per package => current-OS-only (this box's platform), the same
+// tradeoff as the fat jar. Plain tar needs no Go toolchain to assemble.
+import bldr
+import bldr (dep, dep_artifact, _get)
+import std.os
+
+aeb(cap) {
+    bldr.build() {
+        dep("core/.build.ae")
+        lib = dep_artifact("core/.build.ae", "shared_lib")
+        root = _get("root")
+        dist = "${root}/target/dist"
+        _m = os.system("mkdir -p \"${dist}\"")
+
+        // Vendor the freshly-built engine into go/native — the directory the
+        // binding's #cgo LDFLAGS -L/-rpath already point at.
+        dest = "${root}/go/native"
+        _md = os.system("mkdir -p \"${dest}\"")
+        cp = os.system("cp -f \"${lib}\" \"${dest}/libphonenumber_ae.so\"")
+        if cp != 0 { println("go dist: could not vendor the engine into go/native"); return 1 }
+
+        out = "${dist}/phonenumber-ae-go.tar.gz"
+
+        // tar the module sources plus the vendored engine .so, from within go/
+        // so paths inside the tarball are module-relative. Ship the importable
+        // package (go.mod + phonenumber.go + README), not the *_test.go.
+        rc = os.system("cd \"${root}/go\" && tar -czf \"${out}\" go.mod phonenumber.go README.md native/libphonenumber_ae.so")
+        if rc != 0 { println("go dist: failed to build the module tarball"); return 1 }
+        println("go dist: target/dist/phonenumber-ae-go.tar.gz (Go module sources, engine vendored at native/)")
+        return 0
+    }
+}

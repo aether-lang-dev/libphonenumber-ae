@@ -16,8 +16,25 @@ aeb(cap) {
         // JVM: the fat jar (engine .so bundled at /native/).
         dep("java/.jar.ae")
 
-        // Per-binding dist nodes are added here as they land (python wheel, ruby
-        // gem, rust crate, npm tarball, dotnet nupkg, …).
+        // Every binding's distribution artifact, into target/dist/.
+        dep("python/.dist.ae")     // wheel
+        dep("ruby/.dist.ae")       // gem
+        dep("rust/.dist.ae")       // .crate
+        dep("go/.dist.ae")         // module tarball (+ vendored .so)
+        dep("dart/.dist.ae")       // package tarball (+ vendored .so)
+        dep("dotnet/.dist.ae")     // .nupkg (skip-loud: no SDK)
+        dep("php/.dist.ae")        // composer package tarball
+        dep("lua/.dist.ae")        // .rock / tarball
+        dep("haskell/.dist.ae")    // cabal sdist (skip-loud: no ghc)
+        dep("nim/.dist.ae")        // nimble package tarball
+        dep("zig/.dist.ae")        // module tarball
+        dep("pharo/.dist.ae")      // source tarball (+ vendored .so)
+        dep("erlang/.dist.ae")     // app tarball (priv/ .so)
+        dep("elixir/.dist.ae")     // hex .tar
+        dep("gleam/.dist.ae")      // package tarball
+        dep("kotlin/.dist.ae")     // thin jar (layers over java/'s classes)
+        dep("groovy/.dist.ae")     // thin jar
+        dep("clojure/.dist.ae")    // thin jar
 
         // Prove the artifacts are real (exist, non-empty, native bundled where
         // expected).

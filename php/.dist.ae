@@ -1,0 +1,54 @@
+// The PHP binding's DISTRIBUTION artifact: a self-contained composer package
+// tarball.
+//
+// Composer packages are consumed from a VCS/tarball of source (there is no
+// compiled binary package format for a pure-PHP library), so the idiomatic
+// hand-to-someone artifact is a .tar.gz of the package: composer.json + the
+// PSR-4 src/ + a vendored copy of the engine .so under native/, so a consumer
+// can point LIBPHONENUMBER_AE_LIB (or the loader's search) at the bundled
+// native/libphonenumber_ae.so with no external .so to place.
+//
+// The engine .so comes from core/.build.ae's shared_lib artifact (dep'd), so
+// the tarball always vendors the freshly-built engine. One .so per tarball =>
+// the package is current-OS-only (the .so is this box's platform).
+//
+// Plain `tar` needs no PHP toolchain, so there is nothing to skip on here — the
+// PHP CLI is only needed to RUN the binding, not to tar its sources.
+import bldr
+import std.os
+import bldr (dep, dep_artifact, _get)
+
+aeb(cap) {
+    bldr.build() {
+        dep("core/.build.ae")
+        lib = dep_artifact("core/.build.ae", "shared_lib")
+        root = _get("root")
+        dist = "${root}/target/dist"
+        _m = os.system("mkdir -p \"${dist}\"")
+
+        // Stage the package into a clean tree so the tarball has exactly the
+        // composer package + a vendored .so and none of the box's detritus.
+        stage = "${root}/target/php-dist/phonenumber-ae-php"
+        _r = os.system("rm -rf \"${root}/target/php-dist\"")
+        _s = os.system("mkdir -p \"${stage}/native\"")
+
+        // composer.json + the PSR-4 src/ + README (NOT tests/, NOT example/,
+        // NOT the vendor/ or composer.lock the .gitignore covers).
+        cpj = os.system("cp \"${root}/php/composer.json\" \"${root}/php/README.md\" \"${stage}/\"")
+        if cpj != 0 { println("php dist: failed to stage composer.json"); return 1 }
+        cps = os.system("cp -R \"${root}/php/src\" \"${stage}/src\"")
+        if cps != 0 { println("php dist: failed to stage src/"); return 1 }
+
+        // Vendor the freshly-built engine alongside the package.
+        cpl = os.system("cp \"${lib}\" \"${stage}/native/libphonenumber_ae.so\"")
+        if cpl != 0 { println("php dist: failed to vendor the engine .so"); return 1 }
+
+        // tar the staged package. -C so paths inside are relative to the package
+        // root (phonenumber-ae-php/...), not the box's absolute tree.
+        tar = "${dist}/phonenumber-ae-php.tar.gz"
+        rc = os.system("tar -czf \"${tar}\" -C \"${root}/target/php-dist\" phonenumber-ae-php")
+        if rc != 0 { println("php dist: tar failed"); return 1 }
+        println("php dist: target/dist/phonenumber-ae-php.tar.gz (composer package src + vendored engine .so at native/)")
+        return 0
+    }
+}

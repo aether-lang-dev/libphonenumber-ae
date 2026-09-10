@@ -1,0 +1,42 @@
+// The Pharo binding's DISTRIBUTION artifact: a .tar.gz of the Tonel sources +
+// the vendored engine .so.
+//
+// Mirrors java/.jar.ae in shape: dep core/.build.ae, take its freshly-built
+// engine .so via dep_artifact, and assemble a hand-to-someone package under
+// target/dist/. Pharo has no binary package archive the way a jar is; code is
+// shipped as Tonel source (pharo/src/) that a consumer loads into an image via
+// the Metacello baseline. The idiomatic distributable is therefore the source
+// tree, and — because this is a REAL UnifiedFFI binding against the flat C ABI,
+// not a JVM layer — we vendor the engine .so under native/ so a consumer points
+// LIBPHONENUMBER_AE_LIB at it and runs without building the engine.
+//
+// One .so per package => current-OS-only, same tradeoff as the fat jar. tar
+// needs no missing toolchain, so this node never has to skip.
+import bldr
+import bldr (dep, dep_artifact, _get)
+import std.os
+
+aeb(cap) {
+    bldr.build() {
+        dep("core/.build.ae")
+        lib = dep_artifact("core/.build.ae", "shared_lib")
+        root = _get("root")
+        dist = "${root}/target/dist"
+        _m = os.system("mkdir -p \"${dist}\"")
+
+        // Vendor the freshly-built engine into pharo/native so the package
+        // carries it; the FFI's LIBPHONENUMBER_AE_LIB is pointed here.
+        dest = "${root}/pharo/native"
+        _md = os.system("mkdir -p \"${dest}\"")
+        cp = os.system("cp -f \"${lib}\" \"${dest}/libphonenumber_ae.so\"")
+        if cp != 0 { println("pharo dist: could not vendor the engine into pharo/native"); return 1 }
+
+        out = "${dist}/phonenumber-ae-pharo.tar.gz"
+
+        // tar the Tonel sources, the loader script, and the vendored engine .so.
+        rc = os.system("cd \"${root}/pharo\" && tar -czf \"${out}\" src run-tests.sh README.md native/libphonenumber_ae.so")
+        if rc != 0 { println("pharo dist: failed to build the sources tarball"); return 1 }
+        println("pharo dist: target/dist/phonenumber-ae-pharo.tar.gz (Tonel sources, engine vendored at native/)")
+        return 0
+    }
+}

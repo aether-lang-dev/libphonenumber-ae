@@ -1,0 +1,40 @@
+// The Haskell binding's DISTRIBUTION artifact: a Cabal source distribution
+// (.tar.gz) produced by `cabal sdist`.
+//
+// The idiomatic Haskell package is the sdist tarball Cabal itself assembles
+// from the .cabal + sources (this is what Hackage consumes). There is no honest
+// hand-fake of it — `cabal sdist` decides exactly which files land in the
+// tarball from the .cabal's source fields — so when the GHC/Cabal toolchain is
+// absent this node SKIPS LOUDLY: it prints the skip line, returns 0, and
+// produces NO artifact — the same posture haskell/.tests.ae takes on this box.
+//
+// On THIS box ghc/cabal are not installed, so it skips.
+import bldr
+import std.os
+import bldr (dep, dep_artifact, _get)
+
+aeb(cap) {
+    bldr.build() {
+        dep("core/.build.ae")
+        lib = dep_artifact("core/.build.ae", "shared_lib")
+        root = _get("root")
+
+        // `cabal` is the tool that builds the sdist; without it there is nothing
+        // to skip TO (a raw tar-of-sources would not be the sdist Cabal makes).
+        have = os.system("command -v cabal >/dev/null 2>&1")
+        if have != 0 {
+            println("haskell dist: SKIPPED — cabal not installed")
+            return 0
+        }
+
+        dist = "${root}/target/dist"
+        _m = os.system("mkdir -p \"${dist}\"")
+
+        // cabal sdist writes to dist-newstyle/sdist/<pkg>-<ver>.tar.gz by
+        // default; -o directs it straight into target/dist/.
+        rc = os.system("cd \"${root}/haskell\" && cabal sdist -o \"${dist}\"")
+        if rc != 0 { println("haskell dist: cabal sdist failed"); return 1 }
+        println("haskell dist: target/dist/*.tar.gz (cabal sdist source distribution)")
+        return 0
+    }
+}

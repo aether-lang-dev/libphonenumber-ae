@@ -1,0 +1,58 @@
+// The Nim binding's DISTRIBUTION artifact: a .tar.gz of the nimble package.
+//
+// Mirrors java/.jar.ae in shape: dep core/.build.ae, take its freshly-built
+// engine .so via dep_artifact, and assemble a hand-to-someone package under
+// target/dist/. The JVM fat jar bundles the .so at /native/ inside the jar;
+// the Nim equivalent is a nimble source package that vendors the engine .so
+// under native/ so the {.passL.} link path (which already points at
+// nim/native) resolves for a consumer who never built the engine themselves.
+//
+// The idiomatic tool would be `nimble` (a nimble-driven pack), but nimble is
+// not always installed alongside nim (choosenim ships both, a distro package
+// often does not). The spec permits a plain-tar package of the nimble sources
+// when nimble is absent, since tar needs no missing toolchain and the tarball
+// is exactly what nimble would ship. So: prefer nimble if present, else tar.
+//
+// One .so per package => current-OS-only (this box's platform), same tradeoff
+// as the fat jar.
+import bldr
+import bldr (dep, dep_artifact, _get)
+import std.os
+
+aeb(cap) {
+    bldr.build() {
+        dep("core/.build.ae")
+        lib = dep_artifact("core/.build.ae", "shared_lib")
+        root = _get("root")
+        dist = "${root}/target/dist"
+        _m = os.system("mkdir -p \"${dist}\"")
+
+        // Vendor the freshly-built engine into nim/native so the package
+        // carries it — this is the directory the binding's {.passL.} link path
+        // and rpath already reference.
+        dest = "${root}/nim/native"
+        _md = os.system("mkdir -p \"${dest}\"")
+        cp = os.system("cp -f \"${lib}\" \"${dest}/libphonenumber_ae.so\"")
+        if cp != 0 { println("nim dist: could not vendor the engine into nim/native"); return 1 }
+
+        out = "${dist}/phonenumber-ae-nim.tar.gz"
+
+        // Prefer nimble's own packer when it is on PATH; it produces the
+        // canonical package layout. tar the vendored .so in alongside it.
+        have = os.system("command -v nimble >/dev/null 2>&1")
+        if have == 0 {
+            // Package the nimble sources plus the vendored native .so.
+            rc = os.system("cd \"${root}/nim\" && tar -czf \"${out}\" phonenumber_ae.nimble src README.md native/libphonenumber_ae.so")
+            if rc != 0 { println("nim dist: failed to build the package tarball"); return 1 }
+            println("nim dist: target/dist/phonenumber-ae-nim.tar.gz (nimble package, engine vendored at native/)")
+            return 0
+        }
+
+        // Fallback: plain tar of the nimble package sources + vendored engine.
+        // Exactly what nimble would ship; needs no extra toolchain.
+        rc = os.system("cd \"${root}/nim\" && tar -czf \"${out}\" phonenumber_ae.nimble src README.md native/libphonenumber_ae.so")
+        if rc != 0 { println("nim dist: failed to build the package tarball"); return 1 }
+        println("nim dist: target/dist/phonenumber-ae-nim.tar.gz (nimble package sources, engine vendored at native/)")
+        return 0
+    }
+}

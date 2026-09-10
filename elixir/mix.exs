@@ -22,9 +22,22 @@ defmodule PhonenumberAe.MixProject do
       deps: deps(),
       description:
         "Validate and format international phone numbers — Elixir surface over the shared Aether engine",
+      package: package(),
       # No network access is needed to build or test this project; the dep list
       # below is empty on purpose so `mix test` runs offline.
       docs: [main: "PhonenumberAe"]
+    ]
+  end
+
+  # Hex package metadata. `mix hex.build` (used by elixir/.dist.ae to produce the
+  # distribution .tar) refuses to build without `licenses` and `links`, so they
+  # live here. The NIF is built once by erlang/.build.ae and loaded at runtime —
+  # this package ships only the Elixir surface, no C and no second .so — so no
+  # priv/ files are listed.
+  defp package do
+    [
+      licenses: ["Apache-2.0"],
+      links: %{"Source" => "https://github.com/google/libphonenumber"}
     ]
   end
 

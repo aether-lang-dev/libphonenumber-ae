@@ -1,0 +1,60 @@
+// The Ruby binding's DISTRIBUTION artifact: a self-contained gem.
+//
+// Unlike ruby/.tests.ae (which runs rspec against a loose engine .so pointed at
+// by LIBPHONENUMBER_AE_LIB), this node produces a hand-to-someone gem under
+// target/dist/: the Fiddle binding PLUS the engine .so vendored at
+// native/libphonenumber_ae.so inside the gem. native.rb's loader already probes
+// ../native beside lib/, so the gem runs with no LIBPHONENUMBER_AE_LIB and no
+// external .so to place.
+//
+// One .so per gem => the gem is current-OS-only (the .so is this box's
+// platform). The gemspec's `files` already globs native/*.so, so copying the
+// freshly-built engine into native/ before `gem build` is all that is needed.
+//
+// The engine .so comes from core/.build.ae's shared_lib artifact (dep'd), so the
+// gem always vendors the freshly-built engine.
+import bldr
+import std.os
+import bldr (dep, dep_artifact, _get)
+
+aeb(cap) {
+    bldr.build() {
+        dep("core/.build.ae")
+        lib = dep_artifact("core/.build.ae", "shared_lib")
+        root = _get("root")
+        dist = "${root}/target/dist"
+        _m = os.system("mkdir -p \"${dist}\"")
+
+        // Skip honestly rather than fail the DAG when the toolchain is absent.
+        have = os.system("command -v gem >/dev/null 2>&1")
+        if have != 0 {
+            println("ruby dist: SKIPPED — gem not installed (no Ruby toolchain on PATH)")
+            return 0
+        }
+
+        // Vendor the freshly-built engine so the gem is self-contained; the
+        // gemspec's files glob (native/*.so) packages it into the gem.
+        rubynative = "${root}/ruby/native"
+        _mk = os.system("mkdir -p \"${rubynative}\"")
+        rcc = os.system("cp \"${lib}\" \"${rubynative}/libphonenumber_ae.so\"")
+        if rcc != 0 { println("ruby dist: failed to vendor engine .so into ruby/native"); return 1 }
+
+        // Build the gem, then collect it into the monorepo's single distribution
+        // dir. `gem build` writes phonenumber_ae-<version>.gem into the cwd.
+        outdir = "${root}/ruby/target/dist_gem"
+        _mo = os.system("rm -rf \"${outdir}\" && mkdir -p \"${outdir}\"")
+        rcb = os.system("cd \"${root}/ruby\" && gem build phonenumber_ae.gemspec --output \"${outdir}/phonenumber_ae.gem\" >/dev/null 2>&1")
+        if rcb != 0 {
+            // Older RubyGems lack --output; fall back to building in-place and
+            // moving the produced gem.
+            rcb = os.system("cd \"${root}/ruby\" && gem build phonenumber_ae.gemspec >/dev/null 2>&1 && mv phonenumber_ae-*.gem \"${outdir}/\"")
+        }
+        if rcb != 0 { println("ruby dist: `gem build` failed"); return 1 }
+
+        rcp = os.system("cp \"${outdir}\"/*.gem \"${dist}/\"")
+        if rcp != 0 { println("ruby dist: no gem produced to copy into target/dist"); return 1 }
+
+        println("ruby dist: target/dist/*.gem (gem, engine vendored at native/)")
+        return 0
+    }
+}

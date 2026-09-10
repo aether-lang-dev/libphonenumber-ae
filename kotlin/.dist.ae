@@ -1,0 +1,56 @@
+// The Kotlin layer's DISTRIBUTION artifact: a jar of THIS binding's own classes.
+//
+// Unlike java/.jar.ae, the JVM-family layers (kotlin/ groovy/ clojure/) do NOT
+// re-bundle the engine .so — java/.jar.ae already ships the self-contained fat
+// jar, and these layers reuse it. So the honest hand-to-someone artifact here is
+// just the Kotlin binding's own compiled classes, packaged as a jar under
+// target/dist/. A consumer puts this jar plus the java fat jar (and the Kotlin
+// stdlib) on the classpath.
+//
+// We still dep core/.build.ae to mirror the exemplar's shape and keep dist
+// ordering consistent, but the .so is not vendored into this jar.
+//
+// Kotlin needs a capable compiler: kotlinc >= 2.x on a JDK 22+ VM, because the
+// java binding's classes it compiles against are FFM-era (major 66+) bytecode.
+// Debian's kotlinc 1.3 cannot read them, so "kotlinc on PATH" is not the same as
+// "Kotlin can build this". KOTLIN_HOME must point at a real kotlinc 2.x layout
+// (<home>/bin/kotlinc). If it is unset, SKIP LOUDLY (green, no artifact).
+import bldr
+import bldr (dep, dep_artifact, _get)
+import std.os
+import std.string
+
+aeb(cap) {
+    bldr.build() {
+        dep("core/.build.ae")
+        dep("java/.build.ae")
+        root = _get("root")
+        dist = "${root}/target/dist"
+        _m = os.system("mkdir -p \"${dist}\"")
+
+        kh = os.getenv("KOTLIN_HOME")
+        if string.length(kh) == 0 {
+            println("kotlin dist: SKIPPED — kotlinc not installed (set KOTLIN_HOME to a kotlinc 2.x install)")
+            return 0
+        }
+
+        // Compile only the MAIN Kotlin sources (not the test suite) into a
+        // staging dir, against the java binding's classpath, then jar them.
+        classes = dep_artifact("java/.build.ae", "jvm_classpath_deps_including_transitive")
+        stage = "${root}/target/dist-stage/kotlin"
+        _rm = os.system("rm -rf \"${stage}\"")
+        _mk = os.system("mkdir -p \"${stage}\"")
+
+        rc_c = os.system("cd \"${root}/kotlin\" && \"${kh}/bin/kotlinc\" -nowarn -cp \"${classes}\" -d \"${stage}\" $(find src/main/kotlin -name '*.kt')")
+        if rc_c != 0 {
+            println("kotlin dist: kotlinc failed to compile the binding classes")
+            return 1
+        }
+
+        out = "${dist}/kotlin-phonenumber-ae.jar"
+        rc = os.system("cd \"${stage}\" && jar cf \"${out}\" .")
+        if rc != 0 { println("kotlin dist: jar failed"); return 1 }
+        println("kotlin dist: target/dist/kotlin-phonenumber-ae.jar (binding classes; layers over java/'s fat jar + Kotlin stdlib)")
+        return 0
+    }
+}

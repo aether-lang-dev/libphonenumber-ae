@@ -1,0 +1,41 @@
+// The Groovy layer's DISTRIBUTION artifact: a jar of THIS binding's own sources.
+//
+// Like kotlin/ and clojure/, the Groovy layer sits on top of the java binding's
+// classes and does NOT re-bundle the engine .so — java/.jar.ae already ships the
+// self-contained fat jar, and this layer reuses it. The honest hand-to-someone
+// artifact is therefore just the Groovy binding's own code, packaged as a jar
+// under target/dist/. A consumer puts this jar plus the java fat jar (and a
+// Groovy runtime) on the classpath.
+//
+// We ship SOURCE .groovy files rather than compiled classes on purpose: the only
+// groovyc on this box is Debian's Groovy 2.4 on a JDK 17 VM, which cannot even
+// LOAD the java binding's FFM-era (major 66+) classes to compile against, so a
+// compiled-classes jar is impractical here. The spec explicitly allows a source
+// package for the JVM layers when a jar of classes is impractical; Groovy is
+// idiomatically distributed and compiled from source anyway (groovyc/@Grab at
+// the consumer). Building a source jar needs only `jar`, no groovyc — so this
+// node does NOT skip: the artifact is always producible.
+//
+// We still dep core/.build.ae to mirror the exemplar's shape and keep dist
+// ordering consistent; the .so is not vendored into this jar.
+import bldr
+import bldr (dep, _get)
+import std.os
+
+aeb(cap) {
+    bldr.build() {
+        dep("core/.build.ae")
+        root = _get("root")
+        dist = "${root}/target/dist"
+        _m = os.system("mkdir -p \"${dist}\"")
+
+        // jar the binding's own source tree (src/main/groovy) from within
+        // groovy/ so the paths inside the jar are package-relative. `jar` is
+        // part of the JDK and always present, so no toolchain probe is needed.
+        out = "${dist}/groovy-phonenumber-ae.jar"
+        rc = os.system("cd \"${root}/groovy\" && jar cf \"${out}\" -C src/main/groovy . README.md")
+        if rc != 0 { println("groovy dist: jar failed"); return 1 }
+        println("groovy dist: target/dist/groovy-phonenumber-ae.jar (binding sources; layers over java/'s fat jar + a Groovy runtime)")
+        return 0
+    }
+}

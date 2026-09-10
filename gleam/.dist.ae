@@ -1,0 +1,45 @@
+// The Gleam binding's DISTRIBUTION artifact: a package tarball.
+//
+// The Hex/Gleam idiom for "here is my package" is `gleam publish` (which uploads
+// a package tarball to Hex). This toolchain's `gleam` (1.18.x) has no
+// `--dry-run` that would emit that tarball locally without authenticating and
+// pushing, so — per the dist spec — we fall back to a plain tar of the package
+// sources with the engine .so vendored under priv/. Plain `tar` needs no extra
+// toolchain, so this fallback is always available and never has to SKIP.
+//
+// The tarball is self-contained: gleam.toml + manifest.toml + src/ + test/ +
+// README, plus priv/libphonenumber_ae.so (the freshly-built engine, dep'd from
+// core/.build.ae). The NIF that Gleam's @external(erlang, "phonenumber_ae_nif",
+// …) resolves against is the canonical one built by erlang/.build.ae; a consumer
+// puts that app on ERL_LIBS the same way the in-repo tests do.
+import bldr
+import std.os
+import bldr (dep, dep_artifact, _get)
+
+aeb(cap) {
+    bldr.build() {
+        dep("core/.build.ae")
+        lib = dep_artifact("core/.build.ae", "shared_lib")
+        root = _get("root")
+        dist = "${root}/target/dist"
+        _m = os.system("mkdir -p \"${dist}\"")
+
+        // Stage the package into a clean tree so the archive expands to a
+        // top-level phonenumber_ae/ with the engine .so vendored under priv/.
+        // build/ is a gleam build output, not a source, so it is excluded.
+        stage = "${root}/target/dist-stage-gleam"
+        _r = os.system("rm -rf \"${stage}\"")
+        pkg = "${stage}/phonenumber_ae"
+        mk = os.system("mkdir -p \"${pkg}/priv\"")
+        if mk != 0 { println("gleam dist: failed to create staging tree"); return 1 }
+
+        cp = os.system("cd \"${root}/gleam\" && cp -R gleam.toml manifest.toml README.md src test \"${pkg}/\" && cp \"${lib}\" \"${pkg}/priv/libphonenumber_ae.so\"")
+        if cp != 0 { println("gleam dist: failed to stage sources + engine .so"); return 1 }
+
+        rc = os.system("tar -czf \"${dist}/phonenumber-ae-gleam.tar.gz\" -C \"${stage}\" phonenumber_ae")
+        if rc != 0 { println("gleam dist: failed to build the package tarball"); return 1 }
+        _c = os.system("rm -rf \"${stage}\"")
+        println("gleam dist: target/dist/phonenumber-ae-gleam.tar.gz (Gleam sources, engine .so vendored under priv/)")
+        return 0
+    }
+}

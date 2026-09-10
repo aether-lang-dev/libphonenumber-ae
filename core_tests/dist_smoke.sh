@@ -42,11 +42,19 @@ if [ -f "$JAR" ]; then
   checked=$((checked + 1))
 fi
 
-# --- Other bindings' artifacts: presence + non-empty by extension. Extend as
-# per-binding dist nodes land (wheel, gem, crate tarball, npm tgz, nupkg, …). ---
+# --- The JVM-layer thin jars (kotlin/groovy/clojure) layer over java/'s classes
+# and deliberately do NOT bundle the engine; check presence + non-empty only. ---
 shopt -s nullglob
+for f in "$DIST"/kotlin-phonenumber-ae.jar "$DIST"/groovy-phonenumber-ae.jar \
+         "$DIST"/clojure-phonenumber-ae.jar; do
+  nonempty "$f" "jvm-layer jar"
+  say "$(basename "$f") OK — present, non-empty (thin, reuses the fat jar's engine)"
+  checked=$((checked + 1))
+done
+
+# --- Other bindings' artifacts: presence + non-empty by extension. ---
 for f in "$DIST"/*.whl "$DIST"/*.gem "$DIST"/*.crate "$DIST"/*.tgz \
-         "$DIST"/*.nupkg "$DIST"/*.tar.gz "$DIST"/*.tar; do
+         "$DIST"/*.nupkg "$DIST"/*.tar.gz "$DIST"/*.tar "$DIST"/*.rock; do
   nonempty "$f" "artifact"
   say "$(basename "$f") OK — present, non-empty"
   checked=$((checked + 1))

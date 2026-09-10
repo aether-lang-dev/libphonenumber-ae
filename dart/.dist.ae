@@ -1,0 +1,55 @@
+// The Dart binding's DISTRIBUTION artifact: a self-contained .tar.gz.
+//
+// Dart/pub has no binary package format that can carry a native .so (a published
+// pub package is source-only), so the hand-to-someone distributable is a
+// .tar.gz of the package sources PLUS the engine .so vendored at
+// native/libphonenumber_ae.so inside the tarball. native.dart's loader already
+// probes native/ beside the package ($cwd/native/<lib>), so unpacking the
+// tarball and running from its root resolves the engine with no
+// LIBPHONENUMBER_AE_LIB and no external .so to place.
+//
+// One .so per tarball => the tarball is current-OS-only (the .so is this box's
+// platform). Built with plain `tar` (no Dart toolchain needed to package), so
+// this node produces its artifact even where the `dart` CLI is absent — only
+// the engine .so (from core) is required.
+//
+// The engine .so comes from core/.build.ae's shared_lib artifact (dep'd), so the
+// tarball always vendors the freshly-built engine.
+import bldr
+import std.os
+import bldr (dep, dep_artifact, _get)
+
+aeb(cap) {
+    bldr.build() {
+        dep("core/.build.ae")
+        lib = dep_artifact("core/.build.ae", "shared_lib")
+        root = _get("root")
+        dist = "${root}/target/dist"
+        _m = os.system("mkdir -p \"${dist}\"")
+
+        // Plain tar is the only tool needed; skip loudly if even that is absent.
+        have = os.system("command -v tar >/dev/null 2>&1")
+        if have != 0 {
+            println("dart dist: SKIPPED — tar not installed")
+            return 0
+        }
+
+        // Vendor the freshly-built engine so the tarball is self-contained.
+        dartnative = "${root}/dart/native"
+        _mk = os.system("mkdir -p \"${dartnative}\"")
+        rcc = os.system("cp \"${lib}\" \"${dartnative}/libphonenumber_ae.so\"")
+        if rcc != 0 { println("dart dist: failed to vendor engine .so into dart/native"); return 1 }
+
+        // Tar the package sources + vendored .so. Named entries only (not the
+        // whole dir) so build cruft (.dart_tool/, target/, example/) stays out of
+        // the distributable. --transform prefixes a package dir so it unpacks
+        // into phonenumber-ae-dart/ rather than scattering into the cwd.
+        out = "${dist}/phonenumber-ae-dart.tar.gz"
+        cmd = "cd \"${root}/dart\" && tar --transform 's,^,phonenumber-ae-dart/,' -czf \"${out}\" lib native pubspec.yaml README.md"
+        rcb = os.system(cmd)
+        if rcb != 0 { println("dart dist: `tar` of the package failed"); return 1 }
+
+        println("dart dist: target/dist/phonenumber-ae-dart.tar.gz (sources + engine vendored at native/)")
+        return 0
+    }
+}

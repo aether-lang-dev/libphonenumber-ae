@@ -1,0 +1,58 @@
+// The Rust binding's DISTRIBUTION artifact: a source .crate (cargo package).
+//
+// Unlike rust/.tests.ae (which runs `cargo test` against a loose engine .so
+// pointed at by LIBPHONENUMBER_AE_LIB), this node produces a hand-to-someone
+// .crate under target/dist/: the standard Cargo source package (sources +
+// Cargo.lock), the idiomatic distributable for the ecosystem.
+//
+// No .so is bundled: the binding loads the engine via libloading at RUN time
+// (LIBPHONENUMBER_AE_LIB / OS loader search path), and a published crate is
+// consumed as source and built by the consumer, so `cargo package`'s source
+// tarball is the correct, self-consistent artifact — matching how crates.io
+// distributes every crate.
+//
+// The node still deps core/.build.ae so the crate is only cut against a
+// buildable engine (the DAG stays honest), even though the .crate itself carries
+// no binary.
+import bldr
+import std.os
+import bldr (dep, dep_artifact, _get)
+
+aeb(cap) {
+    bldr.build() {
+        dep("core/.build.ae")
+        lib = dep_artifact("core/.build.ae", "shared_lib")
+        root = _get("root")
+        dist = "${root}/target/dist"
+        _m = os.system("mkdir -p \"${dist}\"")
+
+        // Skip honestly rather than fail the DAG when the toolchain is absent.
+        have = os.system("command -v cargo >/dev/null 2>&1")
+        if have != 0 {
+            println("rust dist: SKIPPED — cargo not installed (no Rust toolchain on PATH)")
+            return 0
+        }
+
+        // `cargo package` cuts the .crate into <target-dir>/package/. Use a
+        // rust-local target dir (not the shared aeb target) so parallel dist
+        // nodes never race, and --offline to stay network-free (Cargo.lock is
+        // vendored). --allow-dirty: the monorepo tree carries uncommitted files
+        // (this .dist.ae itself, and other bindings' work) which is not a reason
+        // to refuse to package the sources.
+        outdir = "${root}/rust/target/dist_pkg"
+        _mo = os.system("rm -rf \"${outdir}\" && mkdir -p \"${outdir}\"")
+        rcb = os.system("cd \"${root}/rust\" && cargo package --offline --allow-dirty --no-verify --target-dir \"${outdir}\" >/dev/null 2>&1")
+        if rcb != 0 {
+            // Fall back to an online package if the offline cache lacks a needed
+            // index entry (first run on a cold registry).
+            rcb = os.system("cd \"${root}/rust\" && cargo package --allow-dirty --no-verify --target-dir \"${outdir}\" >/dev/null 2>&1")
+        }
+        if rcb != 0 { println("rust dist: `cargo package` failed"); return 1 }
+
+        rcp = os.system("cp \"${outdir}\"/package/*.crate \"${dist}/\"")
+        if rcp != 0 { println("rust dist: no .crate produced to copy into target/dist"); return 1 }
+
+        println("rust dist: target/dist/*.crate (cargo source package; engine loaded via FFI at consumer build time)")
+        return 0
+    }
+}
