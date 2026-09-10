@@ -122,6 +122,8 @@ type
   Leniency* = enum ## How strict `findNumbers` is.
     lenPossible = 0
     lenValid = 1
+    lenStrictGrouping = 2
+    lenExactGrouping = 3
 
   ShortNumberCost* = enum ## What `expectedCost` reports for a short number.
     costTollFree = 0
@@ -169,6 +171,8 @@ const
 
   LENIENCY_POSSIBLE* = 0.cint
   LENIENCY_VALID* = 1.cint
+  LENIENCY_STRICT_GROUPING* = 2.cint
+  LENIENCY_EXACT_GROUPING* = 3.cint
 
   COST_TOLL_FREE* = 0.cint
   COST_STANDARD_RATE* = 1.cint

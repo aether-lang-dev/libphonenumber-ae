@@ -127,7 +127,15 @@ enum CountryCodeSource {
 /// How hard [findNumbers] tries when scanning free text.
 enum Leniency {
   possible(n.kLeniencyPossible),
-  valid(n.kLeniencyValid);
+  valid(n.kLeniencyValid),
+
+  /// The candidate's digit grouping must match a format the region
+  /// recognises (a MAIN or an alternate format).
+  strictGrouping(n.kLeniencyStrictGrouping),
+
+  /// Like [Leniency.strictGrouping] but the grouping must match a MAIN
+  /// format exactly.
+  exactGrouping(n.kLeniencyExactGrouping);
 
   const Leniency(this.code);
 

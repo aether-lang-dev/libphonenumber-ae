@@ -41,7 +41,7 @@ import static org.libphonenumber.ae.groovy.PhoneNumbers.truncateTooLong
 import static org.libphonenumber.ae.groovy.PhoneNumbers.unknownTimeZone
 
 /**
- * The 45-check binding conformance suite (docs/conformance.md, v7), in Groovy.
+ * The 47-check binding conformance suite (docs/conformance.md, v7), in Groovy.
  *
  * Proves the <b>Groovy layer</b> reaches the same engine behaviour the Java and
  * Python suites see. Since that layer sits on the Java binding rather than on
@@ -61,7 +61,7 @@ class ConformanceTest {
     static List<String> failures = []
 
     static void main(String[] args) {
-        // ---- the 45 required checks ----
+        // ---- the 47 required checks ----
         check('01 countryCode US') { assertEquals('1', countryCode('US')) }
         check('02 countryCode GB') { assertEquals('44', countryCode('GB')) }
         check('03 unknown region') { assertEquals('', countryCode('ZZ')) }
@@ -165,6 +165,18 @@ class ConformanceTest {
         }
         check('45 geoDescriptionForNumber US') {
             assertEquals('Mountain View, CA', geoDescriptionForNumber('US', '6502530000'))
+        }
+        check('46 STRICT_GROUPING accepts via an alternate format') {
+            // The DE candidate's three-group split matches no MAIN format but is
+            // legitimized by an alternate format, so STRICT_GROUPING accepts it.
+            def ms = findNumbers('call 030 234 5678 now', 'DE', Leniency.STRICT_GROUPING)
+            assertEquals(1, ms.size())
+        }
+        check('47 EXACT_GROUPING rejects an illegitimate grouping') {
+            // The US digits are a VALID number (they match at VALID) but their
+            // grouping matches no US format, so EXACT_GROUPING rejects them.
+            assertEquals(1, findNumbers('call 65 025 30000 today', 'US', Leniency.VALID).size())
+            assertEquals(0, findNumbers('call 65 025 30000 today', 'US', Leniency.EXACT_GROUPING).size())
         }
 
         // ---- extras specific to the Groovy layer ----

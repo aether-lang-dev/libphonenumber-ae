@@ -15,7 +15,7 @@ defmodule PhonenumberAeTest do
 
   alias PhonenumberAe.{AsYouTypeFormatter, ParsedNumber}
 
-  # ---- the 40 checks (docs/conformance.md, v3) ----
+  # ---- the 47 checks (docs/conformance.md, v3) ----
 
   test "01 country_code US" do
     assert PhonenumberAe.country_code("US") == "1"
@@ -211,7 +211,23 @@ defmodule PhonenumberAeTest do
     assert PhonenumberAe.geo_description_for_number("US", "6502530000") == "Mountain View, CA"
   end
 
-  # ---- extras: the marshalling corners the 45 do not reach ----
+  # ---- matcher grouping leniency (docs/conformance.md #46–47) ----
+
+  # #46: the DE candidate's three-group split matches no MAIN format but is
+  # legitimized by an alternate format, so :strict_grouping (2) accepts it.
+  test "46 strict grouping via alternate format" do
+    matches = PhonenumberAe.find_numbers("call 030 234 5678 now", "DE", :strict_grouping)
+    assert length(matches) == 1
+  end
+
+  # #47: the US digits are a VALID number (they match at :valid) but their
+  # grouping matches no US format, so :exact_grouping (3) rejects them.
+  test "47 exact grouping rejects illegitimate" do
+    assert length(PhonenumberAe.find_numbers("call 65 025 30000 today", "US", :valid)) == 1
+    assert length(PhonenumberAe.find_numbers("call 65 025 30000 today", "US", :exact_grouping)) == 0
+  end
+
+  # ---- extras: the marshalling corners the 47 do not reach ----
 
   # The NIF takes iodata, so a caller with a plain charlist should not have to
   # flatten it first.

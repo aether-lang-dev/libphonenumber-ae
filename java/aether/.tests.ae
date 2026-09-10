@@ -37,7 +37,7 @@ aeb(cap) {
             println("java: conformance suite reported failures")
             return 1
         }
-        println("java: PASS (v7, timezones + carrier + geocoder, localized) — 45-check conformance")
+        println("java: PASS (v7, timezones + carrier + geocoder, localized, grouping) — 47-check conformance")
         return 0
     }
 }

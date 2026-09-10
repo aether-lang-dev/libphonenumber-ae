@@ -1,4 +1,4 @@
---- The 45-check binding conformance suite (docs/conformance.md, v7).
+--- The 47-check binding conformance suite (docs/conformance.md, v7).
 ---
 --- Proves the Lua binding marshals every value shape across the FFI. It is NOT
 --- a phone-number test suite — the behavioural cases live in the engine's own
@@ -249,6 +249,23 @@ end)
 
 test("45 geo_description_for_number US 6502530000 == Mountain View, CA", function()
   eq(pn.geo_description_for_number("US", "6502530000"), "Mountain View, CA")
+end)
+
+test("46 strict_grouping accepts via an alternate format", function()
+  -- The DE candidate's three-group split matches no MAIN format but is
+  -- legitimized by an alternate format, so STRICT_GROUPING accepts it.
+  local matches = pn.find_numbers("call 030 234 5678 now", "DE",
+                                  pn.LENIENCY_STRICT_GROUPING)
+  eq(#matches, 1, "match count")
+end)
+
+test("47 exact_grouping rejects an illegitimate grouping", function()
+  -- The US digits are a VALID number (they match at LENIENCY_VALID) but their
+  -- grouping matches no US format, so EXACT_GROUPING rejects them.
+  eq(#pn.find_numbers("call 65 025 30000 today", "US", pn.LENIENCY_VALID), 1,
+     "valid accepts")
+  eq(#pn.find_numbers("call 65 025 30000 today", "US", pn.LENIENCY_EXACT_GROUPING), 0,
+     "exact_grouping rejects")
 end)
 
 -- ---- a few surface extras ----

@@ -200,4 +200,18 @@ RSpec.describe PhoneNumberAe do
   it "45 geo_description_for_number US" do
     expect(PhoneNumberAe::Geocoder.geo_description_for_number("US", "6502530000")).to eq("Mountain View, CA")
   end
+
+  it "46 strict_grouping accepts via an alternate format DE" do
+    # The DE candidate's three-group split matches no MAIN format but is
+    # legitimized by an alternate format, so STRICT_GROUPING accepts it.
+    matches = PhoneNumberAe.find_numbers("call 030 234 5678 now", "DE", PhoneNumberAe::LENIENCY_STRICT_GROUPING)
+    expect(matches.length).to eq(1)
+  end
+
+  it "47 exact_grouping rejects an illegitimate grouping US" do
+    # The US digits are a VALID number (they match at VALID) but their grouping
+    # matches no US format, so EXACT_GROUPING rejects them.
+    expect(PhoneNumberAe.find_numbers("call 65 025 30000 today", "US", PhoneNumberAe::LENIENCY_VALID).length).to eq(1)
+    expect(PhoneNumberAe.find_numbers("call 65 025 30000 today", "US", PhoneNumberAe::LENIENCY_EXACT_GROUPING).length).to eq(0)
+  end
 end

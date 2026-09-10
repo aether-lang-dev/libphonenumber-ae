@@ -928,6 +928,8 @@ int luaopen_phonenumber_ae_native(lua_State* L) {
     /* Matcher leniency. */
     K("LENIENCY_POSSIBLE", 0);
     K("LENIENCY_VALID", 1);
+    K("LENIENCY_STRICT_GROUPING", 2);
+    K("LENIENCY_EXACT_GROUPING", 3);
 
     /* ShortNumberCost (short_expected_cost). */
     K("COST_TOLL_FREE", 0);

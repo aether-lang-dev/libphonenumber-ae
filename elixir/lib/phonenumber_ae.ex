@@ -76,7 +76,7 @@ defmodule PhonenumberAe do
           | :unspecified
 
   @typedoc "Matcher leniency."
-  @type leniency :: :possible | :valid
+  @type leniency :: :possible | :valid | :strict_grouping | :exact_grouping
 
   @typedoc "A ShortNumberCost from `short_expected_cost/2`."
   @type short_number_cost :: :toll_free | :standard_rate | :premium_rate | :unknown
@@ -458,9 +458,12 @@ defmodule PhonenumberAe do
   defp match_atom(4), do: :exact
   defp match_atom(_), do: :no_match
 
-  # Matcher leniency codes.
+  # Matcher leniency codes. :strict_grouping (2) and :exact_grouping (3) consult
+  # AlternateFormats in the engine; all levels hit the same matcher_count symbol.
   defp leniency_code(:possible), do: 0
   defp leniency_code(:valid), do: 1
+  defp leniency_code(:strict_grouping), do: 2
+  defp leniency_code(:exact_grouping), do: 3
 
   # ShortNumberCost codes -> atoms (0 toll-free, 1 standard, 2 premium, 3 unknown).
   defp cost_atom(0), do: :toll_free

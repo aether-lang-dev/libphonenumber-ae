@@ -202,7 +202,8 @@ Constant groups (all mirror `docs/abi.md`): **Format** `pn.E164`,
 `pn.INTERNATIONAL`, `pn.NATIONAL`, `pn.RFC3966`; **NumberType** `pn.TYPE_*`
 (`TYPE_UNKNOWN` = -1 through `TYPE_VOICEMAIL` = 9); **ValidationResult**
 `pn.VR_*`; **MatchType** `pn.MATCH_*`; **CountryCodeSource** `pn.SRC_*`;
-**Leniency** `pn.LENIENCY_POSSIBLE` / `pn.LENIENCY_VALID`; **ShortNumberCost**
+**Leniency** `pn.LENIENCY_POSSIBLE` / `pn.LENIENCY_VALID` /
+`pn.LENIENCY_STRICT_GROUPING` / `pn.LENIENCY_EXACT_GROUPING`; **ShortNumberCost**
 `pn.COST_TOLL_FREE` / `pn.COST_STANDARD_RATE` / `pn.COST_PREMIUM_RATE` /
 `pn.COST_UNKNOWN`.
 
@@ -222,7 +223,7 @@ buffers, valid for the duration of the call.
 
 ## Tests
 
-The 45-check conformance suite (`docs/conformance.md`, v7) lives in
+The 47-check conformance suite (`docs/conformance.md`, v7) lives in
 `test/conformance.lua`, alongside a few surface extras. Lua 5.4 ships no
 de-facto-standard test framework, so it is a **plain assertion runner** — no
 dependency to install, and the exit code is the result.

@@ -1,0 +1,18 @@
+// Matcher grouping leniency + AlternateFormats engine gate.
+import bldr
+import bldr (dep)
+import std.os
+aeb(cap) {
+    bldr.build() {
+        dep("core/gen.build.ae")
+        root = _get("root")
+        out = "${root}/target/pn_altformats_probe"
+        _m = os.system("mkdir -p \"${root}/target\"")
+        rc = os.system("cd \"${root}\" && ae build core_tests/altformats_probe.ae -o \"${out}\"")
+        if rc != 0 { println("core_tests: failed to build altformats_probe.ae"); return 1 }
+        rc2 = os.system("\"${out}\"")
+        if rc2 != 0 { println("core_tests: altformats grouping probe failed"); return 1 }
+        println("core_tests: PASS — matcher grouping (STRICT/EXACT) + AlternateFormats")
+        return 0
+    }
+}

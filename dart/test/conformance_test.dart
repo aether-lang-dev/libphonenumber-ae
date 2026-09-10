@@ -1,4 +1,4 @@
-/// The 45-check binding conformance suite (docs/conformance.md, v7).
+/// The 47-check binding conformance suite (docs/conformance.md, v7).
 ///
 /// Proves the Dart binding marshals every value shape across the FFI. It is NOT
 /// a phone-number test suite — the behavioural cases live in the engine's own
@@ -212,6 +212,29 @@ void main() {
   test('45 geo_description_for_number US', () {
     expect(pn.Geocoder.geoDescriptionForNumber('US', '6502530000'),
         equals('Mountain View, CA'));
+  });
+
+  test('46 strict_grouping accepts via an alternate format DE', () {
+    // The DE candidate's three-group split matches no MAIN format but is
+    // legitimized by an alternate format, so STRICT_GROUPING accepts it.
+    final matches = pn.findNumbers('call 030 234 5678 now', 'DE',
+        leniency: pn.Leniency.strictGrouping);
+    expect(matches.length, equals(1));
+  });
+
+  test('47 exact_grouping rejects an illegitimate grouping US', () {
+    // The US digits are a VALID number but their grouping matches no US
+    // format, so EXACT_GROUPING rejects them; VALID (the contrast) accepts.
+    expect(
+        pn.findNumbers('call 65 025 30000 today', 'US',
+                leniency: pn.Leniency.valid)
+            .length,
+        equals(1));
+    expect(
+        pn.findNumbers('call 65 025 30000 today', 'US',
+                leniency: pn.Leniency.exactGrouping)
+            .length,
+        equals(0));
   });
 
   // ---- a few extras exercising the idiomatic surface ----

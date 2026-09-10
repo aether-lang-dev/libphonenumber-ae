@@ -46,7 +46,7 @@ haskell/
     phonenumber_ae.cabal         build manifest
     src/PhoneNumber.hs           the public API
     src/PhoneNumber/Native.hs    the 1:1 C ABI symbol table (all 66 symbols)
-    test/Conformance.hs          the 45-check suite, a plain assertion runner
+    test/Conformance.hs          the 47-check suite, a plain assertion runner
     native/                      where .tests.ae stages the engine .so
 ```
 
@@ -296,7 +296,7 @@ non-reentrant C calls.
 
 ## Conformance
 
-The 45-check suite (`docs/conformance.md`) lives in `test/Conformance.hs`,
+The 47-check suite (`docs/conformance.md`) lives in `test/Conformance.hs`,
 alongside a few surface extras (the format-style aliases, out-of-range
 `regionAt`, timezone-count agreement, `carrierNameForValidNumber`,
 `geoDescriptionForValidNumber`, and a

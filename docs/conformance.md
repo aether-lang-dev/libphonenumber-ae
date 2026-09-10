@@ -53,6 +53,16 @@ engine over Google's metadata.
 | 43 | `tz_unknown()` | `"Etc/Unknown"` |
 | 44 | `carrier_name("GB", "7106000000")` | `"O2"` |
 | 45 | `geo_description("US", "6502530000")` | `"Mountain View, CA"` |
+| 46 | `matcher_count("call 030 234 5678 now", "DE", STRICT_GROUPING)` | `1` (accepted via an alternate format) |
+| 47 | `matcher_count("call 65 025 30000 today", "US", EXACT_GROUPING)` | `0` (valid number, illegitimate grouping) |
+
+Checks 46–47 exercise the matcher's grouping leniencies. `STRICT_GROUPING` is
+leniency `2` and `EXACT_GROUPING` is `3` (above `POSSIBLE`=0, `VALID`=1). #46
+proves the AlternateFormats retry: the DE candidate's three-group split matches
+no *main* format but is legitimized by an alternate format, so it is accepted at
+STRICT. #47 proves grouping actually gates: the same US digits are a *valid*
+number (they pass at `VALID`), but their grouping matches no US format, so EXACT
+rejects them.
 
 A binding that exposes idiomatic wrappers (enums, a PhoneNumber object, an
 AsYouTypeFormatter class, a matcher iterator) still bottoms out at these calls.

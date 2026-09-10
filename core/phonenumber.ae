@@ -19,6 +19,7 @@ import std.string
 import std.list
 import std.regex
 import core.metadata
+import core.altformats_metadata
 
 exports(
     // --- metadata queries ---
@@ -1374,12 +1375,268 @@ ayt_clear(state: string) -> string {
 }
 
 // ===========================================================================
+// Number-grouping validation (matcher STRICT_GROUPING / EXACT_GROUPING).
+//
+// AlternateFormats (resources/PhoneNumberAlternateFormats.xml, compiled into
+// core/altformats_metadata.ae) is consumed ONLY here. A candidate can be a valid
+// number yet still be rejected at grouping leniency if the way its digits are
+// grouped in the source text doesn't match a legitimate format. We first check
+// the MAIN display format's groups; if that fails, we retry against each
+// alternate format for the country code (gated by leadingDigits) — faithful to
+// upstream PhoneNumberMatcher.checkNumberGroupingIsValid.
+// ===========================================================================
+
+// Digit groups of `nsn` under `pattern`/`template`, as a 0x1F-joined list.
+// This mirrors upstream getNationalNumberGroups, which formats with RFC3966 and
+// splits on '-': RFC3966 grouping ignores the template's literal punctuation and
+// keeps only the ORDER of the $1..$9 capture-group references, joining the
+// corresponding captures with the separator. So we walk the template, and for
+// each $N reference emit that capture as its own group (template punctuation
+// between references is discarded — it does not create or split groups beyond
+// the $N boundaries). "" if the pattern doesn't match the nsn.
+fn group_string_for(pattern: string, template: string, nsn: string) -> string {
+    if string.length(pattern) == 0 || string.length(template) == 0 { return "" }
+    anchored = "^${pattern}$"
+    re, err = regex.compile(anchored)
+    if err != "" { return "" }
+    caps, cerr = regex.captures(re, nsn)
+    if cerr != "" || caps == null { regex.free(re); return "" }
+    us = string.from_char(31)
+    out = ""
+    first = 1
+    n = string.length(template)
+    i = 0
+    while i < n {
+        c = string.char_at(template, i)
+        if c == 36 && i + 1 < n {   // '$'
+            d = string.char_at(template, i + 1)
+            if d >= 49 && d <= 57 {  // '1'..'9'
+                gi = d - 48
+                if gi < regex.capture_count(caps) {
+                    if first == 0 { out = string.concat(out, us) }
+                    out = string.concat(out, regex.capture(caps, gi))
+                    first = 0
+                }
+                i = i + 2
+                continue
+            }
+        }
+        i = i + 1   // discard literal template punctuation
+    }
+    regex.captures_free(caps)
+    regex.free(re)
+    return out
+}
+
+// The MAIN display format's national-number groups for `pn`, as a 0x1F-joined
+// group list (upstream getNationalNumberGroups without a supplied format).
+fn main_groups_for(pn: string) -> string {
+    row = row_for(pn_region(pn))
+    nn = national_significant_number(pn)
+    if row == "" { return nn }
+    k = choose_format(row, nn)
+    if k < 0 { return nn }
+    pat = record_at(field(row, F_FMT_PATTERNS), k)
+    tmpl = record_at(field(row, F_FMT_TEMPLATES), k)
+    g = group_string_for(pat, tmpl, nn)
+    if string.length(g) == 0 { return nn }
+    return g
+}
+
+// group i (0-based) of a 0x1F-joined group list.
+fn grp_at(groups: string, i: int) -> string { return record_at_sep(groups, i, 31) }
+fn grp_count(groups: string) -> int { return count_records_sep(groups, 31) }
+
+// count / index of records separated by byte `sep` (like record_at/count_records
+// but parameterised on the separator so we can reuse for group lists).
+fn count_records_sep(s: string, sep: int) -> int {
+    if string.length(s) == 0 { return 0 }
+    n = 1
+    for (i = 0; i < string.length(s); i++) { if string.char_at(s, i) == sep { n = n + 1 } }
+    return n
+}
+fn record_at_sep(s: string, idx: int, sep: int) -> string {
+    start = 0
+    cur = 0
+    n = string.length(s)
+    for (i = 0; i < n; i++) {
+        if string.char_at(s, i) == sep {
+            if cur == idx { return string.substring(s, start, i) }
+            cur = cur + 1
+            start = i + 1
+        }
+    }
+    if cur == idx { return string.substring(s, start, n) }
+    return ""
+}
+
+// Normalize a candidate KEEPING non-digits (upstream normalizeDigits(cand,true)):
+// digits pass through, everything else is kept as-is. (Our inputs are already
+// ASCII, so this is a copy; kept for faithful structure and future widening.)
+fn normalize_keep(cand: string) -> string { return cand }
+
+// allNumberGroupsRemainGrouped (STRICT_GROUPING checker): every formatted group
+// appears, in order, un-split, inside the normalized candidate. `groups` is the
+// 0x1F-joined formatted group list; `cand` the normalized candidate string.
+fn groups_remain_grouped(pn: string, cand: string, groups: string) -> int {
+    from_index = 0
+    src = pn_source(pn)
+    if src != SRC_FROM_DEFAULT_COUNTRY {
+        cc = pn_country_code(pn)
+        p = index_of_from(cand, cc, 0)
+        if p >= 0 { from_index = p + string.length(cc) }
+    }
+    ng = grp_count(groups)
+    for (i = 0; i < ng; i++) {
+        g = grp_at(groups, i)
+        p = index_of_from(cand, g, from_index)
+        if p < 0 { return 0 }
+        from_index = p + string.length(g)
+        if i == 0 && from_index < string.length(cand) {
+            region = region_code_for_country_code(pn_country_code(pn))
+            ndd = ndd_prefix_for_region(region, 1)
+            if string.length(ndd) > 0 && is_digit_at(cand, from_index) == 1 {
+                nsn = national_significant_number(pn)
+                tail = string.substring(cand, from_index - string.length(g), string.length(cand))
+                if starts_with_str(tail, nsn) == 1 { return 1 }
+                return 0
+            }
+        }
+    }
+    // Guard: the leftover tail must still contain the extension (if any).
+    ext = pn_extension(pn)
+    tail = string.substring(cand, from_index, string.length(cand))
+    if string.length(ext) == 0 { return 1 }
+    if index_of_from(tail, ext, 0) >= 0 { return 1 }
+    return 0
+}
+
+// allNumberGroupsAreExactlyPresent (EXACT_GROUPING checker).
+fn groups_exactly_present(pn: string, cand: string, groups: string) -> int {
+    // Split the candidate on runs of non-digits into candidate groups.
+    cg = split_digit_runs(cand)   // 0x1F-joined
+    ncg = count_records_sep(cg, 31)
+    ext = pn_extension(pn)
+    cand_idx = ncg - 1
+    if string.length(ext) > 0 { cand_idx = ncg - 2 }
+    nsn = national_significant_number(pn)
+    // NSN present as a single block?
+    if ncg == 1 { return 1 }
+    if cand_idx >= 0 {
+        if contains_str(record_at_sep(cg, cand_idx, 31), nsn) == 1 { return 1 }
+    }
+    ng = grp_count(groups)
+    fi = ng - 1
+    ci = cand_idx
+    while fi > 0 && ci >= 0 {
+        if record_at_sep(cg, ci, 31) != grp_at(groups, fi) { return 0 }
+        fi = fi - 1
+        ci = ci - 1
+    }
+    if ci >= 0 && ends_with_str(record_at_sep(cg, ci, 31), grp_at(groups, 0)) == 1 { return 1 }
+    return 0
+}
+
+// Split a string into its maximal digit runs, 0x1F-joined (drops non-digit runs).
+fn split_digit_runs(s: string) -> string {
+    us = string.from_char(31)
+    out = ""
+    cur = ""
+    n = string.length(s)
+    for (i = 0; i < n; i++) {
+        c = string.char_at(s, i)
+        if c >= 48 && c <= 57 { cur = string.concat(cur, string.substring(s, i, i + 1)) }
+        else {
+            if string.length(cur) > 0 {
+                if string.length(out) > 0 { out = string.concat(out, us) }
+                out = string.concat(out, cur)
+                cur = ""
+            }
+        }
+    }
+    if string.length(cur) > 0 {
+        if string.length(out) > 0 { out = string.concat(out, us) }
+        out = string.concat(out, cur)
+    }
+    return out
+}
+
+fn index_of_from(s: string, needle: string, from: int) -> int {
+    ln = string.length(needle)
+    if ln == 0 { return from }
+    n = string.length(s)
+    for (i = from; i + ln <= n; i++) {
+        if string.substring(s, i, i + ln) == needle { return i }
+    }
+    return -1
+}
+fn is_digit_at(s: string, i: int) -> int {
+    if i < 0 || i >= string.length(s) { return 0 }
+    c = string.char_at(s, i)
+    if c >= 48 && c <= 57 { return 1 }
+    return 0
+}
+fn starts_with_str(s: string, prefix: string) -> int {
+    lp = string.length(prefix)
+    if string.length(s) < lp { return 0 }
+    if string.substring(s, 0, lp) == prefix { return 1 }
+    return 0
+}
+fn ends_with_str(s: string, suffix: string) -> int {
+    ls = string.length(suffix)
+    n = string.length(s)
+    if n < ls { return 0 }
+    if string.substring(s, n - ls, n) == suffix { return 1 }
+    return 0
+}
+fn contains_str(s: string, needle: string) -> int {
+    if index_of_from(s, needle, 0) >= 0 { return 1 }
+    return 0
+}
+
+// checkNumberGroupingIsValid: try the main format's grouping; on failure retry
+// against each alternate format for the cc (leadingDigits-gated). `mode` selects
+// the checker: 0 = remain-grouped (STRICT), 1 = exactly-present (EXACT).
+fn check_grouping(pn: string, cand: string, mode: int) -> int {
+    norm = normalize_keep(cand)
+    groups = main_groups_for(pn)
+    if run_checker(pn, norm, groups, mode) == 1 { return 1 }
+    // Alternate formats for this country code.
+    cc = pn_country_code(pn)
+    blob = altformats_metadata.altformats_for_cc(cc)
+    if string.length(blob) == 0 { return 0 }
+    nsn = national_significant_number(pn)
+    nrec = count_records_sep(blob, 30)   // records 0x1E-separated
+    for (r = 0; r < nrec; r++) {
+        rec = record_at_sep(blob, r, 30)
+        pat = record_at_sep(rec, 0, 31)
+        fmt = record_at_sep(rec, 1, 31)
+        ld = record_at_sep(rec, 2, 31)
+        // leadingDigits gate (there is only one leadingDigits per alt format).
+        if string.length(ld) > 0 {
+            if prefix_match(ld, nsn) == 0 { continue }
+        }
+        g = group_string_for(pat, fmt, nsn)
+        if string.length(g) == 0 { continue }
+        if run_checker(pn, norm, g, mode) == 1 { return 1 }
+    }
+    return 0
+}
+
+fn run_checker(pn: string, cand: string, groups: string, mode: int) -> int {
+    if mode == 1 { return groups_exactly_present(pn, cand, groups) }
+    return groups_remain_grouped(pn, cand, groups)
+}
+
+// ===========================================================================
 // PhoneNumberMatcher / findNumbers (stateful cursor over free text). We scan
 // the text for candidate digit runs (optionally +cc), validate each per the
 // leniency, and expose them by index. The matcher state is
 // "region\x1fleniency\x1ftext"; matches are computed on demand by index.
 //
-// Leniency: 0 POSSIBLE, 1 VALID (default), 2 STRICT (VALID here).
+// Leniency: 0 POSSIBLE, 1 VALID (default), 2 STRICT_GROUPING, 3 EXACT_GROUPING.
+// The two grouping levels additionally require the candidate's digit grouping to
+// match a legitimate (main or alternate) format — see check_grouping above.
 // ===========================================================================
 
 exports(matcher_count, matcher_start, matcher_end, matcher_raw)
@@ -1462,5 +1719,14 @@ fn count_digits(s: string) -> int {
 
 fn candidate_ok(cand: string, region: string, leniency: int) -> int {
     if leniency == 0 { return is_possible_number(region, cand) }
-    return is_valid_number(region, cand)
+    // VALID and both grouping levels first require a valid number.
+    if is_valid_number(region, cand) == 0 { return 0 }
+    if leniency <= 1 { return 1 }
+    // STRICT_GROUPING (2) / EXACT_GROUPING (3): the candidate's digit grouping
+    // must match a legitimate format (main or, failing that, an alternate).
+    pn = parse(cand, region)
+    if pn_error(pn) != "" { return 0 }
+    mode = 0
+    if leniency >= 3 { mode = 1 }
+    return check_grouping(pn, cand, mode)
 }

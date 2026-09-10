@@ -1,7 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 -- |
--- The 45-check binding conformance suite (@docs\/conformance.md@, v7).
+-- The 47-check binding conformance suite (@docs\/conformance.md@, v7), now
+-- including the two matcher grouping-leniency checks.
 --
 -- Proves the Haskell binding marshals every value shape across the FFI. It is
 -- __not__ a phone-number test suite — the behavioural cases live in the
@@ -109,7 +110,7 @@ main = do
 
 runChecks :: Failures -> IO ()
 runChecks fs = do
-  -- ---- the forty-five (docs/conformance.md v7) ----
+  -- ---- the forty-seven (docs/conformance.md v7) ----
 
   check fs "01 country_code US == 1" $ do
     out <- countryCode "US"
@@ -314,6 +315,20 @@ runChecks fs = do
   check fs "45 geo_description_for_number US 6502530000 == Mountain View, CA" $ do
     g <- geoDescriptionForNumber "US" "6502530000"
     eqStr "geo_description" g "Mountain View, CA"
+
+  check fs "46 STRICT_GROUPING accepts via an alternate format" $ do
+    -- The DE candidate's three-group split matches no MAIN format but is
+    -- legitimized by an alternate format, so StrictGrouping accepts it.
+    ms <- findNumbers "call 030 234 5678 now" "DE" StrictGrouping
+    eqInt "strict grouping match count" (length ms) 1
+
+  check fs "47 EXACT_GROUPING rejects an illegitimate grouping" $ do
+    -- The US digits are a VALID number (they match at Valid) but their grouping
+    -- matches no US format, so ExactGrouping rejects them.
+    msValid <- findNumbers "call 65 025 30000 today" "US" Valid
+    eqInt "valid accepts" (length msValid) 1
+    msExact <- findNumbers "call 65 025 30000 today" "US" ExactGrouping
+    eqInt "exact grouping rejects" (length msExact) 0
 
   -- ---- a few surface extras ----
 

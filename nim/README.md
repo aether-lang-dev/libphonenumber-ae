@@ -209,7 +209,7 @@ overload also takes the raw `cint` via the `E164` / `INTERNATIONAL` / `NATIONAL`
 - `ValidationResult` / `VR_*`
 - `MatchType` / `MATCH_*`
 - `CountryCodeSource` / `SRC_*`
-- `Leniency` / `LENIENCY_POSSIBLE`, `LENIENCY_VALID`
+- `Leniency` / `LENIENCY_POSSIBLE`, `LENIENCY_VALID`, `LENIENCY_STRICT_GROUPING`, `LENIENCY_EXACT_GROUPING`
 - `ShortNumberCost` / `COST_TOLL_FREE`, `COST_STANDARD_RATE`, `COST_PREMIUM_RATE`, `COST_UNKNOWN`
 
 ## Memory
@@ -234,7 +234,7 @@ explicitly. Do not "simplify" one of them to `int`.
 
 ## Conformance
 
-The 45-check conformance suite (`docs/conformance.md`, v7) lives in
+The 47-check conformance suite (`docs/conformance.md`, v7) lives in
 `tests/tconformance.nim`, alongside a few surface extras (the format-style
 aliases, the raw-int overload, out-of-range `regionAt`, AsYouType clear, and a
 several-thousand round-trip loop over `takeString`).

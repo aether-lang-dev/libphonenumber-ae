@@ -1,5 +1,5 @@
 "
-The 45-check binding conformance suite (docs/conformance.md, v6), in Pharo.
+The 47-check binding conformance suite (docs/conformance.md, v6), in Pharo.
 
 I prove the Pharo binding marshals every value shape across the FFI. I am NOT a
 phone-number test suite — the behavioural cases live in the engine's own tests
@@ -357,6 +357,38 @@ PhonenumberAeConformanceTest >> test45Geocoder [
 	self
 		assert: (PhonenumberAe geoDescriptionForNumber: '6502530000' region: 'US')
 		equals: 'Mountain View, CA'
+]
+
+{ #category : 'tests - grouping leniency' }
+PhonenumberAeConformanceTest >> test46StrictGroupingAlternateFormat [
+	"#46: the DE candidate's three-group split matches no MAIN format but is
+	 legitimized by an alternate format, so #strictGrouping (2) accepts it."
+
+	self
+		assert: (PhonenumberAe
+				 findNumbers: 'call 030 234 5678 now'
+				 region: 'DE'
+				 leniency: #strictGrouping) size
+		equals: 1
+]
+
+{ #category : 'tests - grouping leniency' }
+PhonenumberAeConformanceTest >> test47ExactGroupingRejectsIllegitimate [
+	"#47: the US digits are a VALID number (they match at #valid) but their
+	 grouping matches no US format, so #exactGrouping (3) rejects them."
+
+	self
+		assert: (PhonenumberAe
+				 findNumbers: 'call 65 025 30000 today'
+				 region: 'US'
+				 leniency: #valid) size
+		equals: 1.
+	self
+		assert: (PhonenumberAe
+				 findNumbers: 'call 65 025 30000 today'
+				 region: 'US'
+				 leniency: #exactGrouping) size
+		equals: 0
 ]
 
 { #category : 'tests - extras' }

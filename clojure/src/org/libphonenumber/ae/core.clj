@@ -90,8 +90,10 @@
    CountryCodeSource/FROM_DEFAULT_COUNTRY          :from-default-country})
 
 (def ^:private kw->leniency
-  {:possible Leniency/POSSIBLE
-   :valid    Leniency/VALID})
+  {:possible        Leniency/POSSIBLE
+   :valid           Leniency/VALID
+   :strict-grouping Leniency/STRICT_GROUPING
+   :exact-grouping  Leniency/EXACT_GROUPING})
 
 (def ^:private cost->kw
   {ShortNumberCost/TOLL_FREE     :toll-free
@@ -284,8 +286,8 @@
 
 (defn find-numbers
   "Find phone numbers in free text. Returns a vector of maps
-  {:start int :end int :raw string}. `leniency` is `:valid` (default) or
-  `:possible`."
+  {:start int :end int :raw string}. `leniency` is `:valid` (default),
+  `:possible`, `:strict-grouping` or `:exact-grouping`."
   ([^String text ^String region] (find-numbers text region :valid))
   ([^String text ^String region leniency]
    (mapv (fn [^Matcher$Match m]

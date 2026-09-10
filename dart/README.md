@@ -145,7 +145,8 @@ ABI integer back to the enum.
 `fromNumberWithIdd` (5), `fromNumberWithoutPlus` (10), `fromDefaultCountry`
 (20).
 
-`Leniency` (`findNumbers`): `possible` (0), `valid` (1).
+`Leniency` (`findNumbers`): `possible` (0), `valid` (1),
+`strictGrouping` (2), `exactGrouping` (3).
 
 `ShortNumberCost` (`ShortNumberInfo.expectedCost`): `tollFree` (0),
 `standardRate` (1), `premiumRate` (2), `unknown` (3).
@@ -165,8 +166,8 @@ and nothing borrowed to track.
 
 ## Tests
 
-The 45-check v7 conformance suite (`docs/conformance.md`) lives in
-`test/conformance_test.dart`.
+The 47-check v7 conformance suite (`docs/conformance.md`) lives in
+`test/conformance_test.dart` (checks 46 and 47 exercise matcher grouping).
 
 ```sh
 aeb dart/.tests.ae     # builds the engine, then runs dart test

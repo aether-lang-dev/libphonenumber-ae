@@ -13,6 +13,7 @@
 #   metadata.ae               (phone metadata — always)
 #   shortnumber_metadata.ae   (always)
 #   timezone_metadata.ae      (always)
+#   altformats_metadata.ae    (alternate formats, matcher grouping — always)
 #   carrier_metadata_<lang>.ae, geocoder_metadata_<lang>.ae  (per language)
 #   carrier_blobs.ae, geocoder_blobs.ae  (dispatchers over the built languages)
 set -euo pipefail
@@ -41,6 +42,8 @@ say "short-number metadata"
 ae run "$GEN/generate_short.ae"  > "$CORE/shortnumber_metadata.ae"
 say "timezone metadata"
 ae run "$GEN/generate_tz.ae"     > "$CORE/timezone_metadata.ae"
+say "alternate-formats metadata"
+ae run "$GEN/generate_altformats.ae" > "$CORE/altformats_metadata.ae"
 
 # --- per-language carrier + geocoder (need argv -> compile the generator once) ---
 tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT

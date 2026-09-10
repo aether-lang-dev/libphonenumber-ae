@@ -155,4 +155,22 @@ def test_44_carrier():
 
 
 def test_45_geocoder():
-    assert pn.geo_description_for_number("US", "6502530000") == "Mountain View, CA" 
+    assert pn.geo_description_for_number("US", "6502530000") == "Mountain View, CA"
+
+
+def test_46_strict_grouping_alternate_format():
+    # The DE candidate's three-group split matches no MAIN format but is
+    # legitimized by an alternate format, so STRICT_GROUPING accepts it.
+    matches = pn.find_numbers(
+        "call 030 234 5678 now", "DE", leniency=pn.LENIENCY_STRICT_GROUPING
+    )
+    assert len(matches) == 1
+
+
+def test_47_exact_grouping_rejects_illegitimate():
+    # The US digits are a VALID number (they match at LENIENCY_VALID) but their
+    # grouping matches no US format, so EXACT_GROUPING rejects them.
+    assert len(pn.find_numbers(
+        "call 65 025 30000 today", "US", leniency=pn.LENIENCY_VALID)) == 1
+    assert len(pn.find_numbers(
+        "call 65 025 30000 today", "US", leniency=pn.LENIENCY_EXACT_GROUPING)) == 0

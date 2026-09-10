@@ -1,5 +1,5 @@
 (ns org.libphonenumber.ae.conformance-test
-  "The 45-check binding conformance suite (docs/conformance.md, v7), in Clojure.
+  "The 47-check binding conformance suite (docs/conformance.md, v7), in Clojure.
 
   Proves the **Clojure layer** reaches the same engine behaviour the Java and
   Python suites see. Since that layer sits on the Java binding rather than on
@@ -16,7 +16,7 @@
   (:require [clojure.test :refer [deftest is run-tests]]
             [org.libphonenumber.ae.core :as pn]))
 
-;; ---- the 45 required checks ----------------------------------------------
+;; ---- the 47 required checks ----------------------------------------------
 
 (deftest test-01-country-code-us
   (is (= "1" (pn/country-code "US"))))
@@ -150,6 +150,17 @@
 
 (deftest test-45-geocoder
   (is (= "Mountain View, CA" (pn/geo-description-for-number "US" "6502530000"))))
+
+(deftest test-46-strict-grouping-alternate-format
+  ;; The DE candidate's three-group split matches no MAIN format but is
+  ;; legitimized by an alternate format, so :strict-grouping accepts it.
+  (is (= 1 (count (pn/find-numbers "call 030 234 5678 now" "DE" :strict-grouping)))))
+
+(deftest test-47-exact-grouping-rejects-illegitimate
+  ;; The US digits are a VALID number (they match at :valid) but their
+  ;; grouping matches no US format, so :exact-grouping rejects them.
+  (is (= 1 (count (pn/find-numbers "call 65 025 30000 today" "US" :valid))))
+  (is (= 0 (count (pn/find-numbers "call 65 025 30000 today" "US" :exact-grouping)))))
 
 ;; ---- extras specific to the Clojure layer --------------------------------
 

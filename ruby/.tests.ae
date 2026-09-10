@@ -19,7 +19,7 @@ aeb(cap) {
             println("ruby: rspec reported failures (is rspec installed? `gem install --user-install rspec`)")
             return 1
         }
-        println("ruby: PASS — v7 45-check conformance (full ABI parity + ShortNumberInfo + timezones + carrier + geocoder)")
+        println("ruby: PASS — v7 47-check conformance (full ABI parity + ShortNumberInfo + timezones + carrier + geocoder + matcher grouping)")
         return 0
     }
 }

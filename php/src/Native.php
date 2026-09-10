@@ -102,6 +102,8 @@ final class Native
 
     public const LENIENCY_POSSIBLE = 0;
     public const LENIENCY_VALID = 1;
+    public const LENIENCY_STRICT_GROUPING = 2;
+    public const LENIENCY_EXACT_GROUPING = 3;
 
     // ---- ShortNumberCost (short_expected_cost) ----
 

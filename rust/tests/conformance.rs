@@ -289,6 +289,32 @@ fn t45_geo_description() {
     );
 }
 
+#[test]
+fn t46_strict_grouping_alternate_format() {
+    // The DE candidate's three-group split matches no MAIN format but is
+    // legitimized by an alternate format, so STRICT_GROUPING accepts it.
+    let matches =
+        engine().find_numbers("call 030 234 5678 now", "DE", pn::LENIENCY_STRICT_GROUPING);
+    assert_eq!(matches.len(), 1);
+}
+
+#[test]
+fn t47_exact_grouping_rejects_illegitimate() {
+    // The US digits are a VALID number but their grouping matches no US format,
+    // so EXACT_GROUPING rejects them; VALID (the contrast) accepts them.
+    let pn = engine();
+    assert_eq!(
+        pn.find_numbers("call 65 025 30000 today", "US", pn::LENIENCY_VALID)
+            .len(),
+        1
+    );
+    assert_eq!(
+        pn.find_numbers("call 65 025 30000 today", "US", pn::LENIENCY_EXACT_GROUPING)
+            .len(),
+        0
+    );
+}
+
 // ---- extras exercising the typed idiomatic surface ----
 
 #[test]

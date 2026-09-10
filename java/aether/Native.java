@@ -88,6 +88,8 @@ public final class Native {
     // ---- matcher leniency ----
     public static final int LENIENCY_POSSIBLE = 0;
     public static final int LENIENCY_VALID = 1;
+    public static final int LENIENCY_STRICT_GROUPING = 2;
+    public static final int LENIENCY_EXACT_GROUPING = 3;
 
     // ---- ShortNumberCost (short_expected_cost) ----
     public static final int COST_TOLL_FREE = 0;

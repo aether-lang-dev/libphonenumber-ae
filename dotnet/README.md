@@ -15,7 +15,7 @@ ISO code, default "en").
 |---|---|
 | `src/Native.cs` | the P/Invoke surface — the **only** place that knows the ABI |
 | `src/PhoneNumber.cs` | the idiomatic C# API over it |
-| `test/Conformance.cs` | the 45-check conformance suite, as a console runner |
+| `test/Conformance.cs` | the 47-check conformance suite, as a console runner |
 
 Targets **net8.0**, with **zero NuGet dependencies** — which is also what lets
 it build and test on a box with no network.
@@ -174,7 +174,8 @@ renumbering: **`E164` is now `0`** (it was `2` under the v1 ABI),
 `International` is `1`, `National` is `2`, `Rfc3966` is `3`. The other constant
 groups are enums with the ABI's exact values: `PhoneNumberType`
 (`Unknown` = -1, …), `ValidationResult`, `MatchType`, `CountryCodeSource`
-(`ParsedNumber.Source`), `Leniency` (`Possible` = 0, `Valid` = 1) and
+(`ParsedNumber.Source`), `Leniency` (`Possible` = 0, `Valid` = 1,
+`StrictGrouping` = 2, `ExactGrouping` = 3) and
 `ShortNumberCost` (`TollFree` = 0, `StandardRate` = 1, `PremiumRate` = 2,
 `Unknown` = 3).
 
@@ -206,7 +207,7 @@ a keepalive list, `GetFunctionPointerForDelegate`) do not arise here.
 
 ## Tests
 
-The 45-check conformance suite (`docs/conformance.md`) lives in
+The 47-check conformance suite (`docs/conformance.md`) lives in
 `test/Conformance.cs`, alongside a few surface extras and a 5,000-iteration loop
 over the caller-owned-string contract (now exercising the parse accessors too).
 

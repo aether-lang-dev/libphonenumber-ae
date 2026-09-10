@@ -40,7 +40,7 @@ aeb core/.build.ae
 Then:
 
 ```sh
-zig build test        # the 45-check v7 conformance suite
+zig build test        # the 47-check v7 conformance suite
 zig build example     # build and run the demo
 ```
 
@@ -303,7 +303,7 @@ not a silent truncation: Zig slices carry NULs happily and C strings do not.
 
 ## Conformance
 
-The 45-check v7 suite (`docs/conformance.md`) lives in `src/conformance.zig`,
+The 47-check v7 suite (`docs/conformance.md`) lives in `src/conformance.zig`,
 pulled into `zig build test` by a `test` block at the bottom of `src/root.zig`.
 It samples every value shape that crosses the FFI — parse accessors, all four
 format styles, the AsYouTypeFormatter, and the matcher — plus a few Zig-specific

@@ -33,7 +33,7 @@ aeb(cap) {
             println("javascript: node --test reported failures")
             return 1
         }
-        println("javascript: PASS — v7 45-check conformance (incl. ShortNumberInfo, TimeZones, Carrier + Geocoder with lang)")
+        println("javascript: PASS — v7 47-check conformance (incl. ShortNumberInfo, TimeZones, Carrier + Geocoder with lang, matcher grouping leniency)")
         return 0
     }
 }

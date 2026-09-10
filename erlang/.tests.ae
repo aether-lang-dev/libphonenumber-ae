@@ -57,7 +57,7 @@ aeb(cap) {
             println("erlang: conformance suite reported failures")
             return 1
         }
-        println("erlang: PASS — 45-check conformance (v7 ABI, incl. ShortNumberInfo, timezones, carrier + geocoder)")
+        println("erlang: PASS — 47-check conformance (v7 ABI, incl. ShortNumberInfo, timezones, carrier, geocoder + matcher grouping leniency)")
         return 0
     }
 }

@@ -194,6 +194,6 @@ themselves caller-owned strings, wrapped by the opaque `ParsedNumber` and
 
 ## Conformance
 
-`gleam/.tests.ae` runs the 45-check binding conformance suite
+`gleam/.tests.ae` runs the 47-check binding conformance suite
 (`docs/conformance.md`, v7) with gleeunit. It samples each *kind* of value
 crossing the FFI — it proves the marshalling, not the library.

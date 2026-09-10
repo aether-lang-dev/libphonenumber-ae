@@ -301,15 +301,21 @@ countryCodeSourceFromCInt n = OtherSource n
 -- ---------------------------------------------------------------------------
 
 -- | How strict 'findNumbers' is. The 'Enum' values ARE the ABI's leniency
--- selector: @Possible = 0@, @Valid = 1@.
+-- selector: @Possible = 0@, @Valid = 1@, @StrictGrouping = 2@,
+-- @ExactGrouping = 3@. The two grouping levels consult AlternateFormats and
+-- go to the same native @matcher_count@ symbol; no new ABI symbol.
 data Leniency
   = Possible
   | Valid
+  | StrictGrouping
+  | ExactGrouping
   deriving (Eq, Ord, Show, Enum, Bounded)
 
 leniencyCInt :: Leniency -> CInt
 leniencyCInt Possible = 0
 leniencyCInt Valid = 1
+leniencyCInt StrictGrouping = 2
+leniencyCInt ExactGrouping = 3
 
 -- ---------------------------------------------------------------------------
 -- ShortNumberCost (short_expected_cost)

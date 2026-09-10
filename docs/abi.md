@@ -26,7 +26,7 @@ extension `ext`/`x`/`;ext=`, optional vanity letters).
 **ValidationResult** (`is_possible_number_with_reason`): `0` IS_POSSIBLE · `4` IS_POSSIBLE_LOCAL_ONLY · `1` INVALID_COUNTRY_CODE · `2` TOO_SHORT · `5` INVALID_LENGTH · `3` TOO_LONG
 **MatchType** (`is_number_match`): `0` NOT_A_NUMBER · `1` NO_MATCH · `2` SHORT_NSN · `3` NSN · `4` EXACT
 **CountryCodeSource** (`pn_source`): `1` FROM_NUMBER_WITH_PLUS · `5` FROM_NUMBER_WITH_IDD · `10` FROM_NUMBER_WITHOUT_PLUS · `20` FROM_DEFAULT_COUNTRY
-**Matcher leniency** (`matcher_*`): `0` POSSIBLE · `1` VALID
+**Matcher leniency** (`matcher_*`): `0` POSSIBLE · `1` VALID · `2` STRICT_GROUPING · `3` EXACT_GROUPING. The two grouping levels additionally require the candidate's digit grouping to match a legitimate format — the main display format, or failing that an alternate format (AlternateFormats). No extra symbols: it is a higher `leniency` value on the existing `matcher_*` calls.
 
 ## Symbols
 

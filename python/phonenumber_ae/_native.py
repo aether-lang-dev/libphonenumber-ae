@@ -61,6 +61,8 @@ SRC_FROM_DEFAULT_COUNTRY = 20
 # ---- matcher leniency ----
 LENIENCY_POSSIBLE = 0
 LENIENCY_VALID = 1
+LENIENCY_STRICT_GROUPING = 2
+LENIENCY_EXACT_GROUPING = 3
 
 # ---- ShortNumberCost (short_expected_cost) ----
 COST_TOLL_FREE = 0

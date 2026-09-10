@@ -80,6 +80,8 @@ final class PhoneNumber
 
     public const LENIENCY_POSSIBLE = Native::LENIENCY_POSSIBLE;
     public const LENIENCY_VALID = Native::LENIENCY_VALID;
+    public const LENIENCY_STRICT_GROUPING = Native::LENIENCY_STRICT_GROUPING;
+    public const LENIENCY_EXACT_GROUPING = Native::LENIENCY_EXACT_GROUPING;
 
     // ---- ShortNumberCost (ShortNumberInfo::expectedCost) ----
 

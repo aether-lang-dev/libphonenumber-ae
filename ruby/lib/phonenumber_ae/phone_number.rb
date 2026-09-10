@@ -52,6 +52,8 @@ module PhoneNumberAe
   # ---- matcher leniency ----
   LENIENCY_POSSIBLE = Native::LENIENCY_POSSIBLE
   LENIENCY_VALID = Native::LENIENCY_VALID
+  LENIENCY_STRICT_GROUPING = Native::LENIENCY_STRICT_GROUPING
+  LENIENCY_EXACT_GROUPING = Native::LENIENCY_EXACT_GROUPING
 
   # ---- ShortNumberCost (short_expected_cost) ----
   COST_TOLL_FREE = Native::COST_TOLL_FREE

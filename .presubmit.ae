@@ -21,6 +21,7 @@ aeb(cap) {
         dep("core_tests/.tz.ae")        // PhoneNumberToTimeZonesMapper behaviour
         dep("core_tests/.carrier.ae")   // PhoneNumberToCarrierMapper behaviour
         dep("core_tests/.geo.ae")       // PhoneNumberOfflineGeocoder behaviour
+        dep("core_tests/.altformats.ae") // matcher grouping (STRICT/EXACT) + AlternateFormats
         dep("core_tests/.variants.ae")  // composable validation-only variant is slim
 
         // Native-FFI bindings.

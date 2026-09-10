@@ -85,6 +85,8 @@ pub const SRC_FROM_DEFAULT_COUNTRY: c_int = 20;
 
 pub const LENIENCY_POSSIBLE: c_int = 0;
 pub const LENIENCY_VALID: c_int = 1;
+pub const LENIENCY_STRICT_GROUPING: c_int = 2;
+pub const LENIENCY_EXACT_GROUPING: c_int = 3;
 
 // ---- ShortNumberCost (`short_expected_cost` result) ----
 

@@ -140,7 +140,8 @@ CountryCodeSource (`ParsedNumber.source`): `SRC_FROM_NUMBER_WITH_PLUS` (1),
 `SRC_FROM_NUMBER_WITH_IDD` (5), `SRC_FROM_NUMBER_WITHOUT_PLUS` (10),
 `SRC_FROM_DEFAULT_COUNTRY` (20).
 
-Matcher leniency: `LENIENCY_POSSIBLE` (0), `LENIENCY_VALID` (1).
+Matcher leniency: `LENIENCY_POSSIBLE` (0), `LENIENCY_VALID` (1),
+`LENIENCY_STRICT_GROUPING` (2), `LENIENCY_EXACT_GROUPING` (3).
 
 ShortNumberCost (`ShortNumberInfo.expectedCost`): `COST_TOLL_FREE` (0),
 `COST_STANDARD_RATE` (1), `COST_PREMIUM_RATE` (2), `COST_UNKNOWN` (3).
@@ -157,7 +158,7 @@ or, with the engine built for you:
 aeb javascript/aether/.tests.ae
 ```
 
-The suite is the 45-check v7 conformance contract in `docs/conformance.md`. It
+The suite is the 47-check v7 conformance contract in `docs/conformance.md`. It
 uses `node:test` and `node:assert`, so koffi is the only dependency that has to
 be installed.
 

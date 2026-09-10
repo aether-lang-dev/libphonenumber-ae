@@ -205,6 +205,13 @@ const (
 	LeniencyPossible Leniency = 0
 	// LeniencyValid accepts only numbers that pass full validation.
 	LeniencyValid Leniency = 1
+	// LeniencyStrictGrouping additionally requires the candidate's digit
+	// grouping to match a format the region recognises (a MAIN or an
+	// alternate format).
+	LeniencyStrictGrouping Leniency = 2
+	// LeniencyExactGrouping is like LeniencyStrictGrouping but the grouping
+	// must match a MAIN format exactly.
+	LeniencyExactGrouping Leniency = 3
 )
 
 // Cost is the expected cost of dialling a short number, mirroring

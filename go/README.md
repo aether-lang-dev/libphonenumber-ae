@@ -245,7 +245,7 @@ Country-code sources (`Source`, from `ParsedNumber.Source`):
 `SourceFromNumberWithoutPlus` (10), `SourceFromDefaultCountry` (20).
 
 Matcher leniency (`Leniency`, for `FindNumbers`): `LeniencyPossible` (0),
-`LeniencyValid` (1).
+`LeniencyValid` (1), `LeniencyStrictGrouping` (2), `LeniencyExactGrouping` (3).
 
 Short-number cost (`Cost`, from `ShortExpectedCost`): `CostTollFree` (0),
 `CostStandardRate` (1), `CostPremiumRate` (2), `CostUnknown` (3).
@@ -270,8 +270,8 @@ engine is a pure, stateless transform.
 
 ## Tests
 
-The 45-check conformance suite ([`docs/conformance.md`](../docs/conformance.md))
-lives in `phonenumber_test.go`. It is not a phone-number test suite — the
+The 47-check conformance suite ([`docs/conformance.md`](../docs/conformance.md))
+lives in `phonenumber_test.go` (checks 46 and 47 exercise matcher grouping). It is not a phone-number test suite — the
 behavioural cases are proven once, in the engine — it samples each *kind* of
 value crossing the FFI, so it proves the marshalling.
 

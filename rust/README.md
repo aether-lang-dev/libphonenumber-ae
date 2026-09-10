@@ -201,8 +201,9 @@ or, with the engine built for you:
 aeb rust/.tests.ae
 ```
 
-The suite is the 45-check v7 conformance contract in `docs/conformance.md`,
-plus a few extras covering the typed idiomatic surface.
+The suite is the 47-check v7 conformance contract in `docs/conformance.md`
+(checks 46 and 47 exercise matcher grouping), plus a few extras covering the
+typed idiomatic surface.
 
 ## Notes for maintainers
 

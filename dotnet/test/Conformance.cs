@@ -1,4 +1,4 @@
-// The 45-check binding conformance suite (docs/conformance.md, v7).
+// The 47-check binding conformance suite (docs/conformance.md, v7).
 //
 // Proves the .NET binding marshals every value shape across the P/Invoke
 // boundary — a parsed number and its accessors, an AsYouType formatter, the
@@ -78,7 +78,7 @@ internal static class Conformance
         Console.WriteLine($"engine: {PhoneNumber.NativeLibraryPath ?? "(default probing)"} " +
                           $"(ABI v{PhoneNumber.AbiVersion})");
 
-        // ---- the forty-five (docs/conformance.md) ----
+        // ---- the forty-seven (docs/conformance.md) ----
 
         Check("01 country_code US == 1", () => Eq(PhoneNumber.CountryCode("US"), "1"));
 
@@ -235,6 +235,27 @@ internal static class Conformance
 
         Check("45 geo_description_for_number US 6502530000 == Mountain View, CA", () =>
             Eq(PhoneNumber.GeoDescriptionForNumber("US", "6502530000"), "Mountain View, CA"));
+
+        Check("46 STRICT_GROUPING accepts via an alternate format", () =>
+        {
+            // The DE candidate's three-group split matches no MAIN format but is
+            // legitimized by an alternate format, so StrictGrouping accepts it.
+            var matches = PhoneNumber.FindNumbers(
+                "call 030 234 5678 now", "DE", Leniency.StrictGrouping);
+            Eq(matches.Count, 1, "strict grouping match count");
+        });
+
+        Check("47 EXACT_GROUPING rejects an illegitimate grouping", () =>
+        {
+            // The US digits are a VALID number (they match at Valid) but their
+            // grouping matches no US format, so ExactGrouping rejects them.
+            var valid = PhoneNumber.FindNumbers(
+                "call 65 025 30000 today", "US", Leniency.Valid);
+            Eq(valid.Count, 1, "valid accepts");
+            var exact = PhoneNumber.FindNumbers(
+                "call 65 025 30000 today", "US", Leniency.ExactGrouping);
+            Eq(exact.Count, 0, "exact grouping rejects");
+        });
 
         // ---- a few surface extras ----
 

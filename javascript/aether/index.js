@@ -71,6 +71,8 @@ module.exports = {
   // ---- matcher leniency ----
   LENIENCY_POSSIBLE: native.LENIENCY_POSSIBLE,
   LENIENCY_VALID: native.LENIENCY_VALID,
+  LENIENCY_STRICT_GROUPING: native.LENIENCY_STRICT_GROUPING,
+  LENIENCY_EXACT_GROUPING: native.LENIENCY_EXACT_GROUPING,
 
   // ---- ShortNumberCost (ShortNumberInfo.expectedCost) ----
   COST_TOLL_FREE: native.COST_TOLL_FREE,

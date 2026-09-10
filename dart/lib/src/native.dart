@@ -95,6 +95,8 @@ const int kSrcFromDefaultCountry = 20;
 
 const int kLeniencyPossible = 0;
 const int kLeniencyValid = 1;
+const int kLeniencyStrictGrouping = 2;
+const int kLeniencyExactGrouping = 3;
 
 // ---- ShortNumberCost (short_expected_cost) ----
 

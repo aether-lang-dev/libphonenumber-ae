@@ -239,6 +239,8 @@ pub const CountryCodeSource = enum(c_int) {
 pub const Leniency = enum(c_int) {
     possible = 0,
     valid = 1,
+    strict_grouping = 2,
+    exact_grouping = 3,
 };
 
 /// The expected cost of dialling a short number (`shortExpectedCost`).
@@ -291,6 +293,8 @@ pub const SRC_FROM_DEFAULT_COUNTRY: c_int = 20;
 
 pub const LENIENCY_POSSIBLE: c_int = 0;
 pub const LENIENCY_VALID: c_int = 1;
+pub const LENIENCY_STRICT_GROUPING: c_int = 2;
+pub const LENIENCY_EXACT_GROUPING: c_int = 3;
 
 pub const COST_TOLL_FREE: c_int = 0;
 pub const COST_STANDARD_RATE: c_int = 1;

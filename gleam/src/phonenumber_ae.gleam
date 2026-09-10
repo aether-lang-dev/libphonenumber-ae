@@ -101,10 +101,14 @@ pub type CountryCodeSource {
   UnspecifiedSource
 }
 
-/// Matcher leniency.
+/// Matcher leniency. `StrictGrouping` (2) and `ExactGrouping` (3) consult
+/// AlternateFormats in the engine; all levels hit the same `matcher_count`
+/// symbol.
 pub type Leniency {
   Possible
   Valid
+  StrictGrouping
+  ExactGrouping
 }
 
 /// A ShortNumberCost, returned by `short_expected_cost`. The constructors are
@@ -219,6 +223,8 @@ fn leniency_code(l: Leniency) -> Int {
   case l {
     Possible -> 0
     Valid -> 1
+    StrictGrouping -> 2
+    ExactGrouping -> 3
   }
 }
 

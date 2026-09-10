@@ -268,6 +268,22 @@ func Test45GeoDescription(t *testing.T) {
 		GeoDescriptionForNumber("US", "6502530000"), "Mountain View, CA")
 }
 
+// The DE candidate's three-group split matches no MAIN format but is
+// legitimized by an alternate format, so STRICT_GROUPING accepts it.
+func Test46StrictGroupingAlternateFormat(t *testing.T) {
+	matches := FindNumbers("call 030 234 5678 now", "DE", LeniencyStrictGrouping)
+	eqInt(t, "FindNumbers count (STRICT_GROUPING, DE)", len(matches), 1)
+}
+
+// The US digits are a VALID number but their grouping matches no US format, so
+// EXACT_GROUPING rejects them; VALID (the contrast) accepts them.
+func Test47ExactGroupingRejects(t *testing.T) {
+	eqInt(t, "FindNumbers count (VALID, US)",
+		len(FindNumbers("call 65 025 30000 today", "US", LeniencyValid)), 1)
+	eqInt(t, "FindNumbers count (EXACT_GROUPING, US)",
+		len(FindNumbers("call 65 025 30000 today", "US", LeniencyExactGrouping)), 0)
+}
+
 // The Format* convenience wrappers must agree with Format(..., style).
 func TestFormatConveniences(t *testing.T) {
 	eqStr(t, "FormatNational", FormatNational("US", "2015550123"), "(201) 555-0123")

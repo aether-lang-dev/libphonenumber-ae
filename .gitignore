@@ -44,6 +44,7 @@ java/**/target/
 core/metadata.ae
 core/shortnumber_metadata.ae
 core/timezone_metadata.ae
+core/altformats_metadata.ae
 core/carrier_metadata_*.ae
 core/geocoder_metadata_*.ae
 core/carrier_blobs.ae

@@ -10,15 +10,16 @@ import gleam/string
 import gleeunit
 import gleeunit/should
 import phonenumber_ae.{
-  CostTollFree, E164, Exact, FixedLine, FixedLineOrMobile, FromNumberWithPlus,
-  International, National, NoMatch, Rfc3966, TooShort, Valid,
+  CostTollFree, E164, Exact, ExactGrouping, FixedLine, FixedLineOrMobile,
+  FromNumberWithPlus, International, National, NoMatch, Rfc3966, StrictGrouping,
+  TooShort, Valid,
 }
 
 pub fn main() {
   gleeunit.main()
 }
 
-// ---- the 40 checks (docs/conformance.md, v3) ----
+// ---- the 47 checks (docs/conformance.md, v3) ----
 
 pub fn t01_country_code_us_test() {
   phonenumber_ae.country_code("US")
@@ -287,7 +288,30 @@ pub fn t45_geocoder_test() {
   |> should.equal("Mountain View, CA")
 }
 
-// ---- extras: the marshalling corners the 45 do not reach ----
+// ---- matcher grouping leniency (docs/conformance.md #46–47) ----
+
+// #46: the DE candidate's three-group split matches no MAIN format but is
+// legitimized by an alternate format, so StrictGrouping (2) accepts it.
+pub fn t46_strict_grouping_alternate_format_test() {
+  phonenumber_ae.matcher_count("call 030 234 5678 now", "DE", StrictGrouping)
+  |> should.equal(1)
+
+  phonenumber_ae.find_numbers("call 030 234 5678 now", "DE", StrictGrouping)
+  |> list.length
+  |> should.equal(1)
+}
+
+// #47: the US digits are a VALID number (they match at Valid=1) but their
+// grouping matches no US format, so ExactGrouping (3) rejects them.
+pub fn t47_exact_grouping_rejects_illegitimate_test() {
+  phonenumber_ae.matcher_count("call 65 025 30000 today", "US", Valid)
+  |> should.equal(1)
+
+  phonenumber_ae.matcher_count("call 65 025 30000 today", "US", ExactGrouping)
+  |> should.equal(0)
+}
+
+// ---- extras: the marshalling corners the 47 do not reach ----
 
 pub fn format_helpers_test() {
   phonenumber_ae.format_national("US", "2015550123")

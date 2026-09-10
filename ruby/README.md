@@ -205,7 +205,8 @@ Constant groups:
   `MATCH_NSN`, `MATCH_EXACT`
 - **CountryCodeSource**: `SRC_FROM_NUMBER_WITH_PLUS`, `SRC_FROM_NUMBER_WITH_IDD`,
   `SRC_FROM_NUMBER_WITHOUT_PLUS`, `SRC_FROM_DEFAULT_COUNTRY`
-- **Leniency**: `LENIENCY_POSSIBLE` (0), `LENIENCY_VALID` (1)
+- **Leniency**: `LENIENCY_POSSIBLE` (0), `LENIENCY_VALID` (1),
+  `LENIENCY_STRICT_GROUPING` (2), `LENIENCY_EXACT_GROUPING` (3)
 
 ## Memory
 
@@ -218,8 +219,8 @@ freed the same way.
 
 ## Testing
 
-The v7 45-check conformance suite (`docs/conformance.md`) lives in
-`spec/conformance_spec.rb`.
+The v7 47-check conformance suite (`docs/conformance.md`) lives in
+`spec/conformance_spec.rb` (checks 46 and 47 exercise matcher grouping).
 
 ```sh
 LIBPHONENUMBER_AE_LIB=/path/to/libphonenumber_ae.so rspec

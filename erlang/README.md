@@ -109,8 +109,8 @@ S  = lists:foldl(fun(C, S) -> phonenumber_ae:ayt_input(S, <<C>>) end,
 ```erlang
 phonenumber_ae:find_numbers(<<"call 201-555-0123 or +1 202 555 0199">>, <<"US">>).
 %% => [{5, 17, <<"201-555-0123">>}, {21, 36, <<"+1 202 555 0199">>}]
-%% each match is {Start, End, Raw}; pass a leniency atom (possible | valid) as
-%% the 3rd arg, default valid.
+%% each match is {Start, End, Raw}; pass a leniency atom (possible | valid |
+%% strict_grouping | exact_grouping) as the 3rd arg, default valid.
 ```
 
 ### Short numbers (emergency, SMS shortcodes)
@@ -210,7 +210,7 @@ strings (every `char*` the ABI returns is caller-owned).
 
 ## Conformance
 
-`erlang/.tests.ae` runs the 45-check binding conformance suite
+`erlang/.tests.ae` runs the 47-check binding conformance suite
 (`docs/conformance.md`, v7) as EUnit, against the very same compiled module
 Elixir and Gleam load. It samples each *kind* of value crossing the FFI — it
 proves the marshalling, not the library. The suite SKIPs (green) when `erl`,

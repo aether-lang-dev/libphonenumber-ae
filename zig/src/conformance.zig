@@ -1,4 +1,4 @@
-//! The 45-check binding conformance suite (docs/conformance.md, v7).
+//! The 47-check binding conformance suite (docs/conformance.md, v7).
 //!
 //! Proves the Zig binding marshals every value shape across the FFI. It is NOT
 //! a phone-number test suite — the behavioural cases live in the engine's own
@@ -237,6 +237,26 @@ test "44 carrier_name_for_number GB 7106000000 == O2" {
 
 test "45 geo_description_for_number US 6502530000 == Mountain View, CA" {
     try expectStr("Mountain View, CA", pn.geoDescriptionForNumber(alloc, "US", "6502530000"));
+}
+
+test "46 strict_grouping accepts via an alternate format" {
+    // The DE candidate's three-group split matches no MAIN format but is
+    // legitimized by an alternate format, so STRICT_GROUPING accepts it.
+    const matches = try pn.findNumbers(alloc, "call 030 234 5678 now", "DE", .strict_grouping);
+    defer pn.freeMatches(alloc, matches);
+    try testing.expectEqual(@as(usize, 1), matches.len);
+}
+
+test "47 exact_grouping rejects an illegitimate grouping" {
+    // The US digits are a VALID number (they match at .valid) but their grouping
+    // matches no US format, so EXACT_GROUPING rejects them.
+    const valid = try pn.findNumbers(alloc, "call 65 025 30000 today", "US", .valid);
+    defer pn.freeMatches(alloc, valid);
+    try testing.expectEqual(@as(usize, 1), valid.len);
+
+    const exact = try pn.findNumbers(alloc, "call 65 025 30000 today", "US", .exact_grouping);
+    defer pn.freeMatches(alloc, exact);
+    try testing.expectEqual(@as(usize, 0), exact.len);
 }
 
 // =========================================================================

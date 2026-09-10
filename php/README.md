@@ -25,7 +25,7 @@ are themselves caller-owned *strings*.
 | `src/TimeZones.php` | IANA time-zone lookup (the v5 ABI addition) |
 | `src/Carrier.php` | carrier-name lookup (v5 ABI addition; v7 optional `$lang`) |
 | `src/Geocoder.php` | geographic-description lookup (v6 ABI addition; v7 optional `$lang`) |
-| `tests/conformance.php` | the 45-check v7 conformance suite, as an assertion runner |
+| `tests/conformance.php` | the 47-check v7 conformance suite, as an assertion runner |
 
 Requires **PHP 8.1+** and **ext-ffi**. No Composer dependencies at all — which
 is also what lets it run on a box with no network.
@@ -188,7 +188,8 @@ CountryCodeSource (`ParsedNumber::source()`): `SRC_FROM_NUMBER_WITH_PLUS` (1),
 `SRC_FROM_NUMBER_WITH_IDD` (5), `SRC_FROM_NUMBER_WITHOUT_PLUS` (10),
 `SRC_FROM_DEFAULT_COUNTRY` (20).
 
-Matcher leniency: `LENIENCY_POSSIBLE` (0), `LENIENCY_VALID` (1).
+Matcher leniency: `LENIENCY_POSSIBLE` (0), `LENIENCY_VALID` (1),
+`LENIENCY_STRICT_GROUPING` (2), `LENIENCY_EXACT_GROUPING` (3).
 
 ShortNumberCost (`ShortNumberInfo::expectedCost()`): `COST_TOLL_FREE` (0),
 `COST_STANDARD_RATE` (1), `COST_PREMIUM_RATE` (2), `COST_UNKNOWN` (3).
@@ -205,7 +206,7 @@ there is no keepalive list and no borrowed pointers to track.
 
 ## Tests
 
-The 45-check v7 conformance suite (`docs/conformance.md`) lives in
+The 47-check v7 conformance suite (`docs/conformance.md`) lives in
 `tests/conformance.php`, alongside a couple of extras and a 5,000-iteration
 loop over the caller-owned-string contract.
 

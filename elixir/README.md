@@ -99,7 +99,8 @@ out   # => "(201) 555-0123"
 ```elixir
 PhonenumberAe.find_numbers("call 201-555-0123 or +1 202 555 0199", "US")
 # => [%PhonenumberAe.Match{start: 5, end: 17, raw: "201-555-0123"}, ...]
-# pass a leniency atom (:possible | :valid) as the 3rd arg, default :valid.
+# pass a leniency atom (:possible | :valid | :strict_grouping | :exact_grouping)
+# as the 3rd arg, default :valid.
 ```
 
 ### Short numbers (emergency, SMS shortcodes)
@@ -185,7 +186,7 @@ is a direct FFI crossing.
 
 ## Conformance
 
-`elixir/.tests.ae` runs the 45-check binding conformance suite
+`elixir/.tests.ae` runs the 47-check binding conformance suite
 (`docs/conformance.md`, v7) as ExUnit. It samples each *kind* of value crossing
 the FFI — it proves the marshalling, not the library. The node SKIPs (green)
 when Elixir/Mix or the shared NIF is absent.

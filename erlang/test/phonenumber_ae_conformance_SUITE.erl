@@ -12,7 +12,7 @@
 -include_lib("eunit/include/eunit.hrl").
 
 %%------------------------------------------------------------------
-%% The 45 checks (docs/conformance.md, v6)
+%% The 47 checks (docs/conformance.md, v6)
 %%------------------------------------------------------------------
 
 t01_country_code_us_test() ->
@@ -189,7 +189,30 @@ t45_geocoder_test() ->
                  phonenumber_ae:geo_description_for_number(<<"US">>, <<"6502530000">>)).
 
 %%------------------------------------------------------------------
-%% Extras — marshalling corners the 45 do not reach
+%% Matcher grouping leniency (docs/conformance.md #46–47)
+%%------------------------------------------------------------------
+
+%% #46: the DE candidate's three-group split matches no MAIN format but is
+%% legitimized by an alternate format, so STRICT_GROUPING (2) accepts it.
+t46_strict_grouping_alternate_format_test() ->
+    ?assertEqual(1,
+                 phonenumber_ae:matcher_count(
+                   <<"call 030 234 5678 now">>, <<"DE">>, strict_grouping)),
+    ?assertEqual(1, length(phonenumber_ae:find_numbers(
+                   <<"call 030 234 5678 now">>, <<"DE">>, strict_grouping))).
+
+%% #47: the US digits are a VALID number (they match at VALID=1) but their
+%% grouping matches no US format, so EXACT_GROUPING (3) rejects them.
+t47_exact_grouping_rejects_illegitimate_test() ->
+    ?assertEqual(1,
+                 phonenumber_ae:matcher_count(
+                   <<"call 65 025 30000 today">>, <<"US">>, valid)),
+    ?assertEqual(0,
+                 phonenumber_ae:matcher_count(
+                   <<"call 65 025 30000 today">>, <<"US">>, exact_grouping)).
+
+%%------------------------------------------------------------------
+%% Extras — marshalling corners the 47 do not reach
 %%------------------------------------------------------------------
 
 %% The NIF takes iodata, not just binaries — a caller with a plain string list

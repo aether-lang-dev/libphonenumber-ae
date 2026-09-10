@@ -40,7 +40,7 @@ aeb(cap) {
             println("dotnet: conformance suite reported failures")
             return 1
         }
-        println("dotnet: PASS — v7 conformance (parse, formats, AsYouType, matcher, ShortNumberInfo, TimeZones, Carrier+lang, Geocoder+lang; 45-check)")
+        println("dotnet: PASS — v7 conformance (parse, formats, AsYouType, matcher, ShortNumberInfo, TimeZones, Carrier+lang, Geocoder+lang; 47-check)")
         return 0
     }
 }

@@ -131,6 +131,12 @@ public enum Leniency
     Possible = 0,
     /// <summary>Accept only valid numbers.</summary>
     Valid = 1,
+    /// <summary>Accept a valid number only when its grouping matches a main or
+    /// alternate national format (consults AlternateFormats).</summary>
+    StrictGrouping = 2,
+    /// <summary>Accept a valid number only when its grouping matches a format
+    /// exactly (consults AlternateFormats).</summary>
+    ExactGrouping = 3,
 }
 
 /// <summary>

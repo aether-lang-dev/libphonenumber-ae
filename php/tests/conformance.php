@@ -1,7 +1,7 @@
 <?php
 
 /**
- * The 45-check binding conformance suite (docs/conformance.md, v7).
+ * The 47-check binding conformance suite (docs/conformance.md, v7).
  *
  * Proves the PHP binding marshals every value shape across the FFI. It is NOT a
  * phone-number test suite — the behavioural cases live in the engine's own
@@ -315,6 +315,22 @@ check('44 carrier_name_for_number GB', function (): void {
 
 check('45 geo_description_for_number US', function (): void {
     eqStr(Geocoder::geoDescriptionForNumber('US', '6502530000'), 'Mountain View, CA', 'US geo');
+});
+
+check('46 STRICT_GROUPING accepts via an alternate format', function (): void {
+    // The DE candidate's three-group split matches no MAIN format but is
+    // legitimized by an alternate format, so STRICT_GROUPING accepts it.
+    $matches = PhoneNumber::findNumbers('call 030 234 5678 now', 'DE', PhoneNumber::LENIENCY_STRICT_GROUPING);
+    eqInt(count($matches), 1, 'strict grouping match count');
+});
+
+check('47 EXACT_GROUPING rejects an illegitimate grouping', function (): void {
+    // The US digits are a VALID number (they match at LENIENCY_VALID) but their
+    // grouping matches no US format, so EXACT_GROUPING rejects them.
+    $valid = PhoneNumber::findNumbers('call 65 025 30000 today', 'US', PhoneNumber::LENIENCY_VALID);
+    eqInt(count($valid), 1, 'valid accepts');
+    $exact = PhoneNumber::findNumbers('call 65 025 30000 today', 'US', PhoneNumber::LENIENCY_EXACT_GROUPING);
+    eqInt(count($exact), 0, 'exact grouping rejects');
 });
 
 // ---- a few extras exercising the idiomatic surface ----

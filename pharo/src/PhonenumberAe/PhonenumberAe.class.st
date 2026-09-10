@@ -79,16 +79,26 @@ PhonenumberAe class >> leniencyPossible [ ^ 0 ]
 PhonenumberAe class >> leniencyValid [ ^ 1 ]
 
 { #category : 'constants - leniency' }
+PhonenumberAe class >> leniencyStrictGrouping [ ^ 2 ]
+
+{ #category : 'constants - leniency' }
+PhonenumberAe class >> leniencyExactGrouping [ ^ 3 ]
+
+{ #category : 'constants - leniency' }
 PhonenumberAe class >> leniencyFor: aSymbol [
-	"Map a leniency symbol onto the ABI's integer code."
+	"Map a leniency symbol onto the ABI's integer code. #strictGrouping (2) and
+	 #exactGrouping (3) consult AlternateFormats in the engine; all levels hit
+	 the same matcher_count symbol."
 
 	^ aSymbol
 		  caseOf: {
 			  [ #possible ] -> [ self leniencyPossible ].
-			  [ #valid ] -> [ self leniencyValid ] }
+			  [ #valid ] -> [ self leniencyValid ].
+			  [ #strictGrouping ] -> [ self leniencyStrictGrouping ].
+			  [ #exactGrouping ] -> [ self leniencyExactGrouping ] }
 		  otherwise: [
 			  self error: 'unknown leniency ' , aSymbol printString
-				  , ' (expected #possible or #valid)' ]
+				  , ' (expected #possible #valid #strictGrouping or #exactGrouping)' ]
 ]
 
 { #category : 'constants - number type' }

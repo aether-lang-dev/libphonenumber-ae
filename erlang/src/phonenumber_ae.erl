@@ -94,8 +94,9 @@
                              | from_number_without_plus | from_default_country
                              | unspecified.
 
-%% Matcher leniency.
--type leniency() :: possible | valid.
+%% Matcher leniency. strict_grouping (2) and exact_grouping (3) consult
+%% AlternateFormats; the underlying matcher_count symbol already takes the int.
+-type leniency() :: possible | valid | strict_grouping | exact_grouping.
 
 %% The ShortNumberCost of short_expected_cost/2, as an atom.
 -type short_number_cost() :: toll_free | standard_rate | premium_rate | unknown.
@@ -605,9 +606,12 @@ source_atom(10) -> from_number_without_plus;
 source_atom(20) -> from_default_country;
 source_atom(_)  -> unspecified.
 
-%% Matcher leniency codes.
-leniency_code(possible) -> 0;
-leniency_code(valid)    -> 1.
+%% Matcher leniency codes. STRICT_GROUPING=2 and EXACT_GROUPING=3 consult
+%% AlternateFormats in the engine; the levels hit the same matcher_count symbol.
+leniency_code(possible)        -> 0;
+leniency_code(valid)           -> 1;
+leniency_code(strict_grouping) -> 2;
+leniency_code(exact_grouping)  -> 3.
 
 %% ShortNumberCost codes -> atoms (0 toll-free, 1 standard, 2 premium, 3 unknown).
 cost_atom(0) -> toll_free;

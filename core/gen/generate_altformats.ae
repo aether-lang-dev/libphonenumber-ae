@@ -1,0 +1,189 @@
+// core.gen.generate_altformats — compile PhoneNumberAlternateFormats.xml into a
+// pure-Aether table for the matcher's grouping checks.
+//
+// AlternateFormats has ONE consumer in upstream libphonenumber:
+// PhoneNumberMatcher.checkNumberGroupingIsValid. When a candidate passes
+// isValid but its digit grouping doesn't match the MAIN display format,
+// STRICT_GROUPING / EXACT_GROUPING leniency retries the grouping check against
+// each alternate format for the number's country code (gated by leadingDigits).
+// This tool compiles resources/PhoneNumberAlternateFormats.xml into that table.
+//
+// Run offline (from the repo root), or via core/gen/generate_metadata.sh:
+//     ae run core/gen/generate_altformats.ae > core/altformats_metadata.ae
+//
+// The XML is keyed purely by countryCode (no per-region names, no <territory id>).
+// Each <numberFormat> carries a `pattern` attr, an optional (whitespace-laden)
+// <leadingDigits>, a <format> template, and an optional
+// nationalPrefixFormattingRule attr. We emit, per country code, a blob of its
+// formats: records 0x1E-separated, fields within a record 0x1F-separated in the
+// order pattern | format | leadingDigits | nationalPrefixFormattingRule. Only
+// the most-specific leadingDigits is present per format (as upstream relies on).
+
+import std.xml
+import std.string
+import std.list
+import std.file
+
+// Collapse the whitespace libphonenumber pretty-prints inside element text and
+// attribute values (leadingDigits regexes span many indented lines).
+fn squeeze(s: string) -> string {
+    out = ""
+    n = string.length(s)
+    for (i = 0; i < n; i++) {
+        c = string.char_at(s, i)
+        if c == 32 || c == 9 || c == 10 || c == 13 { continue }
+        out = "${out}${string.substring(s, i, i + 1)}"
+    }
+    return out
+}
+
+// Append a format record to the cc's blob entry (record sep 0x1E). Entries are
+// "cc\x1f<blob>"; the leading "cc\x1f" tags the entry, the rest is 0x1E-joined
+// format records (each itself 0x1F-joined pattern|format|leadingDigits|npr).
+fn cc_add(map: ptr, cc: string, rec: string) {
+    us = string.from_char(31)
+    rs = string.from_char(30)
+    n = list.size(map)
+    prefix = "${cc}${us}"
+    for (i = 0; i < n; i++) {
+        e, _ = list.get(map, i)
+        if starts_with(e, prefix) == 1 {
+            blob = string.substring(e, string.length(prefix), string.length(e))
+            list.set(map, i, "${prefix}${blob}${rs}${rec}")
+            return
+        }
+    }
+    list.add(map, "${prefix}${rec}")
+}
+
+fn starts_with(s: string, prefix: string) -> int {
+    lp = string.length(prefix)
+    if string.length(s) < lp { return 0 }
+    if string.substring(s, 0, lp) == prefix { return 1 }
+    return 0
+}
+
+// Escape a value for a double-quoted .ae string literal. Control bytes are
+// emitted as printable \xNN escapes. Built with concat + from_char, never with
+// "${out}\\..." interpolation: Aether collapses "\\\\" in an interpolated string
+// to ONE backslash, which would silently drop every regex backslash.
+fn esc(s: string) -> string {
+    bs = string.from_char(92)
+    q = string.from_char(34)
+    out = ""
+    n = string.length(s)
+    for (i = 0; i < n; i++) {
+        c = string.char_at(s, i)
+        if c == 34 { out = string.concat(out, string.concat(bs, q)) }
+        else if c == 92 { out = string.concat(out, string.concat(bs, bs)) }
+        else if c == 31 { out = string.concat(out, string.concat(bs, "x1f")) }
+        else if c == 30 { out = string.concat(out, string.concat(bs, "x1e")) }
+        else { out = string.concat(out, string.substring(s, i, i + 1)) }
+    }
+    return out
+}
+
+main() {
+    xmltext, ferr = file.read("resources/PhoneNumberAlternateFormats.xml")
+    if ferr != "" {
+        println("// ERROR reading alt-formats: ${ferr}")
+        return 1
+    }
+    p = xml.parser(xmltext)
+
+    println("// core.altformats_metadata — GENERATED, do not edit.")
+    println("//")
+    println("// Produced by core/gen/generate_altformats.ae from")
+    println("// resources/PhoneNumberAlternateFormats.xml (Apache-2.0, (c) The")
+    println("// Libphonenumber Authors). Consumed ONLY by the matcher's STRICT_GROUPING")
+    println("// / EXACT_GROUPING leniency (checkNumberGroupingIsValid).")
+    println("//")
+    println("// altformats_for_cc(cc) returns that country code's alternate formats as")
+    println("// a blob: records 0x1E-separated, each record 0x1F-joined")
+    println("//   pattern | format | leadingDigits | nationalPrefixFormattingRule")
+    println("// (\"\" if the cc has no alternate formats).")
+    println("")
+    println("import std.string")
+    println("import std.list")
+    println("")
+    println("exports(altformats_for_cc)")
+    println("")
+
+    cc_map = list.new()
+
+    // Per-numberFormat streaming state.
+    cur_cc = ""
+    pend_pattern = ""
+    pend_npr = ""
+    pend_leading = ""
+    pend_format = ""
+    pending = ""
+
+    ev = xml.next(p)
+    while ev != xml.EVENT_EOF && ev != xml.EVENT_ERROR {
+        if ev == xml.EVENT_START {
+            nm = xml.name(p)
+            if nm == "territory" {
+                cur_cc = xml.attr(p, "countryCode")
+            }
+            else if nm == "numberFormat" {
+                pend_pattern = squeeze(xml.attr(p, "pattern"))
+                pend_npr = squeeze(xml.attr(p, "nationalPrefixFormattingRule"))
+                pend_leading = ""
+                pend_format = ""
+            }
+            else if nm == "leadingDigits" { pending = "leading-text" }
+            else if nm == "format" { pending = "format-text" }
+        }
+        else if ev == xml.EVENT_TEXT {
+            if pending == "leading-text" {
+                // Only the most-specific leadingDigits is present per format, but
+                // guard anyway: keep the last one seen.
+                pend_leading = squeeze(xml.text(p))
+                pending = ""
+            }
+            else if pending == "format-text" {
+                pend_format = string.trim(xml.text(p))
+                pending = ""
+            }
+        }
+        else if ev == xml.EVENT_END {
+            nm = xml.name(p)
+            if nm == "numberFormat" {
+                if cur_cc != "" && pend_pattern != "" && pend_format != "" {
+                    us = string.from_char(31)
+                    rec = "${pend_pattern}${us}${pend_format}${us}${pend_leading}${us}${pend_npr}"
+                    cc_add(cc_map, cur_cc, rec)
+                }
+                pend_pattern = ""; pend_npr = ""; pend_leading = ""; pend_format = ""
+            }
+        }
+        ev = xml.next(p)
+    }
+
+    // Emit the lookup as a straight if-ladder over the cc -> blob entries. There
+    // are ~60 country codes with alternate formats, so a small linear dispatch is
+    // fine and keeps each blob a single string constant (no big list build).
+    println("altformats_for_cc(cc: string) -> string {")
+    ncc = list.size(cc_map)
+    for (i = 0; i < ncc; i++) {
+        entry, _ = list.get(cc_map, i)
+        // entry = "cc\x1f<blob>": split off the cc tag, emit blob for that cc.
+        us = string.from_char(31)
+        pos = -1
+        elen = string.length(entry)
+        for (j = 0; j < elen; j++) {
+            if string.char_at(entry, j) == 31 { pos = j; break }
+        }
+        if pos < 0 { continue }
+        cc = string.substring(entry, 0, pos)
+        blob = string.substring(entry, pos + 1, elen)
+        println("    if cc == \"${esc(cc)}\" { return \"${esc(blob)}\" }")
+    }
+    println("    return \"\"")
+    println("}")
+
+    xml.free(p)
+    list.free(cc_map)
+    return 0
+}

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The 45-check binding conformance suite (docs/conformance.md, v7).
+ * The 47-check binding conformance suite (docs/conformance.md, v7).
  *
  * <p>Proves the Java binding marshals every value shape across the FFI. It is
  * NOT a phone-number test suite — the behavioural cases live in the engine's
@@ -31,7 +31,7 @@ public final class ConformanceTest {
     private static final List<String> failures = new ArrayList<>();
 
     public static void main(String[] args) {
-        // ---- the 45 required checks (docs/conformance.md v7) ----
+        // ---- the 47 required checks (docs/conformance.md v7) ----
         check("01 country_code US", () ->
                 assertEquals("1", PhoneNumbers.countryCode("US")));
         check("02 country_code GB", () ->
@@ -173,6 +173,21 @@ public final class ConformanceTest {
         check("45 geo_description_for_number US", () ->
                 assertEquals("Mountain View, CA",
                         Geocoder.geoDescriptionForNumber("US", "6502530000")));
+        check("46 STRICT_GROUPING accepts via an alternate format", () -> {
+            // The DE candidate's three-group split matches no MAIN format but is
+            // legitimized by an alternate format, so STRICT_GROUPING accepts it.
+            List<Matcher.Match> ms = PhoneNumbers.findNumbers(
+                    "call 030 234 5678 now", "DE", Leniency.STRICT_GROUPING);
+            assertEquals(1, ms.size());
+        });
+        check("47 EXACT_GROUPING rejects an illegitimate grouping", () -> {
+            // The US digits are a VALID number (they match at VALID) but their
+            // grouping matches no US format, so EXACT_GROUPING rejects them.
+            assertEquals(1, PhoneNumbers.findNumbers(
+                    "call 65 025 30000 today", "US", Leniency.VALID).size());
+            assertEquals(0, PhoneNumbers.findNumbers(
+                    "call 65 025 30000 today", "US", Leniency.EXACT_GROUPING).size());
+        });
 
         // ---- extras: the convenience / value-object surface ----
         check("format helpers agree with format()", () -> {

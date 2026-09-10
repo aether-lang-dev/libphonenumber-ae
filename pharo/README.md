@@ -147,7 +147,8 @@ the engine knows no zone for comes back as a one-element collection of
   `isAlphaNumber:`.
 - **As-you-type**: `asYouTypeFormatterFor:` (→ `PhonenumberAeAsYouTypeFormatter`).
 - **Find numbers**: `findNumbers:region:` / `findNumbers:region:leniency:`
-  (→ `PhonenumberAeMatch` with `start` / `end` / `raw`).
+  (→ `PhonenumberAeMatch` with `start` / `end` / `raw`; leniency is one of
+  `#possible` `#valid` `#strictGrouping` `#exactGrouping`).
 - **Short numbers**: `shortIsPossible:region:`, `shortIsValid:region:`,
   `isEmergencyNumber:region:`, `connectsToEmergencyNumber:region:`,
   `shortIsCarrierSpecific:region:`, `shortIsSmsService:region:`,
@@ -203,7 +204,7 @@ Matching every other binding in the monorepo (see `PhonenumberAeLibrary`):
 
 `pharo/run-tests.sh` loads the Tonel package into a **throwaway copy** of a
 Pharo image (loading code mutates an image permanently, so the developer's own
-image is never touched) and runs the 45-check binding conformance suite
+image is never touched) and runs the 47-check binding conformance suite
 (`docs/conformance.md`, v7) headless. `pharo/.tests.ae` drives it, threading the
 engine `.so` through `$LIBPHONENUMBER_AE_LIB`.
 

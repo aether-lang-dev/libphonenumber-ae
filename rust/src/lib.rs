@@ -42,7 +42,7 @@ pub use native::{
     SRC_FROM_DEFAULT_COUNTRY, SRC_FROM_NUMBER_WITH_IDD, SRC_FROM_NUMBER_WITH_PLUS,
     SRC_FROM_NUMBER_WITHOUT_PLUS,
     // Leniency
-    LENIENCY_POSSIBLE, LENIENCY_VALID,
+    LENIENCY_POSSIBLE, LENIENCY_VALID, LENIENCY_STRICT_GROUPING, LENIENCY_EXACT_GROUPING,
     // ShortNumberCost
     COST_TOLL_FREE, COST_STANDARD_RATE, COST_PREMIUM_RATE, COST_UNKNOWN,
 };
@@ -211,6 +211,12 @@ impl CountryCodeSource {
 pub enum Leniency {
     Possible,
     Valid,
+    /// The candidate's digit grouping must match a format the region
+    /// recognises (a MAIN or an alternate format).
+    StrictGrouping,
+    /// Like [`Leniency::StrictGrouping`] but the grouping must match a MAIN
+    /// format exactly.
+    ExactGrouping,
 }
 
 impl Leniency {
@@ -218,6 +224,8 @@ impl Leniency {
         match self {
             Leniency::Possible => LENIENCY_POSSIBLE,
             Leniency::Valid => LENIENCY_VALID,
+            Leniency::StrictGrouping => LENIENCY_STRICT_GROUPING,
+            Leniency::ExactGrouping => LENIENCY_EXACT_GROUPING,
         }
     }
 }

@@ -1,4 +1,4 @@
-## The 45-check binding conformance suite (docs/conformance.md, v7), in Nim.
+## The 47-check binding conformance suite (docs/conformance.md, v7), in Nim.
 ##
 ## Proves this binding marshals every value shape across the FFI. It is NOT a
 ## phone-number test suite — the behavioural cases live in the engine's own
@@ -163,6 +163,17 @@ suite "conformance":
 
   test "45 geo_description_for_number US 6502530000 == Mountain View, CA":
     check geoDescriptionForNumber("US", "6502530000") == "Mountain View, CA"
+
+  test "46 strict_grouping accepts via an alternate format":
+    # The DE candidate's three-group split matches no MAIN format but is
+    # legitimized by an alternate format, so STRICT_GROUPING accepts it.
+    check findNumbers("call 030 234 5678 now", "DE", lenStrictGrouping).len == 1
+
+  test "47 exact_grouping rejects an illegitimate grouping":
+    # The US digits are a VALID number (they match at lenValid) but their
+    # grouping matches no US format, so EXACT_GROUPING rejects them.
+    check findNumbers("call 65 025 30000 today", "US", lenValid).len == 1
+    check findNumbers("call 65 025 30000 today", "US", lenExactGrouping).len == 0
 
 suite "surface":
 

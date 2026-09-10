@@ -1,0 +1,54 @@
+// core_tests/altformats_probe — matcher grouping leniency + AlternateFormats gate.
+//
+// AlternateFormats (resources/PhoneNumberAlternateFormats.xml, compiled into
+// core/altformats_metadata.ae) is consumed ONLY by the matcher's grouping
+// leniencies. This gate proves the four leniency levels discriminate correctly
+// and, crucially, that the alternate-format retry path fires: a candidate whose
+// grouping matches NO main format but DOES match a legitimate alternate format
+// is accepted at STRICT_GROUPING / EXACT_GROUPING.
+//
+// Leniency: 0 POSSIBLE, 1 VALID, 2 STRICT_GROUPING, 3 EXACT_GROUPING.
+// Run: ae run core_tests/altformats_probe.ae
+
+import std.string
+import core.phonenumber
+
+fn fail(msg: string) { println("FAIL: ${msg}"); exit(1) }
+fn eq_i(label: string, got: int, want: int) {
+    if got != want { fail("${label}: got ${got}, want ${want}") }
+}
+
+main() {
+    // --- US: well-grouped national number passes every leniency ---
+    ok = "call (650) 253-0000 today"
+    eq_i("US well-grouped VALID",  phonenumber.matcher_count(ok, "US", 1), 1)
+    eq_i("US well-grouped STRICT", phonenumber.matcher_count(ok, "US", 2), 1)
+    eq_i("US well-grouped EXACT",  phonenumber.matcher_count(ok, "US", 3), 1)
+
+    // --- US: a valid number grouped illegitimately (digits split into shapes
+    // that match no US format) passes VALID but FAILS both grouping leniencies. ---
+    bad = "call 65 025 30000 today"
+    eq_i("US mis-grouped VALID",  phonenumber.matcher_count(bad, "US", 1), 1)
+    eq_i("US mis-grouped STRICT", phonenumber.matcher_count(bad, "US", 2), 0)
+    eq_i("US mis-grouped EXACT",  phonenumber.matcher_count(bad, "US", 3), 0)
+
+    // --- US: a solid digit block (no separators) is always exactly present ---
+    blk = "call 6502530000 today"
+    eq_i("US block STRICT", phonenumber.matcher_count(blk, "US", 2), 1)
+    eq_i("US block EXACT",  phonenumber.matcher_count(blk, "US", 3), 1)
+
+    // --- ALTERNATE-FORMAT PATH: a DE Berlin number grouped "030 234 5678".
+    // The MAIN display format groups +49 30 as two groups (30 | 2345678), so
+    // this three-group candidate does NOT match the main format. It is accepted
+    // at STRICT/EXACT only because the alternate format (\d{2})(\d{3})(\d{3,4})
+    // -> $1 $2 $3 (gated by leadingDigits 3[02]|40|[68]9) legitimizes it. This
+    // is the whole reason AlternateFormats exists. ---
+    de = "call 030 234 5678 now"
+    eq_i("DE valid",            phonenumber.is_valid_number("DE", "030 234 5678"), 1)
+    eq_i("DE alt-format VALID", phonenumber.matcher_count(de, "DE", 1), 1)
+    eq_i("DE alt-format STRICT", phonenumber.matcher_count(de, "DE", 2), 1)
+    eq_i("DE alt-format EXACT",  phonenumber.matcher_count(de, "DE", 3), 1)
+
+    println("altformats_probe: PASS — grouping leniency (STRICT/EXACT) + AlternateFormats retry")
+    return 0
+}

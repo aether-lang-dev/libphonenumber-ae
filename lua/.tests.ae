@@ -72,7 +72,7 @@ aeb(cap) {
             println("lua: conformance suite reported failures")
             return 1
         }
-        println("lua: PASS — v7 conformance (parse, formats, AsYouType, matcher, ShortNumberInfo, TimeZones, Carrier+lang, Geocoder+lang; 45-check)")
+        println("lua: PASS — v7 conformance (parse, formats, AsYouType, matcher, ShortNumberInfo, TimeZones, Carrier+lang, Geocoder+lang, matcher grouping leniency; 47-check)")
         return 0
     }
 }
