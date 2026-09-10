@@ -155,7 +155,7 @@ node --test test/conformance.test.js
 or, with the engine built for you:
 
 ```
-aeb javascript/aether/.tests.ae
+aeb javascript/.tests.ae
 ```
 
 The suite is the 47-check v7 conformance contract in `docs/conformance.md`. It

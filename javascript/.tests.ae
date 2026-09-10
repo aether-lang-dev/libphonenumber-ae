@@ -20,7 +20,7 @@ aeb(cap) {
         // The `npm install` is skipped when node_modules/koffi already exists, so
         // a developer offline after one successful install still gets a green run
         // (the shell does the test — std.os has no exists()).
-        rc_i = os.system("cd \"${root}/javascript/aether\" && { [ -d node_modules/koffi ] || npm install --no-audit --no-fund; }")
+        rc_i = os.system("cd \"${root}/javascript\" && { [ -d node_modules/koffi ] || npm install --no-audit --no-fund; }")
         if rc_i != 0 {
             println("javascript: SKIPPED — npm install failed (koffi needed; network?)")
             return 0
@@ -28,7 +28,7 @@ aeb(cap) {
 
         // node:test is built in — no test framework to install, so the only
         // dependency this leaf can fail on is koffi itself.
-        rc = os.system("cd \"${root}/javascript/aether\" && LIBPHONENUMBER_AE_LIB=\"${lib}\" node --test test/conformance.test.js")
+        rc = os.system("cd \"${root}/javascript\" && LIBPHONENUMBER_AE_LIB=\"${lib}\" node --test test/conformance.test.js")
         if rc != 0 {
             println("javascript: node --test reported failures")
             return 1

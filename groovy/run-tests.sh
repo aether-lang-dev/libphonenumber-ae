@@ -2,7 +2,7 @@
 # Compile and run the Groovy conformance suite.
 #
 # Inputs (set by groovy/.tests.ae; all have sensible defaults for a manual run):
-#   PN_JAVA_CLASSES      the Java binding's compiled classes (java/aether/.build.ae artifact)
+#   PN_JAVA_CLASSES      the Java binding's compiled classes (java/.build.ae artifact)
 #   PN_OUT               where to put the compiled Groovy classes
 #   LIBPHONENUMBER_AE_LIB  the engine .so                    (core/.build.ae artifact)
 #
@@ -34,7 +34,7 @@ export LIBPHONENUMBER_AE_LIB
 
 if [ ! -d "$PN_JAVA_CLASSES" ] && [ ! -f "$PN_JAVA_CLASSES" ]; then
     echo "groovy: the Java binding classes are missing ($PN_JAVA_CLASSES)." >&2
-    echo "groovy: run \`aeb java/aether/.build.ae\` first, or use \`aeb groovy/.tests.ae\`." >&2
+    echo "groovy: run \`aeb java/.build.ae\` first, or use \`aeb groovy/.tests.ae\`." >&2
     exit 1
 fi
 

@@ -2,7 +2,7 @@
 // family: kotlin/, groovy/ and clojure/ all layer over THESE classes rather
 // than binding the engine a second time.
 //
-// Flat layout: the .java sources sit directly in this module dir (java/aether/),
+// Flat layout: the .java sources sit directly in this module dir (java/),
 // NOT under a Maven src/main/java tree. aeb's `java.javac` builder, with no
 // source_layout set, globs *.java at the module root (depth 1) — which is
 // exactly our layout. The sources keep their `package org.libphonenumber.ae;`

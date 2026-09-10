@@ -2,7 +2,7 @@
 # Compile-free run of the Clojure conformance suite.
 #
 # Inputs (set by clojure/.tests.ae; all have sensible defaults for a manual run):
-#   PN_JAVA_CLASSES        the Java binding's compiled classes (java/aether/.build.ae artifact)
+#   PN_JAVA_CLASSES        the Java binding's compiled classes (java/.build.ae artifact)
 #   LIBPHONENUMBER_AE_LIB  the engine .so                      (core/.build.ae artifact)
 #
 # Exit codes: 0 pass, 1 fail, 77 = no usable Clojure toolchain (SKIP).
@@ -24,7 +24,7 @@ export LIBPHONENUMBER_AE_LIB
 
 if [ ! -d "$PN_JAVA_CLASSES" ] && [ ! -f "$PN_JAVA_CLASSES" ]; then
     echo "clojure: the Java binding classes are missing ($PN_JAVA_CLASSES)." >&2
-    echo "clojure: run \`aeb java/aether/.build.ae\` first, or use \`aeb clojure/.tests.ae\`." >&2
+    echo "clojure: run \`aeb java/.build.ae\` first, or use \`aeb clojure/.tests.ae\`." >&2
     exit 1
 fi
 
