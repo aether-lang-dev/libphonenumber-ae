@@ -1,0 +1,34 @@
+// Composable-build gate: assembles + builds the validation-only variant inline
+// and proves it links slim (no side-library metadata blobs) and still answers
+// core validation. Self-contained (assembles + builds its own .so) so it does
+// not depend on a second shared_lib node in core/ — which would collide on the
+// dir-keyed 'shared_lib' artifact and race on target/build/core/lib.
+import bldr
+import std.os
+import bldr (dep, _get)
+aeb(cap) {
+    bldr.build() {
+        dep("core/.build.ae")   // ensures the engine modules are compiled/cached
+        root = _get("root")
+        emb = "${root}/target/embed_validation.ae"
+        vlib = "${root}/target/libphonenumber_ae_validation.so"
+        bin = "${root}/target/pn_variants_smoke"
+        _m = os.system("mkdir -p \"${root}/target\"")
+
+        // assemble the validation-only variant (base fragment, no features)
+        rc0 = os.system("cd \"${root}\" && core/gen/assemble_embed.sh \"${emb}\"")
+        if rc0 != 0 { println("core_tests: failed to assemble validation embed"); return 1 }
+
+        // build it as a slim shared lib
+        rc1 = os.system("cd \"${root}\" && ae build --emit=lib \"${emb}\" --extra core/_embed_support.c -o \"${vlib}\"")
+        if rc1 != 0 { println("core_tests: failed to build validation variant"); return 1 }
+
+        rc2 = os.system("cc -D_GNU_SOURCE -o \"${bin}\" \"${root}/core_tests/variants_smoke.c\" -ldl")
+        if rc2 != 0 { println("core_tests: failed to compile variants_smoke.c"); return 1 }
+
+        rc3 = os.system("\"${bin}\" \"${vlib}\"")
+        if rc3 != 0 { println("core_tests: validation-variant smoke failed"); return 1 }
+        println("core_tests: PASS — composable validation-only variant")
+        return 0
+    }
+}

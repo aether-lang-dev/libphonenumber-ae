@@ -55,14 +55,14 @@ own library:
 - An **`AsYouTypeFormatter`** (formats as digits are typed) and a
   **`find_numbers`** matcher (extracts numbers from free text).
 
-See [`docs/abi.md`](docs/abi.md) for the full 50-symbol surface and
-[`docs/parity-plan.md`](docs/parity-plan.md) for the fidelity status against
-Google's own test suite (24/25 of the sampled `PhoneNumberUtilTest` cases match
-exactly; two documented rendering approximations).
+Plus the full **side-libraries**: **ShortNumberInfo** (emergency/short codes),
+**TimeZones**, **Carrier** and **Geocoder** (English). See
+[`docs/abi.md`](docs/abi.md) for the full 66-symbol surface and
+[`docs/parity-plan.md`](docs/parity-plan.md) for the fidelity status — 26/26 of
+the sampled `PhoneNumberUtilTest` cases match Google's production output exactly.
 
-Out of scope for this branch: the separate side-libraries (geocoder, carrier
-mapper, timezone mapper, short-number info). Their metadata is already in-tree,
-so they can be added later without a new fetch.
+Every functional component of the distribution is ported: PhoneNumberUtil,
+ShortNumberInfo, TimeZones, Carrier, and Geocoder — one engine, ~20 bindings.
 
 ## How it's built
 
@@ -112,16 +112,26 @@ aeb's own exit status does not always reflect a leaf's PASS/FAIL — read
 toolchain is absent **skips loudly** and returns success, so a partial toolchain
 set still gives a meaningful run; check for `SKIPPED` lines.
 
+## Composable builds — pay only for what you use
+
+The side-libraries bake large data tables into the `.so` (the geocoder blob
+alone is ~7 MB). Validation is the base; each side-library is an additive
+build-time opt-in. A **validation-only** build is ~320 KB; the **full** build is
+~8 MB. Compose any subset with `core/gen/assemble_embed.sh` — see
+[`docs/composable-builds.md`](docs/composable-builds.md).
+
+- `aeb core/.build.ae` — the full library (default).
+- `aeb core/validation.build.ae` — validation only.
+- `core/gen/assemble_embed.sh core/embed_geo.ae geo` then build — any subset.
+
 ## Scope and known gaps
 
-- Full core `PhoneNumberUtil` parity (parse, validation-with-reasons, region
-  detection, all format styles, matching, AsYouType). Formatting now honors
-  `leadingDigits` routing.
-- Two documented rendering approximations (a parenthesized GB area code; US
-  reported as FIXED_LINE rather than FIXED_LINE_OR_MOBILE) — see
-  [`docs/parity-plan.md`](docs/parity-plan.md). Neither affects validation.
-- The geocoder / carrier / timezone / short-number side-libraries are not built
-  on this branch (their metadata is in-tree for a later pass).
+- Whole-distribution functional parity: PhoneNumberUtil (byte-exact vs Google's
+  own test suite), ShortNumberInfo, TimeZones, Carrier, Geocoder.
+- Carrier and geocoder carry the English (`en/`) name slice only; the other ~34
+  language dirs can be added the same way (a generator repeat).
+- Formatting honors `leadingDigits` routing; getNumberType matches upstream
+  (incl. FIXED_LINE_OR_MOBILE). See [`docs/parity-plan.md`](docs/parity-plan.md).
 
 ## Credits and licence
 
