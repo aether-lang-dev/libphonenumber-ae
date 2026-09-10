@@ -61,6 +61,7 @@ public final class Native {
     public static final int TYPE_PAGER = 7;
     public static final int TYPE_UAN = 8;
     public static final int TYPE_VOICEMAIL = 9;
+    public static final int TYPE_FIXED_LINE_OR_MOBILE = 10;
 
     // ---- ValidationResult (is_possible_number_with_reason) ----
     public static final int VR_IS_POSSIBLE = 0;

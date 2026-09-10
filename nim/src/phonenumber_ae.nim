@@ -93,6 +93,7 @@ type
     ntPager = 7
     ntUan = 8
     ntVoicemail = 9
+    ntFixedLineOrMobile = 10
 
   ValidationResult* = enum ## `isPossibleNumberWithReason`'s answer.
     vrIsPossible = 0
@@ -137,6 +138,7 @@ const
   TYPE_PAGER* = 7.cint
   TYPE_UAN* = 8.cint
   TYPE_VOICEMAIL* = 9.cint
+  TYPE_FIXED_LINE_OR_MOBILE* = 10.cint
 
   VR_IS_POSSIBLE* = 0.cint
   VR_INVALID_COUNTRY_CODE* = 1.cint

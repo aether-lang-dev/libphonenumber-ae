@@ -87,8 +87,10 @@ test('20 is_valid with +cc', () => {
   assert.strictEqual(pn.isValidNumber('US', '+12015550123'), true);
 });
 
-test('21 number_type fixed line', () => {
-  assert.strictEqual(pn.numberType('US', '2015550123'), pn.TYPE_FIXED_LINE);
+test('21 number_type fixed line or mobile', () => {
+  // US fixedLine==mobile -> FIXED_LINE_OR_MOBILE; GB has distinct patterns.
+  assert.strictEqual(pn.numberType('US', '2015550123'), pn.TYPE_FIXED_LINE_OR_MOBILE);
+  assert.strictEqual(pn.numberType('GB', '2070313000'), pn.TYPE_FIXED_LINE);
   assert.strictEqual(pn.TYPE_FIXED_LINE, 0);
 });
 
@@ -170,6 +172,7 @@ test('type constants are the documented ints', () => {
   assert.strictEqual(pn.TYPE_UNKNOWN, -1);
   assert.strictEqual(pn.TYPE_MOBILE, 1);
   assert.strictEqual(pn.TYPE_VOICEMAIL, 9);
+  assert.strictEqual(pn.TYPE_FIXED_LINE_OR_MOBILE, 10);
 });
 
 test('matcher reports start/end offsets', () => {

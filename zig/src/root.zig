@@ -171,6 +171,7 @@ pub const NumberType = enum(c_int) {
     pager = 7,
     uan = 8,
     voicemail = 9,
+    fixed_line_or_mobile = 10,
     _,
 };
 
@@ -230,6 +231,7 @@ pub const TYPE_PERSONAL_NUMBER: c_int = 6;
 pub const TYPE_PAGER: c_int = 7;
 pub const TYPE_UAN: c_int = 8;
 pub const TYPE_VOICEMAIL: c_int = 9;
+pub const TYPE_FIXED_LINE_OR_MOBILE: c_int = 10;
 
 pub const VR_IS_POSSIBLE: c_int = 0;
 pub const VR_INVALID_COUNTRY_CODE: c_int = 1;

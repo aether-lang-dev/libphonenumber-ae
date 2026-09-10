@@ -46,7 +46,7 @@ exports(
     // --- number-type constants ---
     TYPE_UNKNOWN, TYPE_FIXED_LINE, TYPE_MOBILE, TYPE_TOLL_FREE,
     TYPE_PREMIUM_RATE, TYPE_SHARED_COST, TYPE_VOIP, TYPE_PERSONAL_NUMBER,
-    TYPE_PAGER, TYPE_UAN, TYPE_VOICEMAIL,
+    TYPE_PAGER, TYPE_UAN, TYPE_VOICEMAIL, TYPE_FIXED_LINE_OR_MOBILE,
     // --- format-style constants ---
     FMT_E164, FMT_INTERNATIONAL, FMT_NATIONAL, FMT_RFC3966,
     // --- ValidationResult constants ---
@@ -71,6 +71,7 @@ const TYPE_PERSONAL_NUMBER = 6
 const TYPE_PAGER = 7
 const TYPE_UAN = 8
 const TYPE_VOICEMAIL = 9
+const TYPE_FIXED_LINE_OR_MOBILE = 10
 
 // PhoneNumberFormat.
 const FMT_E164 = 0
@@ -974,18 +975,33 @@ number_type(region: string, input: string) -> int {
     return number_type_of_row(row, pn_national_number(pn))
 }
 
+// getNumberTypeHelper — faithful to upstream's order and FIXED_LINE_OR_MOBILE
+// rule. The number must match the general pattern; then the specific types are
+// tried in this exact precedence (premium/toll-free/shared-cost first, …), and
+// fixedLine/mobile last. When a territory's fixedLine and mobile patterns are
+// identical (or the number matches both), the type is FIXED_LINE_OR_MOBILE.
 fn number_type_of_row(row: string, nn: string) -> int {
     if row == "" { return TYPE_UNKNOWN }
-    if full_match(field(row, F_FIXED_LINE), nn) == 1 { return TYPE_FIXED_LINE }
-    if full_match(field(row, F_MOBILE), nn) == 1 { return TYPE_MOBILE }
-    if full_match(field(row, F_TOLL_FREE), nn) == 1 { return TYPE_TOLL_FREE }
+    gen = field(row, F_GENERAL)
+    if string.length(gen) > 0 && full_match(gen, nn) == 0 { return TYPE_UNKNOWN }
     if full_match(field(row, F_PREMIUM_RATE), nn) == 1 { return TYPE_PREMIUM_RATE }
+    if full_match(field(row, F_TOLL_FREE), nn) == 1 { return TYPE_TOLL_FREE }
     if full_match(field(row, F_SHARED_COST), nn) == 1 { return TYPE_SHARED_COST }
     if full_match(field(row, F_VOIP), nn) == 1 { return TYPE_VOIP }
     if full_match(field(row, F_PERSONAL_NUMBER), nn) == 1 { return TYPE_PERSONAL_NUMBER }
     if full_match(field(row, F_PAGER), nn) == 1 { return TYPE_PAGER }
     if full_match(field(row, F_UAN), nn) == 1 { return TYPE_UAN }
     if full_match(field(row, F_VOICEMAIL), nn) == 1 { return TYPE_VOICEMAIL }
+    // fixedLine / mobile last.
+    fixed = field(row, F_FIXED_LINE)
+    mobile = field(row, F_MOBILE)
+    if full_match(fixed, nn) == 1 {
+        // sameMobileAndFixedLinePattern: the metadata carries identical strings.
+        if fixed == mobile && string.length(mobile) > 0 { return TYPE_FIXED_LINE_OR_MOBILE }
+        if full_match(mobile, nn) == 1 { return TYPE_FIXED_LINE_OR_MOBILE }
+        return TYPE_FIXED_LINE
+    }
+    if fixed != mobile && full_match(mobile, nn) == 1 { return TYPE_MOBILE }
     return TYPE_UNKNOWN
 }
 

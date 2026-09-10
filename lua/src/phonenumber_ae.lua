@@ -45,6 +45,7 @@ M.TYPE_PERSONAL_NUMBER = native.TYPE_PERSONAL_NUMBER
 M.TYPE_PAGER           = native.TYPE_PAGER
 M.TYPE_UAN             = native.TYPE_UAN
 M.TYPE_VOICEMAIL       = native.TYPE_VOICEMAIL
+M.TYPE_FIXED_LINE_OR_MOBILE = native.TYPE_FIXED_LINE_OR_MOBILE
 
 --- ValidationResult (is_possible_number_with_reason).
 M.VR_IS_POSSIBLE            = native.VR_IS_POSSIBLE

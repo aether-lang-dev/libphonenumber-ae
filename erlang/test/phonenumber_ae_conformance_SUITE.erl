@@ -78,8 +78,11 @@ t20_valid_with_cc_test() ->
     ?assert(phonenumber_ae:is_valid_number(<<"US">>, <<"+12015550123">>)).
 
 t21_number_type_test() ->
-    ?assertEqual(fixed_line, phonenumber_ae:number_type(<<"US">>, <<"2015550123">>)),
-    ?assertEqual(0, phonenumber_ae:number_type_code(<<"US">>, <<"2015550123">>)).
+    %% US fixedLine==mobile -> fixed_line_or_mobile; GB has distinct patterns.
+    ?assertEqual(fixed_line_or_mobile, phonenumber_ae:number_type(<<"US">>, <<"2015550123">>)),
+    ?assertEqual(10, phonenumber_ae:number_type_code(<<"US">>, <<"2015550123">>)),
+    ?assertEqual(fixed_line, phonenumber_ae:number_type(<<"GB">>, <<"2070313000">>)),
+    ?assertEqual(0, phonenumber_ae:number_type_code(<<"GB">>, <<"2070313000">>)).
 
 t22_format_national_test() ->
     ?assertEqual(<<"(201) 555-0123">>,

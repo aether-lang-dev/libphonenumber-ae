@@ -53,6 +53,7 @@ defmodule PhonenumberAe do
           | :pager
           | :uan
           | :voicemail
+          | :fixed_line_or_mobile
 
   @typedoc "A ValidationResult from `is_possible_number_with_reason/2`."
   @type validation_result ::
@@ -317,6 +318,7 @@ defmodule PhonenumberAe do
   defp type_atom(7), do: :pager
   defp type_atom(8), do: :uan
   defp type_atom(9), do: :voicemail
+  defp type_atom(10), do: :fixed_line_or_mobile
   # A newer engine could return an unseen code; degrade rather than crash.
   defp type_atom(_), do: :unknown
 
@@ -331,6 +333,7 @@ defmodule PhonenumberAe do
   defp type_code(:pager), do: 7
   defp type_code(:uan), do: 8
   defp type_code(:voicemail), do: 9
+  defp type_code(:fixed_line_or_mobile), do: 10
 
   # ValidationResult codes -> atoms.
   defp validation_atom(0), do: :is_possible

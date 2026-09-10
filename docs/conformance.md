@@ -28,7 +28,7 @@ engine over Google's metadata.
 | 18 | `is_valid_number("US", "2015550123")` | true |
 | 19 | `is_valid_number("US", "1015550123")` | false |
 | 20 | `is_valid_number("US", "+12015550123")` | true |
-| 21 | `number_type("US", "2015550123")` | FIXED_LINE (0) |
+| 21 | `number_type("US", "2015550123")` | FIXED_LINE_OR_MOBILE (10) — US fixedLine==mobile |
 | 22 | `format("US", "2015550123", NATIONAL)` | `"(201) 555-0123"` |
 | 23 | `format("US", "2015550123", E164)` | `"+12015550123"` |
 | 24 | `format("US", "2015550123", INTERNATIONAL)` | `"+1 201-555-0123"` |

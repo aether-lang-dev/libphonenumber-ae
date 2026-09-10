@@ -109,7 +109,8 @@ PhonenumberAe class >> numberTypeSymbolFor: anInteger [
 			  [ 6 ] -> [ #personalNumber ].
 			  [ 7 ] -> [ #pager ].
 			  [ 8 ] -> [ #uan ].
-			  [ 9 ] -> [ #voicemail ] }
+			  [ 9 ] -> [ #voicemail ].
+			  [ 10 ] -> [ #fixedLineOrMobile ] }
 		  otherwise: [ #unknown ]
 ]
 
@@ -129,7 +130,8 @@ PhonenumberAe class >> numberTypeCodeFor: aSymbol [
 			  [ #personalNumber ] -> [ 6 ].
 			  [ #pager ] -> [ 7 ].
 			  [ #uan ] -> [ 8 ].
-			  [ #voicemail ] -> [ 9 ] }
+			  [ #voicemail ] -> [ 9 ].
+			  [ #fixedLineOrMobile ] -> [ 10 ] }
 		  otherwise: [
 			  self error: 'unknown number type ' , aSymbol printString ]
 ]

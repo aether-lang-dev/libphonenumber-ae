@@ -95,8 +95,9 @@ RSpec.describe PhoneNumberAe do
     expect(PhoneNumberAe.is_valid_number("US", "+12015550123")).to be(true)
   end
 
-  it "21 number_type is fixed line" do
-    expect(PhoneNumberAe.number_type("US", "2015550123")).to eq(PhoneNumberAe::TYPE_FIXED_LINE)
+  it "21 number_type US is fixed-line-or-mobile, GB is fixed line" do
+    expect(PhoneNumberAe.number_type("US", "2015550123")).to eq(PhoneNumberAe::TYPE_FIXED_LINE_OR_MOBILE)
+    expect(PhoneNumberAe.number_type("GB", "2070313000")).to eq(PhoneNumberAe::TYPE_FIXED_LINE)
   end
 
   it "22 format national" do

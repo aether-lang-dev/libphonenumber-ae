@@ -70,6 +70,7 @@ pub type NumberType {
   Pager
   Uan
   Voicemail
+  FixedLineOrMobile
 }
 
 /// A ValidationResult, returned by `is_possible_number_with_reason`.
@@ -149,6 +150,7 @@ fn type_of_code(code: Int) -> NumberType {
     7 -> Pager
     8 -> Uan
     9 -> Voicemail
+    10 -> FixedLineOrMobile
     _ -> Unknown
   }
 }
@@ -166,6 +168,7 @@ fn code_of_type(t: NumberType) -> Int {
     Pager -> 7
     Uan -> 8
     Voicemail -> 9
+    FixedLineOrMobile -> 10
   }
 }
 

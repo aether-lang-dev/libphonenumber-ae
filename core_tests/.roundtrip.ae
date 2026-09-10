@@ -1,0 +1,21 @@
+// Broad invariant gate: runs core_tests/roundtrip.ae, which asserts that EVERY
+// territory's example number (from our production metadata) is possible, valid,
+// has a known type, and round-trips through E.164 parse. Proves breadth across
+// all ~250 territories, not just the sampled parity cases.
+
+import bldr
+import std.os
+
+aeb(cap) {
+    bldr.build() {
+        root = _get("root")
+        out = "${root}/target/pn_roundtrip"
+        _m = os.system("mkdir -p \"${root}/target\"")
+        rc = os.system("cd \"${root}\" && ae build core_tests/roundtrip.ae -o \"${out}\"")
+        if rc != 0 { println("core_tests: failed to build roundtrip.ae"); return 1 }
+        rc2 = os.system("\"${out}\"")
+        if rc2 != 0 { println("core_tests: territory round-trip sweep regressed"); return 1 }
+        println("core_tests: PASS — all-territory round-trip invariants")
+        return 0
+    }
+}

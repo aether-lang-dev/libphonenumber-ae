@@ -59,6 +59,7 @@ const int kTypePersonalNumber = 6;
 const int kTypePager = 7;
 const int kTypeUan = 8;
 const int kTypeVoicemail = 9;
+const int kTypeFixedLineOrMobile = 10;
 
 // ---- ValidationResult (is_possible_number_with_reason) ----
 

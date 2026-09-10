@@ -150,11 +150,18 @@ PhonenumberAeConformanceTest >> test20ValidWithCc [
 PhonenumberAeConformanceTest >> test21NumberType [
 	"The int result path, mapped to a Symbol; and the raw code alongside it."
 
+	"US fixedLine==mobile -> #fixedLineOrMobile; GB has distinct patterns."
 	self
 		assert: (PhonenumberAe numberType: '2015550123' region: 'US')
-		equals: #fixedLine.
+		equals: #fixedLineOrMobile.
 	self
 		assert: (PhonenumberAe numberTypeCode: '2015550123' region: 'US')
+		equals: 10.
+	self
+		assert: (PhonenumberAe numberType: '2070313000' region: 'GB')
+		equals: #fixedLine.
+	self
+		assert: (PhonenumberAe numberTypeCode: '2070313000' region: 'GB')
 		equals: 0
 ]
 

@@ -125,8 +125,10 @@ test("20 is_valid with +cc", function()
   is_true(pn.is_valid_number("US", "+12015550123"), "is_valid")
 end)
 
-test("21 number_type fixed line", function()
-  eq(pn.number_type("US", "2015550123"), pn.TYPE_FIXED_LINE, "number_type")
+test("21 number_type fixed-line-or-mobile / fixed line", function()
+  -- US fixedLine==mobile -> FIXED_LINE_OR_MOBILE; GB has distinct patterns
+  eq(pn.number_type("US", "2015550123"), pn.TYPE_FIXED_LINE_OR_MOBILE, "number_type US")
+  eq(pn.number_type("GB", "2070313000"), pn.TYPE_FIXED_LINE, "number_type GB")
 end)
 
 test("22 format NATIONAL", function()

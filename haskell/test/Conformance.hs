@@ -205,11 +205,16 @@ runChecks fs = do
     ok <- isValidNumber "US" "+12015550123"
     isTrue "is_valid" ok
 
-  check fs "21 number_type FIXED_LINE" $ do
+  check fs "21 number_type FIXED_LINE_OR_MOBILE / FIXED_LINE" $ do
+    -- US fixedLine==mobile -> FIXED_LINE_OR_MOBILE; GB has distinct patterns
     t <- numberType "US" "2015550123"
-    isTrue "number_type is FixedLine" (t == FixedLine)
+    isTrue "number_type US is FixedLineOrMobile" (t == FixedLineOrMobile)
     n <- numberTypeInt "US" "2015550123"
-    eqInt "number_type int" n 0
+    eqInt "number_type US int" n 10
+    tGb <- numberType "GB" "2070313000"
+    isTrue "number_type GB is FixedLine" (tGb == FixedLine)
+    nGb <- numberTypeInt "GB" "2070313000"
+    eqInt "number_type GB int" nGb 0
 
   check fs "22 format NATIONAL" $ do
     out <- format "US" "2015550123" National

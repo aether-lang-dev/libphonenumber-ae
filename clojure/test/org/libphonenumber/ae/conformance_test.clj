@@ -75,7 +75,9 @@
   (is (true? (pn/valid-number? "US" "+12015550123"))))
 
 (deftest test-21-number-type
-  (is (= :fixed-line (pn/number-type "US" "2015550123"))))
+  ;; US fixedLine==mobile -> :fixed-line-or-mobile; GB has distinct patterns.
+  (is (= :fixed-line-or-mobile (pn/number-type "US" "2015550123")))
+  (is (= :fixed-line (pn/number-type "GB" "2070313000"))))
 
 (deftest test-22-format-national
   (is (= "(201) 555-0123" (pn/format-number "US" "2015550123" :national))))

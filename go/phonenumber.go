@@ -120,17 +120,18 @@ const (
 type Type int
 
 const (
-	TypeUnknown        Type = -1
-	TypeFixedLine      Type = 0
-	TypeMobile         Type = 1
-	TypeTollFree       Type = 2
-	TypePremiumRate    Type = 3
-	TypeSharedCost     Type = 4
-	TypeVoIP           Type = 5
-	TypePersonalNumber Type = 6
-	TypePager          Type = 7
-	TypeUAN            Type = 8
-	TypeVoicemail      Type = 9
+	TypeUnknown           Type = -1
+	TypeFixedLine         Type = 0
+	TypeMobile            Type = 1
+	TypeTollFree          Type = 2
+	TypePremiumRate       Type = 3
+	TypeSharedCost        Type = 4
+	TypeVoIP              Type = 5
+	TypePersonalNumber    Type = 6
+	TypePager             Type = 7
+	TypeUAN               Type = 8
+	TypeVoicemail         Type = 9
+	TypeFixedLineOrMobile Type = 10
 )
 
 // ValidationResult is why IsPossibleNumberWithReason accepted or rejected a

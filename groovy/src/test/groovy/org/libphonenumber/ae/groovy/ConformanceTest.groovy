@@ -90,8 +90,9 @@ class ConformanceTest {
             assertTrue('invalid', !isValidNumber('US', '1015550123'))
         }
         check('20 isValidNumber with +cc') { assertTrue('valid', isValidNumber('US', '+12015550123')) }
-        check('21 numberType FIXED_LINE') {
-            assertEquals(NumberType.FIXED_LINE, numberType('US', '2015550123'))
+        check('21 numberType FIXED_LINE_OR_MOBILE / FIXED_LINE') {
+            assertEquals(NumberType.FIXED_LINE_OR_MOBILE, numberType('US', '2015550123'))
+            assertEquals(NumberType.FIXED_LINE, numberType('GB', '2070313000'))
         }
         check('22 format NATIONAL') {
             assertEquals('(201) 555-0123', format('US', '2015550123', Format.NATIONAL))

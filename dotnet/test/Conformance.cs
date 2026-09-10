@@ -129,11 +129,14 @@ internal static class Conformance
         Check("20 is_valid with +cc", () =>
             IsTrue(PhoneNumber.IsValidNumber("US", "+12015550123"), "is_valid"));
 
-        Check("21 number_type fixed line", () =>
+        Check("21 number_type fixed-line-or-mobile / fixed line", () =>
         {
             // An `int`/`long` width mismatch shows up here as a garbage type.
+            // US fixedLine==mobile -> FIXED_LINE_OR_MOBILE; GB has distinct patterns.
             Eq((int)PhoneNumber.NumberType("US", "2015550123"),
-               (int)PhoneNumberType.FixedLine, "number_type");
+               (int)PhoneNumberType.FixedLineOrMobile, "number_type US");
+            Eq((int)PhoneNumber.NumberType("GB", "2070313000"),
+               (int)PhoneNumberType.FixedLine, "number_type GB");
         });
 
         Check("22 format NATIONAL", () =>

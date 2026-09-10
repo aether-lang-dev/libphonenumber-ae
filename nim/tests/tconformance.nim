@@ -78,9 +78,12 @@ suite "conformance":
   test "20 is_valid with +cc":
     check isValidNumber("US", "+12015550123") == true
 
-  test "21 number_type fixed line":
-    check numberType("US", "2015550123") == ntFixedLine
-    check numberTypeInt("US", "2015550123") == 0
+  test "21 number_type fixed_line_or_mobile":
+    # US fixedLine==mobile -> FIXED_LINE_OR_MOBILE; GB has distinct patterns
+    check numberType("US", "2015550123") == ntFixedLineOrMobile
+    check numberTypeInt("US", "2015550123") == 10
+    check numberType("GB", "2070313000") == ntFixedLine
+    check numberTypeInt("GB", "2070313000") == 0
 
   test "22 format NATIONAL":
     check format("US", "2015550123", fmtNational) == "(201) 555-0123"

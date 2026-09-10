@@ -22,6 +22,7 @@
 #define FMT_RFC3966 3
 /* number types */
 #define TYPE_FIXED_LINE 0
+#define TYPE_FIXED_LINE_OR_MOBILE 10
 /* validation reasons */
 #define VR_IS_POSSIBLE 0
 #define VR_TOO_SHORT 2
@@ -147,7 +148,8 @@ int main(int argc, char **argv) {
     ck_i("US invalid shape", is_valid("US", "1015550123"), 0);
     ck_i("US valid +1", is_valid("US", "+12015550123"), 1);
     ck_i("US valid for region", is_valid_for_region("2015550123", "US"), 1);
-    ck_i("US fixed-line type", number_type("US", "2015550123"), TYPE_FIXED_LINE);
+    ck_i("US fixed-line-or-mobile type", number_type("US", "2015550123"), TYPE_FIXED_LINE_OR_MOBILE);
+    ck_i("GB fixed-line type", number_type("GB", "2070313000"), TYPE_FIXED_LINE);
 
     /* formatting */
     ck_s("US national", format("US", "2015550123", FMT_NATIONAL), "(201) 555-0123");

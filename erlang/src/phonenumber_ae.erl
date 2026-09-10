@@ -65,7 +65,7 @@
 %% The PhoneNumberType, as an atom. `unknown` is the -1 sentinel.
 -type number_type() :: unknown | fixed_line | mobile | toll_free
                      | premium_rate | shared_cost | voip | personal_number
-                     | pager | uan | voicemail.
+                     | pager | uan | voicemail | fixed_line_or_mobile.
 
 %% The ValidationResult of is_possible_number_with_reason/2, as an atom.
 -type validation_result() :: is_possible | is_possible_local_only
@@ -419,6 +419,7 @@ type_atom(6)  -> personal_number;
 type_atom(7)  -> pager;
 type_atom(8)  -> uan;
 type_atom(9)  -> voicemail;
+type_atom(10) -> fixed_line_or_mobile;
 %% A newer engine could return a code this build has not seen; degrade rather
 %% than crash. The append-only rule means the number is still meaningful.
 type_atom(_)  -> unknown.
@@ -433,7 +434,8 @@ type_code(voip)            -> 5;
 type_code(personal_number) -> 6;
 type_code(pager)           -> 7;
 type_code(uan)             -> 8;
-type_code(voicemail)       -> 9.
+type_code(voicemail)       -> 9;
+type_code(fixed_line_or_mobile) -> 10.
 
 %% ValidationResult codes -> atoms.
 validation_atom(0) -> is_possible;

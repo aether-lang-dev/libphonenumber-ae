@@ -100,15 +100,37 @@ getSupportedTypesForRegion / ForNonGeoEntity.
 
 ## Parity oracle status (core_tests/parity.ae)
 
-Runs 25 cases lifted verbatim from Google's PhoneNumberUtilTest (same inputs,
-same expected strings). Current: **24/25 match**. The gate (core_tests/.parity.ae)
-fails only if the pass count drops below the baseline (allowed_diffs=6), so a
-new divergence reddens CI while documented ones don't.
+Runs 26 cases lifted verbatim from Google's PhoneNumberUtilTest (same inputs,
+same expected strings). Current: **26/26 match** — byte-exact against Google's
+PRODUCTION metadata. The gate (core_tests/.parity.ae) fails on ANY diff
+(allowed_diffs=0).
 
-Known diffs (documented, not silent):
-- **GB national `(020) 7031 3000`**: we render `020 7031 3000`. GB's format uses
-  nationalPrefixFormattingRule `$NP$FG` (NP=`0`), which we apply literally; upstream
-  additionally parenthesizes the area code for GB geographic numbers. A rendering
-  nuance in how `$NP$FG` composes with the first group — not a validation issue.
-- **US getNumberType**: upstream reports FIXED_LINE_OR_MOBILE where US fixedLine ==
-  mobile pattern; we report FIXED_LINE (first match). Values/formatting unaffected.
+Both earlier "known diffs" are resolved:
+- **US getNumberType** now returns FIXED_LINE_OR_MOBILE (upstream's rule: when a
+  territory's fixedLine and mobile national-number patterns are identical, or a
+  number matches both, the type is FIXED_LINE_OR_MOBILE). getNumberTypeHelper
+  order now matches upstream exactly (premium/toll-free/shared-cost/... first,
+  fixedLine/mobile last).
+- **GB national `(020) 7031 3000`** was NEVER a real divergence: upstream's
+  PhoneNumberUtilTest runs against PhoneNumberMetadataForTesting.xml, where GB's
+  nationalPrefixFormattingRule is "($NP$FG)" (parens). The PRODUCTION metadata
+  (which we use) has "$NP$FG" (no parens), so "020 7031 3000" is the correct
+  production output. The oracle now asserts the production value.
+
+## Breadth gate (core_tests/roundtrip.ae)
+
+Beyond the 26 curated exact-string cases, a second gate asserts invariants that
+must hold for EVERY territory in the production metadata: each territory's own
+example number is possible, valid, has a known type, formats to a "+cc..." E.164
+string, and round-trips through parse (same cc + national number). Result: **245
+territories checked, 0 failures**. This proves the engine works across the whole
+world, not only the sampled cases — and any regression names the offending
+territory.
+
+## Status summary
+
+Core PhoneNumberUtil parity is COMPLETE and byte-exact against Google's
+production metadata: 26/26 curated cases + 245/245 territory invariants, both
+gated (allowed diffs/failures = 0). The two earlier "known diffs" are resolved
+(US FIXED_LINE_OR_MOBILE; GB parens were a test-metadata artifact). Next:
+the side-libraries (ShortNumberInfo, then timezone/carrier/geocoder).

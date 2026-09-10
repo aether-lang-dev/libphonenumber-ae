@@ -45,6 +45,7 @@ module.exports = {
   TYPE_PAGER: native.TYPE_PAGER,
   TYPE_UAN: native.TYPE_UAN,
   TYPE_VOICEMAIL: native.TYPE_VOICEMAIL,
+  TYPE_FIXED_LINE_OR_MOBILE: native.TYPE_FIXED_LINE_OR_MOBILE,
 
   // ---- ValidationResult (is_possible_number_with_reason) ----
   VR_IS_POSSIBLE: native.VR_IS_POSSIBLE,

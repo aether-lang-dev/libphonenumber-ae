@@ -64,7 +64,9 @@ def test_20_valid_with_cc():
     assert pn.is_valid_number("US", "+12015550123") is True
 
 def test_21_number_type():
-    assert pn.number_type("US", "2015550123") == pn.TYPE_FIXED_LINE
+    # US fixedLine==mobile -> FIXED_LINE_OR_MOBILE; GB has distinct patterns
+    assert pn.number_type("US", "2015550123") == pn.TYPE_FIXED_LINE_OR_MOBILE
+    assert pn.number_type("GB", "2070313000") == pn.TYPE_FIXED_LINE
 
 def test_22_format_national():
     assert pn.format("US", "2015550123", pn.NATIONAL) == "(201) 555-0123"

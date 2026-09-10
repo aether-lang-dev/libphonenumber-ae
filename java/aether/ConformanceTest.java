@@ -87,9 +87,11 @@ public final class ConformanceTest {
                 assertTrue("invalid", !PhoneNumbers.isValidNumber("US", "1015550123")));
         check("20 is_valid_number with +cc", () ->
                 assertTrue("valid with cc", PhoneNumbers.isValidNumber("US", "+12015550123")));
-        check("21 number_type FIXED_LINE", () -> {
-            assertEquals(Native.TYPE_FIXED_LINE, PhoneNumbers.numberTypeCode("US", "2015550123"));
-            assertEquals(NumberType.FIXED_LINE, PhoneNumbers.numberType("US", "2015550123"));
+        check("21 number_type FIXED_LINE_OR_MOBILE / FIXED_LINE", () -> {
+            assertEquals(Native.TYPE_FIXED_LINE_OR_MOBILE, PhoneNumbers.numberTypeCode("US", "2015550123"));
+            assertEquals(NumberType.FIXED_LINE_OR_MOBILE, PhoneNumbers.numberType("US", "2015550123"));
+            assertEquals(Native.TYPE_FIXED_LINE, PhoneNumbers.numberTypeCode("GB", "2070313000"));
+            assertEquals(NumberType.FIXED_LINE, PhoneNumbers.numberType("GB", "2070313000"));
         });
         check("22 format NATIONAL", () ->
                 assertEquals("(201) 555-0123",

@@ -26,6 +26,7 @@ module PhoneNumberAe
   TYPE_PAGER = Native::TYPE_PAGER
   TYPE_UAN = Native::TYPE_UAN
   TYPE_VOICEMAIL = Native::TYPE_VOICEMAIL
+  TYPE_FIXED_LINE_OR_MOBILE = Native::TYPE_FIXED_LINE_OR_MOBILE
 
   # ---- ValidationResult (is_possible_number_with_reason) ----
   VR_IS_POSSIBLE = Native::VR_IS_POSSIBLE

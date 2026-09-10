@@ -22,7 +22,7 @@ extension `ext`/`x`/`;ext=`, optional vanity letters).
 ## Constants
 
 **Format style** (`format` arg): `0` E164 · `1` INTERNATIONAL · `2` NATIONAL · `3` RFC3966
-**Number type**: `-1` unknown · `0` fixed line · `1` mobile · `2` toll free · `3` premium rate · `4` shared cost · `5` VoIP · `6` personal · `7` pager · `8` UAN · `9` voicemail
+**Number type**: `-1` unknown · `0` fixed line · `1` mobile · `2` toll free · `3` premium rate · `4` shared cost · `5` VoIP · `6` personal · `7` pager · `8` UAN · `9` voicemail · `10` fixed-line-or-mobile
 **ValidationResult** (`is_possible_number_with_reason`): `0` IS_POSSIBLE · `4` IS_POSSIBLE_LOCAL_ONLY · `1` INVALID_COUNTRY_CODE · `2` TOO_SHORT · `5` INVALID_LENGTH · `3` TOO_LONG
 **MatchType** (`is_number_match`): `0` NOT_A_NUMBER · `1` NO_MATCH · `2` SHORT_NSN · `3` NSN · `4` EXACT
 **CountryCodeSource** (`pn_source`): `1` FROM_NUMBER_WITH_PLUS · `5` FROM_NUMBER_WITH_IDD · `10` FROM_NUMBER_WITHOUT_PLUS · `20` FROM_DEFAULT_COUNTRY
@@ -126,7 +126,7 @@ aether_pn_embed_free_string(intl);
 
 ## Scope
 
-Full core `PhoneNumberUtil` parity. Two documented rendering approximations
-(GB parenthesized area code; US FIXED_LINE vs FIXED_LINE_OR_MOBILE) — see
-[`parity-plan.md`](parity-plan.md). Side-libraries (geocoder, carrier, timezone,
-short numbers) are out of scope for this branch.
+Full core `PhoneNumberUtil` parity — byte-exact against Google's PRODUCTION
+metadata on every sampled `PhoneNumberUtilTest` case (26/26, see
+[`parity-plan.md`](parity-plan.md)). Side-libraries (geocoder, carrier,
+timezone, short numbers) are out of scope for this branch.

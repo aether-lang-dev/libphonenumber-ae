@@ -14,7 +14,7 @@ import std.string
 import core.phonenumber
 
 // number of cases we currently, knowingly differ on (documented approximations)
-fn allowed_diffs() -> int { return 6 }
+fn allowed_diffs() -> int { return 0 }
 
 main() {
     println("Parity oracle — Google PhoneNumberUtilTest cases:")
@@ -25,7 +25,12 @@ main() {
     r1 = ck_s("US national", phonenumber.format_national("US", "6502530000"), "(650) 253-0000")
     r2 = ck_s("US international", phonenumber.format_international("US", "6502530000"), "+1 650-253-0000")
     r3 = ck_s("US e164", phonenumber.format_e164("US", "6502530000"), "+16502530000")
-    r4 = ck_s("GB national", phonenumber.format_national("GB", "2070313000"), "(020) 7031 3000")
+    // GB national: PRODUCTION metadata uses nationalPrefixFormattingRule "$NP$FG"
+    // (no parens) -> "020 7031 3000". The upstream PhoneNumberUtilTest asserts
+    // "(020) 7031 3000" because it runs against PhoneNumberMetadataForTesting.xml,
+    // where GB's rule is "($NP$FG)". We use the PRODUCTION metadata, so the
+    // parens-free form is the correct output, not a divergence.
+    r4 = ck_s("GB national", phonenumber.format_national("GB", "2070313000"), "020 7031 3000")
     r5 = ck_s("GB international", phonenumber.format_international("GB", "2070313000"), "+44 20 7031 3000")
     r6 = ck_s("GB e164", phonenumber.format_e164("GB", "2070313000"), "+442070313000")
     r7 = ck_s("DE international", phonenumber.format_international("DE", "30123456"), "+49 30 123456")
@@ -45,6 +50,8 @@ main() {
     r17 = ck_i("GB fixed line", phonenumber.number_type("GB", "2070313000"), phonenumber.TYPE_FIXED_LINE)
     r18 = ck_i("DE fixed line", phonenumber.number_type("DE", "30123456"), phonenumber.TYPE_FIXED_LINE)
     r19 = ck_i("IT fixed line", phonenumber.number_type("IT", "0236618300"), phonenumber.TYPE_FIXED_LINE)
+    // US_NUMBER: upstream getNumberType == FIXED_LINE_OR_MOBILE (US fixedLine==mobile)
+    r19b = ck_i("US fixed-or-mobile", phonenumber.number_type("US", "6502530000"), phonenumber.TYPE_FIXED_LINE_OR_MOBILE)
 
     // --- parse round-trips ---
     p_us = phonenumber.parse("+1 650 253 0000", "US")
@@ -59,8 +66,8 @@ main() {
     // --- isNumberMatch (Google's EXACT_MATCH case) ---
     r25 = ck_i("match exact", phonenumber.is_number_match("+1 650 253 0000", "+16502530000"), phonenumber.MATCH_EXACT)
 
-    total = 25
-    passes = r1+r2+r3+r4+r5+r6+r7+r8+r9+r10+r11+r12+r13+r14+r15+r16+r17+r18+r19+r20+r21+r22+r23+r24+r25
+    total = 26
+    passes = r1+r2+r3+r4+r5+r6+r7+r8+r9+r10+r11+r12+r13+r14+r15+r16+r17+r18+r19+r19b+r20+r21+r22+r23+r24+r25
 
     diffs = total - passes
     println("")

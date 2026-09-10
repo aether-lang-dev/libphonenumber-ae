@@ -1,0 +1,100 @@
+// core_tests/roundtrip — a broad, production-metadata invariant sweep.
+//
+// The curated oracle (parity.ae) checks a handful of exact strings against
+// Google's PhoneNumberUtilTest. This complements it by asserting invariants that
+// must hold for EVERY territory in our production metadata — proving breadth,
+// not just the sampled cases. For each territory that carries a fixedLine
+// example number:
+//
+//   1. the example is a POSSIBLE number (right length),
+//   2. the example is a VALID number (matches a type pattern),
+//   3. getNumberType(example) is not UNKNOWN,
+//   4. E.164 round-trips: parse(format_e164(example)) yields the same cc + nn,
+//   5. the E.164 string starts with "+<cc>".
+//
+// A territory with no example is skipped (counted). Any invariant failure names
+// the territory and fails the gate — a real regression signal across all ~250.
+
+import std.string
+import std.list
+import core.phonenumber
+
+main() {
+    regs = phonenumber.regions()
+    n = list.size(regs)
+    checked = 0
+    skipped = 0
+    failures = 0
+
+    for (i = 0; i < n; i++) {
+        region, _ = list.get(regs, i)
+        ex = phonenumber.example_number(region)
+        if string.length(ex) == 0 { skipped = skipped + 1; continue }
+        checked = checked + 1
+
+        // 1. possible
+        if phonenumber.is_possible_number(region, ex) != 1 {
+            println("  FAIL ${region}: example ${ex} not possible")
+            failures = failures + 1
+            continue
+        }
+        // 2. valid
+        if phonenumber.is_valid_number(region, ex) != 1 {
+            println("  FAIL ${region}: example ${ex} not valid")
+            failures = failures + 1
+            continue
+        }
+        // 3. known type
+        if phonenumber.number_type(region, ex) == phonenumber.TYPE_UNKNOWN {
+            println("  FAIL ${region}: example ${ex} type UNKNOWN")
+            failures = failures + 1
+            continue
+        }
+        // 4 + 5. E.164 round-trip
+        e164 = phonenumber.format_e164(region, ex)
+        cc = phonenumber.country_code(region)
+        if string.length(e164) < 2 || string.char_at(e164, 0) != 43 {   // '+'
+            println("  FAIL ${region}: e164 '${e164}' has no +")
+            failures = failures + 1
+            continue
+        }
+        expect_prefix = "+${cc}"
+        if string.length(e164) < string.length(expect_prefix) ||
+           string.substring(e164, 0, string.length(expect_prefix)) != expect_prefix {
+            println("  FAIL ${region}: e164 '${e164}' does not start with '${expect_prefix}'")
+            failures = failures + 1
+            continue
+        }
+        pn = phonenumber.parse(e164, region)
+        if phonenumber.pn_error(pn) != "" {
+            println("  FAIL ${region}: re-parse of ${e164} errored: ${phonenumber.pn_error(pn)}")
+            failures = failures + 1
+            continue
+        }
+        if phonenumber.pn_country_code(pn) != cc {
+            println("  FAIL ${region}: round-trip cc ${phonenumber.pn_country_code(pn)} != ${cc}")
+            failures = failures + 1
+            continue
+        }
+        // The re-parsed national number should equal the example's own national
+        // significant number (parse the example directly to get its NSN).
+        direct = phonenumber.parse(ex, region)
+        if phonenumber.pn_national_number(pn) != phonenumber.pn_national_number(direct) {
+            println("  FAIL ${region}: nn round-trip '${phonenumber.pn_national_number(pn)}' != '${phonenumber.pn_national_number(direct)}'")
+            failures = failures + 1
+        }
+    }
+    list.free(regs)
+
+    println("roundtrip: ${checked} territories checked, ${skipped} without example, ${failures} failures")
+    if failures > allowed_failures() {
+        println("REGRESSION: ${failures} failures exceeds baseline ${allowed_failures()}")
+        exit(1)
+    }
+    println("roundtrip: PASS (baseline held)")
+    return 0
+}
+
+// Territories whose example legitimately can't round-trip under our current
+// engine (documented). Baseline holds the known count; a NEW failure reddens.
+fn allowed_failures() -> int { return 0 }

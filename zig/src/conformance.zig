@@ -113,10 +113,12 @@ test "20 is_valid with +cc" {
     try testing.expect(try pn.isValidNumber(alloc, "US", "+12015550123"));
 }
 
-test "21 number_type fixed line" {
+test "21 number_type fixed_line_or_mobile" {
     // Reading the enum value is also the int-width check: a c_long here would
     // read a garbage code and this would fail even if a bool check passed.
-    try testing.expectEqual(pn.NumberType.fixed_line, try pn.numberType(alloc, "US", "2015550123"));
+    // US fixedLine==mobile -> FIXED_LINE_OR_MOBILE; GB has distinct patterns.
+    try testing.expectEqual(pn.NumberType.fixed_line_or_mobile, try pn.numberType(alloc, "US", "2015550123"));
+    try testing.expectEqual(pn.NumberType.fixed_line, try pn.numberType(alloc, "GB", "2070313000"));
 }
 
 test "22 format NATIONAL" {
@@ -200,7 +202,7 @@ test "extra number_type unknown maps cleanly" {
     // Not asserting a specific unknown case, just that the enum path never
     // yields illegal-value UB for whatever the engine returns.
     const t = try pn.numberType(alloc, "US", "2015550123");
-    try testing.expect(t == .fixed_line);
+    try testing.expect(t == .fixed_line_or_mobile);
 }
 
 test "extra interior NUL is rejected, not truncated" {

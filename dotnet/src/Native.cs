@@ -72,6 +72,8 @@ public enum PhoneNumberType
     Uan = 8,
     /// <summary>A voicemail-access number.</summary>
     Voicemail = 9,
+    /// <summary>A number whose fixed-line and mobile patterns are indistinguishable.</summary>
+    FixedLineOrMobile = 10,
 }
 
 /// <summary>

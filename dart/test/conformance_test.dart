@@ -83,9 +83,13 @@ void main() {
     expect(pn.isValidNumber('US', '+12015550123'), isTrue);
   });
 
-  test('21 number_type fixed line', () {
+  test('21 number_type fixed line or mobile', () {
+    // US fixedLine==mobile -> fixedLineOrMobile; GB has distinct patterns.
+    expect(pn.numberType('US', '2015550123'),
+        equals(pn.PhoneNumberType.fixedLineOrMobile));
+    expect(pn.PhoneNumberType.fixedLineOrMobile.code, equals(10));
     expect(
-        pn.numberType('US', '2015550123'), equals(pn.PhoneNumberType.fixedLine));
+        pn.numberType('GB', '2070313000'), equals(pn.PhoneNumberType.fixedLine));
     expect(pn.PhoneNumberType.fixedLine.code, equals(0));
   });
 
@@ -172,6 +176,8 @@ void main() {
     expect(pn.PhoneNumberType.fromCode(-1), equals(pn.PhoneNumberType.unknown));
     expect(pn.PhoneNumberType.fromCode(1), equals(pn.PhoneNumberType.mobile));
     expect(pn.PhoneNumberType.fromCode(9), equals(pn.PhoneNumberType.voicemail));
+    expect(pn.PhoneNumberType.fromCode(10),
+        equals(pn.PhoneNumberType.fixedLineOrMobile));
   });
 
   test('matcher reports start/end offsets', () {

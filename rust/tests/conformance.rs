@@ -113,7 +113,12 @@ fn t20_valid_with_cc() {
 
 #[test]
 fn t21_number_type() {
-    assert_eq!(engine().number_type("US", "2015550123"), pn::TYPE_FIXED_LINE);
+    // US fixedLine==mobile -> FIXED_LINE_OR_MOBILE; GB has distinct patterns.
+    assert_eq!(
+        engine().number_type("US", "2015550123"),
+        pn::TYPE_FIXED_LINE_OR_MOBILE
+    );
+    assert_eq!(engine().number_type("GB", "2070313000"), pn::TYPE_FIXED_LINE);
 }
 
 #[test]
@@ -226,7 +231,7 @@ fn t34_abi_version() {
 fn number_type_enum_matches_raw() {
     assert_eq!(
         engine().number_type_enum("US", "2015550123"),
-        pn::NumberType::FixedLine
+        pn::NumberType::FixedLineOrMobile
     );
 }
 

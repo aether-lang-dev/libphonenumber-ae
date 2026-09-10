@@ -19,7 +19,8 @@ public enum NumberType {
     PERSONAL_NUMBER(Native.TYPE_PERSONAL_NUMBER),
     PAGER(Native.TYPE_PAGER),
     UAN(Native.TYPE_UAN),
-    VOICEMAIL(Native.TYPE_VOICEMAIL);
+    VOICEMAIL(Native.TYPE_VOICEMAIL),
+    FIXED_LINE_OR_MOBILE(Native.TYPE_FIXED_LINE_OR_MOBILE);
 
     private final int code;
 

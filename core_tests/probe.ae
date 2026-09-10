@@ -74,7 +74,7 @@ main() {
     eq_i("US valid for region US", phonenumber.is_valid_number_for_region("2015550123", "US"), 1)
 
     // --- getNumberType ---
-    eq_i("US fixed-line type", phonenumber.number_type("US", "2015550123"), phonenumber.TYPE_FIXED_LINE)
+    eq_i("US fixed-line-or-mobile type", phonenumber.number_type("US", "2015550123"), phonenumber.TYPE_FIXED_LINE_OR_MOBILE)
 
     // --- formatting (leadingDigits-correct) ---
     eq_s("US national", phonenumber.format_national("US", "2015550123"), "(201) 555-0123")

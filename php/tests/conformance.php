@@ -181,8 +181,11 @@ check('20 is_valid with +cc', function (): void {
     isTrue(PhoneNumber::isValidNumber('US', '+12015550123'), 'is_valid with +cc');
 });
 
-check('21 number_type fixed line', function (): void {
-    eqInt(PhoneNumber::numberType('US', '2015550123'), PhoneNumber::TYPE_FIXED_LINE, 'number_type');
+check('21 number_type fixed_line_or_mobile', function (): void {
+    // US fixedLine==mobile -> FIXED_LINE_OR_MOBILE; GB has distinct patterns
+    eqInt(PhoneNumber::numberType('US', '2015550123'), PhoneNumber::TYPE_FIXED_LINE_OR_MOBILE, 'number_type US');
+    eqInt(PhoneNumber::TYPE_FIXED_LINE_OR_MOBILE, 10, 'TYPE_FIXED_LINE_OR_MOBILE constant');
+    eqInt(PhoneNumber::numberType('GB', '2070313000'), PhoneNumber::TYPE_FIXED_LINE, 'number_type GB');
     eqInt(PhoneNumber::TYPE_FIXED_LINE, 0, 'TYPE_FIXED_LINE constant');
 });
 

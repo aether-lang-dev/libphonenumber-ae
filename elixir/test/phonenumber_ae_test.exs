@@ -94,8 +94,11 @@ defmodule PhonenumberAeTest do
   end
 
   test "21 number type" do
-    assert PhonenumberAe.number_type("US", "2015550123") == :fixed_line
-    assert PhonenumberAe.number_type_code("US", "2015550123") == 0
+    # US fixedLine==mobile -> :fixed_line_or_mobile; GB has distinct patterns.
+    assert PhonenumberAe.number_type("US", "2015550123") == :fixed_line_or_mobile
+    assert PhonenumberAe.number_type_code("US", "2015550123") == 10
+    assert PhonenumberAe.number_type("GB", "2070313000") == :fixed_line
+    assert PhonenumberAe.number_type_code("GB", "2070313000") == 0
   end
 
   test "22 format national" do

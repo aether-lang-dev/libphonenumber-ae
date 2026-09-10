@@ -10,8 +10,8 @@ import gleam/string
 import gleeunit
 import gleeunit/should
 import phonenumber_ae.{
-  E164, Exact, FixedLine, FromNumberWithPlus, International, National, NoMatch,
-  Rfc3966, TooShort, Valid,
+  E164, Exact, FixedLine, FixedLineOrMobile, FromNumberWithPlus, International,
+  National, NoMatch, Rfc3966, TooShort, Valid,
 }
 
 pub fn main() {
@@ -136,10 +136,17 @@ pub fn t20_valid_with_cc_test() {
 }
 
 pub fn t21_number_type_test() {
+  // US fixedLine==mobile -> FixedLineOrMobile; GB has distinct patterns.
   phonenumber_ae.number_type("US", "2015550123")
-  |> should.equal(FixedLine)
+  |> should.equal(FixedLineOrMobile)
 
   phonenumber_ae.number_type_code("US", "2015550123")
+  |> should.equal(10)
+
+  phonenumber_ae.number_type("GB", "2070313000")
+  |> should.equal(FixedLine)
+
+  phonenumber_ae.number_type_code("GB", "2070313000")
   |> should.equal(0)
 }
 

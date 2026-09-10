@@ -50,6 +50,7 @@ final class PhoneNumber
     public const TYPE_PAGER = Native::TYPE_PAGER;
     public const TYPE_UAN = Native::TYPE_UAN;
     public const TYPE_VOICEMAIL = Native::TYPE_VOICEMAIL;
+    public const TYPE_FIXED_LINE_OR_MOBILE = Native::TYPE_FIXED_LINE_OR_MOBILE;
 
     // ---- ValidationResult (isPossibleNumberWithReason) ----
 

@@ -37,7 +37,8 @@ enum PhoneNumberType {
   personalNumber(n.kTypePersonalNumber),
   pager(n.kTypePager),
   uan(n.kTypeUan),
-  voicemail(n.kTypeVoicemail);
+  voicemail(n.kTypeVoicemail),
+  fixedLineOrMobile(n.kTypeFixedLineOrMobile);
 
   const PhoneNumberType(this.code);
 

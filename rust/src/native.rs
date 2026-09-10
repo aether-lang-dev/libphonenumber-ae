@@ -55,6 +55,7 @@ pub const TYPE_PERSONAL_NUMBER: c_int = 6;
 pub const TYPE_PAGER: c_int = 7;
 pub const TYPE_UAN: c_int = 8;
 pub const TYPE_VOICEMAIL: c_int = 9;
+pub const TYPE_FIXED_LINE_OR_MOBILE: c_int = 10;
 
 // ---- ValidationResult (`is_possible_number_with_reason` result) ----
 

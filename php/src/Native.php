@@ -67,6 +67,7 @@ final class Native
     public const TYPE_PAGER = 7;
     public const TYPE_UAN = 8;
     public const TYPE_VOICEMAIL = 9;
+    public const TYPE_FIXED_LINE_OR_MOBILE = 10;
 
     // ---- ValidationResult (is_possible_number_with_reason) ----
 

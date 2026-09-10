@@ -172,6 +172,7 @@ data NumberType
   | Pager
   | Uan
   | Voicemail
+  | FixedLineOrMobile
   | OtherType CInt
   deriving (Eq, Show)
 
@@ -187,6 +188,7 @@ numberTypeFromCInt 6 = PersonalNumber
 numberTypeFromCInt 7 = Pager
 numberTypeFromCInt 8 = Uan
 numberTypeFromCInt 9 = Voicemail
+numberTypeFromCInt 10 = FixedLineOrMobile
 numberTypeFromCInt n = OtherType n
 
 -- ---------------------------------------------------------------------------
@@ -639,4 +641,5 @@ numberTypeToCInt PersonalNumber = 6
 numberTypeToCInt Pager = 7
 numberTypeToCInt Uan = 8
 numberTypeToCInt Voicemail = 9
+numberTypeToCInt FixedLineOrMobile = 10
 numberTypeToCInt (OtherType n) = n

@@ -31,7 +31,7 @@ pub mod native;
 pub use native::{
     Error, E164, INTERNATIONAL, NATIONAL, RFC3966, TYPE_FIXED_LINE, TYPE_MOBILE, TYPE_PAGER,
     TYPE_PERSONAL_NUMBER, TYPE_PREMIUM_RATE, TYPE_SHARED_COST, TYPE_TOLL_FREE, TYPE_UAN,
-    TYPE_UNKNOWN, TYPE_VOICEMAIL, TYPE_VOIP,
+    TYPE_FIXED_LINE_OR_MOBILE, TYPE_UNKNOWN, TYPE_VOICEMAIL, TYPE_VOIP,
     // ValidationResult
     VR_INVALID_COUNTRY_CODE, VR_INVALID_LENGTH, VR_IS_POSSIBLE, VR_IS_POSSIBLE_LOCAL_ONLY,
     VR_TOO_LONG, VR_TOO_SHORT,
@@ -48,7 +48,7 @@ use native::Api;
 
 /// The kind of phone number, mirroring libphonenumber's `PhoneNumberType`.
 ///
-/// [`NumberType::from_raw`] maps the ABI's `int` (`-1` and `0..=9`) onto this;
+/// [`NumberType::from_raw`] maps the ABI's `int` (`-1` and `0..=10`) onto this;
 /// [`number_type`] returns the raw `i32` so no information is lost across the
 /// FFI, and [`PhoneNumbers::number_type_enum`] is the typed convenience.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -64,6 +64,7 @@ pub enum NumberType {
     Pager,
     Uan,
     Voicemail,
+    FixedLineOrMobile,
 }
 
 impl NumberType {
@@ -81,6 +82,7 @@ impl NumberType {
             TYPE_PAGER => NumberType::Pager,
             TYPE_UAN => NumberType::Uan,
             TYPE_VOICEMAIL => NumberType::Voicemail,
+            TYPE_FIXED_LINE_OR_MOBILE => NumberType::FixedLineOrMobile,
             _ => NumberType::Unknown,
         }
     }
@@ -99,6 +101,7 @@ impl NumberType {
             NumberType::Pager => TYPE_PAGER,
             NumberType::Uan => TYPE_UAN,
             NumberType::Voicemail => TYPE_VOICEMAIL,
+            NumberType::FixedLineOrMobile => TYPE_FIXED_LINE_OR_MOBILE,
         }
     }
 }

@@ -44,6 +44,7 @@ module PhoneNumberAe
     TYPE_PAGER = 7
     TYPE_UAN = 8
     TYPE_VOICEMAIL = 9
+    TYPE_FIXED_LINE_OR_MOBILE = 10
 
     # ---- ValidationResult (is_possible_number_with_reason) ----
     VR_IS_POSSIBLE = 0

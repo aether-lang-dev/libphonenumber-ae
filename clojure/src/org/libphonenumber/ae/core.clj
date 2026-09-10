@@ -49,6 +49,7 @@
    NumberType/PAGER           :pager
    NumberType/UAN             :uan
    NumberType/VOICEMAIL       :voicemail
+   NumberType/FIXED_LINE_OR_MOBILE :fixed-line-or-mobile
    NumberType/UNKNOWN         :unknown})
 
 (def ^:private kw->type
@@ -193,7 +194,7 @@
 (defn number-type
   "The number's type as a keyword: `:fixed-line`, `:mobile`, `:toll-free`,
   `:premium-rate`, `:shared-cost`, `:voip`, `:personal-number`, `:pager`,
-  `:uan`, `:voicemail`, or `:unknown`."
+  `:uan`, `:voicemail`, `:fixed-line-or-mobile`, or `:unknown`."
   [^String region ^String input]
   (get type->kw (PhoneNumbers/numberType region input) :unknown))
 

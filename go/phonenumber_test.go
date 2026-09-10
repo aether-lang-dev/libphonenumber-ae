@@ -123,8 +123,11 @@ func Test20ValidWithCC(t *testing.T) {
 }
 
 func Test21NumberType(t *testing.T) {
-	if got := NumberType("US", "2015550123"); got != TypeFixedLine {
-		t.Errorf(`NumberType("US", "2015550123") = %d, want %d (TypeFixedLine)`, got, TypeFixedLine)
+	if got := NumberType("US", "2015550123"); got != TypeFixedLineOrMobile {
+		t.Errorf(`NumberType("US", "2015550123") = %d, want %d (TypeFixedLineOrMobile)`, got, TypeFixedLineOrMobile)
+	}
+	if got := NumberType("GB", "2070313000"); got != TypeFixedLine {
+		t.Errorf(`NumberType("GB", "2070313000") = %d, want %d (TypeFixedLine)`, got, TypeFixedLine)
 	}
 }
 

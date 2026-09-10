@@ -475,7 +475,7 @@ static int l_is_valid_number_for_region(lua_State* L) {
 
 static int l_number_type(lua_State* L) {
     engine_load(L, NULL);
-    /* The result is a plain int, -1..9. It crosses as a Lua integer; the
+    /* The result is a plain int, -1..10. It crosses as a Lua integer; the
      * idiomatic layer maps it to a TYPE_* name. */
     lua_pushinteger(L, ENGINE.number_type(luaL_checkstring(L, 1),
                                           luaL_checkstring(L, 2)));
@@ -703,6 +703,7 @@ int luaopen_phonenumber_ae_native(lua_State* L) {
     K("TYPE_PAGER", 7);
     K("TYPE_UAN", 8);
     K("TYPE_VOICEMAIL", 9);
+    K("TYPE_FIXED_LINE_OR_MOBILE", 10);
 
     /* ValidationResult (is_possible_number_with_reason). */
     K("VR_IS_POSSIBLE", 0);
