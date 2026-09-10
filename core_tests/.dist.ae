@@ -1,0 +1,20 @@
+// Distribution smoke gate — assert target/dist/ holds real artifacts.
+//
+// Run standalone it only checks what's already in target/dist/; the .dist.ae
+// aggregator deps the per-binding dist nodes FIRST, so by the time this runs the
+// artifacts are present. Verifies existence, non-emptiness, and that the fat jar
+// actually bundles the engine (native/libphonenumber_ae.so). See dist_smoke.sh.
+import bldr
+import bldr (dep)
+import std.os
+aeb(cap) {
+    bldr.build() {
+        // Order after the artifact producers: the gate checks what they wrote.
+        dep("java/.jar.ae")
+        root = _get("root")
+        rc = os.system("cd \"${root}\" && core_tests/dist_smoke.sh")
+        if rc != 0 { println("core_tests: dist smoke gate failed"); return 1 }
+        println("core_tests: PASS — distribution artifacts are real")
+        return 0
+    }
+}

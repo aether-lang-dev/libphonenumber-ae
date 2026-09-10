@@ -1,0 +1,45 @@
+// The Java binding's DISTRIBUTION artifact: a self-contained fat jar.
+//
+// Unlike java/.build.ae (which just compiles classes for the in-repo test/JVM
+// family to run against a loose engine .so), this node produces a hand-to-someone
+// jar under target/dist/: the binding classes PLUS the engine .so bundled at
+// /native/ inside the jar. Native.openLibrary() already probes ./native/<lib>,
+// so the jar runs with no LIBPHONENUMBER_AE_LIB and no external .so to place.
+//
+// One .so per jar => the jar is current-OS-only (the .so is this box's platform).
+// A multi-platform jar would bundle several native/<os-arch>/ copies; that is a
+// packaging concern for later, not a change to this node's shape.
+//
+// The engine .so comes from core/.build.ae's shared_lib artifact (dep'd), so the
+// jar always bundles the freshly-built engine. JDK 22+ (FFM/Panama).
+import bldr
+import java
+import std.os
+import bldr (dep, dep_artifact, _get)
+import java (jar_name, native_resource, release)
+
+aeb(cap) {
+    bldr.build() {
+        dep("core/.build.ae")
+        lib = dep_artifact("core/.build.ae", "shared_lib")
+        root = _get("root")
+        dist = "${root}/target/dist"
+        _m = os.system("mkdir -p \"${dist}\"")
+
+        java.package_jar() {
+            jar_name("phonenumber-ae.jar")
+            release("22")
+            // Bundle the engine .so as /native/libphonenumber_ae.so inside the jar.
+            native_resource(lib, "native/libphonenumber_ae.so")
+        }
+
+        // package_jar publishes under target/jar/java/; collect the artifact into
+        // the monorepo's single distribution dir so every binding's dist lands in
+        // one place a consumer can grab.
+        built = "${root}/target/jar/java/phonenumber-ae.jar"
+        rc = os.system("cp \"${built}\" \"${dist}/phonenumber-ae.jar\"")
+        if rc != 0 { println("java dist: failed to copy jar into target/dist"); return 1 }
+        println("java dist: target/dist/phonenumber-ae.jar (fat jar, engine bundled at /native/)")
+        return 0
+    }
+}

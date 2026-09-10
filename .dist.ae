@@ -1,0 +1,28 @@
+// Distribution aggregator — build every binding's hand-to-someone artifact into
+// target/dist/, then assert they're real.
+//
+// Each binding owns a <lang>/.dist.ae (or .jar.ae for the JVM) that produces its
+// language's native package format (jar, wheel, gem, crate, npm tarball, nupkg,
+// hex, …) into target/dist/. This node deps them all and then runs the dist
+// smoke gate. target/dist/ is a build output (gitignored) — nothing here is
+// committed; the artifacts are regenerated from source like everything else.
+//
+// Toolchain-absent bindings' dist nodes SKIP loudly (exit 0, no artifact), same
+// as their test nodes; the smoke gate only asserts artifacts that were produced.
+import bldr
+import bldr (dep)
+aeb(cap) {
+    bldr.build() {
+        // JVM: the fat jar (engine .so bundled at /native/).
+        dep("java/.jar.ae")
+
+        // Per-binding dist nodes are added here as they land (python wheel, ruby
+        // gem, rust crate, npm tarball, dotnet nupkg, …).
+
+        // Prove the artifacts are real (exist, non-empty, native bundled where
+        // expected).
+        dep("core_tests/.dist.ae")
+        println("dist: target/dist/ populated")
+        return 0
+    }
+}

@@ -7,9 +7,12 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SymbolLookup;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -378,10 +381,49 @@ public final class Native {
                 last = e;
             }
         }
+
+        // Last resort: a fat jar bundles the engine at /native/<lib> as a
+        // classpath resource. Panama's libraryLookup needs a real file, so
+        // extract the resource to a temp file and open that. This is what makes
+        // the self-contained `java -jar phonenumber-ae.jar` case work with no
+        // external .so and no LIBPHONENUMBER_AE_LIB.
+        if (explicitPath == null) {
+            try {
+                Path extracted = extractBundledLibrary();
+                if (extracted != null) {
+                    return SymbolLookup.libraryLookup(extracted, Arena.global());
+                }
+            } catch (RuntimeException e) {
+                last = e;
+            }
+        }
+
         throw new IllegalStateException(
                 "could not load the phonenumber engine (" + LIB_NAME + "). Set "
                         + "LIBPHONENUMBER_AE_LIB to its absolute path. Last error: "
                         + (last == null ? "no candidates" : last.getMessage()), last);
+    }
+
+    /**
+     * Extract the engine bundled at {@code /native/<lib>} on the classpath (as a
+     * fat jar ships it) to a temp file, returning its path, or {@code null} if no
+     * such resource is present. The temp file is deleted on JVM exit.
+     */
+    private Path extractBundledLibrary() {
+        String resource = "/native/" + LIB_NAME;
+        try (InputStream in = Native.class.getResourceAsStream(resource)) {
+            if (in == null) return null;
+            int dot = LIB_NAME.lastIndexOf('.');
+            String prefix = (dot > 0 ? LIB_NAME.substring(0, dot) : LIB_NAME) + "-";
+            String suffix = (dot > 0 ? LIB_NAME.substring(dot) : ".so");
+            Path tmp = Files.createTempFile(prefix, suffix);
+            tmp.toFile().deleteOnExit();
+            Files.copy(in, tmp, StandardCopyOption.REPLACE_EXISTING);
+            return tmp;
+        } catch (IOException e) {
+            throw new IllegalStateException(
+                    "failed to extract bundled engine from " + resource, e);
+        }
     }
 
     private MethodHandle downcall(String name, FunctionDescriptor fd) {
