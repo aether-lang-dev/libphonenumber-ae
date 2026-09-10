@@ -89,3 +89,29 @@ select features behind a flag, but that is sugar over this model: it would still
 need the single-file assembly step, because `--emit=lib` won't merge embeds
 regardless. The fragments are the substance; a flag would only hide the
 selection.
+
+## Languages (a second, orthogonal axis)
+
+Carrier and geocoder names exist in many languages. Like features, **language is
+selected at build time** — a `.so` carries only the languages compiled into it,
+and English is always the default and the fallback for any language not present.
+
+`core/gen/generate_metadata.sh <langs...>` picks which languages get generated
+(and builds the `blob_for_lang` dispatcher over them). English is always
+included. Feature selection (`assemble_embed.sh`) and language selection
+(`generate_metadata.sh`) are independent:
+
+```
+# English + German + French carrier/geocoder names, geocoder feature only:
+core/gen/generate_metadata.sh en de fr
+core/gen/assemble_embed.sh core/embed_geo.ae geo
+ae build --emit=lib core/embed_geo.ae --extra core/_embed_support.c -o out.so
+# out.so answers geo_description(region, input, "de") etc.; unknown langs -> en.
+```
+
+At the ABI, the carrier/geo calls take a trailing `lang` argument
+(`geo_description(region, input, lang)`); the bindings default it to `"en"` so a
+call that omits it keeps working. Available languages come from the in-tree
+`resources/carrier/<lang>/` and `resources/geocoding/<lang>/` directories
+(carrier: ~9 languages; geocoder: ~34). The default `core/.build.ae` builds
+English only; add languages by re-running the generator.

@@ -36,7 +36,7 @@ aeb(cap) {
             println("groovy: conformance suite reported failures")
             return 1
         }
-        println("groovy: PASS (v6, timezones + carrier + geocoder) — 45-check conformance")
+        println("groovy: PASS (v7, timezones + carrier + geocoder, localized) — 45-check conformance")
         return 0
     }
 }

@@ -1,4 +1,4 @@
-/// The idiomatic Dart surface over the phonenumber engine (ABI v6).
+/// The idiomatic Dart surface over the phonenumber engine (ABI v7).
 ///
 /// Carries no phone-number logic — every member here marshals to an
 /// `aether_pn_embed_*` call in `native.dart`. Most of the surface is top-level
@@ -637,48 +637,60 @@ abstract final class TimeZones {
   }
 }
 
-// ---- PhoneNumberToCarrierMapper (English carrier names) ----
+// ---- PhoneNumberToCarrierMapper (localized carrier names) ----
 
-/// English carrier-name lookup for a number, mirroring libphonenumber's
+/// Carrier-name lookup for a number, mirroring libphonenumber's
 /// `PhoneNumberToCarrierMapper`.
 ///
 /// Every member marshals to an `aether_pn_embed_carrier_*` call. `""` means no
-/// carrier is known. The class is never instantiated — it is stateless.
+/// carrier is known. The [lang] argument (an ISO code) localizes the result and
+/// defaults to English (`"en"`), which is always available and the fallback for
+/// any other language. The class is never instantiated — it is stateless.
 abstract final class Carrier {
-  /// The carrier name for [input] in [region] (English), or "" if none is known.
-  static String carrierNameForNumber(String region, String input) {
+  /// The carrier name for [input] in [region], or "" if none is known
+  /// (localized by [lang], default `"en"`).
+  static String carrierNameForNumber(String region, String input,
+      [String lang = 'en']) {
     final api = _api;
-    return _withUtf8x2(
-        region, input, (r, i) => api.takeString(api.carrierName(r, i)));
+    return _withUtf8x3(region, input, lang,
+        (r, i, l) => api.takeString(api.carrierName(r, i, l)));
   }
 
-  /// The carrier name only when [input] is a valid number for [region], else "".
-  static String carrierNameForValidNumber(String region, String input) {
+  /// The carrier name only when [input] is a valid number for [region], else ""
+  /// (localized by [lang], default `"en"`).
+  static String carrierNameForValidNumber(String region, String input,
+      [String lang = 'en']) {
     final api = _api;
-    return _withUtf8x2(region, input,
-        (r, i) => api.takeString(api.carrierNameForValid(r, i)));
+    return _withUtf8x3(region, input, lang,
+        (r, i, l) => api.takeString(api.carrierNameForValid(r, i, l)));
   }
 }
 
-// ---- PhoneNumberOfflineGeocoder (English geographic descriptions) ----
+// ---- PhoneNumberOfflineGeocoder (localized geographic descriptions) ----
 
-/// English geographic-description lookup for a number, mirroring
+/// Geographic-description lookup for a number, mirroring
 /// libphonenumber's `PhoneNumberOfflineGeocoder`.
 ///
 /// Every member marshals to an `aether_pn_embed_geo_*` call. `""` means no
-/// description is known. The class is never instantiated — it is stateless.
+/// description is known. The [lang] argument (an ISO code) localizes the result
+/// and defaults to English (`"en"`), which is always available and the fallback
+/// for any other language. The class is never instantiated — it is stateless.
 abstract final class Geocoder {
-  /// A geographic description for [input] in [region] (English), or "" if none.
-  static String geoDescriptionForNumber(String region, String input) {
+  /// A geographic description for [input] in [region], or "" if none
+  /// (localized by [lang], default `"en"`).
+  static String geoDescriptionForNumber(String region, String input,
+      [String lang = 'en']) {
     final api = _api;
-    return _withUtf8x2(
-        region, input, (r, i) => api.takeString(api.geoDescription(r, i)));
+    return _withUtf8x3(region, input, lang,
+        (r, i, l) => api.takeString(api.geoDescription(r, i, l)));
   }
 
-  /// A geographic description only when [input] is a valid number, else "".
-  static String geoDescriptionForValidNumber(String region, String input) {
+  /// A geographic description only when [input] is a valid number, else ""
+  /// (localized by [lang], default `"en"`).
+  static String geoDescriptionForValidNumber(String region, String input,
+      [String lang = 'en']) {
     final api = _api;
-    return _withUtf8x2(region, input,
-        (r, i) => api.takeString(api.geoDescriptionForValid(r, i)));
+    return _withUtf8x3(region, input, lang,
+        (r, i, l) => api.takeString(api.geoDescriptionForValid(r, i, l)));
   }
 }

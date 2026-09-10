@@ -10,7 +10,7 @@ This package is **marshalling only**. The engine itself — Google
 libphonenumber's metadata, parse, `isPossible`/`isValid`, number typing,
 formatting, the as-you-type formatter and the free-text matcher — is the
 pure-Aether engine in `core/phonenumber.ae`, shared by every language binding in
-this monorepo and reached through the full **v6** `aether_pn_embed_*` C ABI
+this monorepo and reached through the full **v7** `aether_pn_embed_*` C ABI
 (`core/embed.ae`, 66 symbols, `docs/abi.md`). Cross-language behaviour is
 therefore identical by construction, not by test.
 
@@ -74,10 +74,12 @@ pn.ShortNumberInfo.exampleNumber('US');              // '112'
 pn.TimeZones.timeZonesForNumber('US', '2015550123'); // ['America/New_York']
 pn.TimeZones.timeZonesForNumber('GB', '2070313000'); // ['Europe/London']
 pn.TimeZones.unknownTimeZone();                      // 'Etc/Unknown'
-pn.Carrier.carrierNameForNumber('GB', '7106000000'); // 'O2'
+pn.Carrier.carrierNameForNumber('GB', '7106000000');       // 'O2'
+pn.Carrier.carrierNameForNumber('GB', '7106000000', 'en'); // 'O2' (lang is optional, defaults to 'en')
 
-// Geographic descriptions (v6 — Geocoder).
-pn.Geocoder.geoDescriptionForNumber('US', '6502530000'); // 'Mountain View, CA'
+// Geographic descriptions (v6 — Geocoder; v7 adds an optional lang).
+pn.Geocoder.geoDescriptionForNumber('US', '6502530000');       // 'Mountain View, CA'
+pn.Geocoder.geoDescriptionForNumber('US', '6502530000', 'en'); // 'Mountain View, CA'
 ```
 
 ### Surface
@@ -108,11 +110,14 @@ pn.Geocoder.geoDescriptionForNumber('US', '6502530000'); // 'Mountain View, CA'
 * **`TimeZones`** (v5) — IANA time-zone lookup:
   `timeZonesForNumber(region, input)` (an array; `['Etc/Unknown']` when none),
   `timeZoneCount(region, input)`, `unknownTimeZone()`.
-* **`Carrier`** (v5) — English carrier names: `carrierNameForNumber(region,
-  input)`, `carrierNameForValidNumber(region, input)` (`''` when none).
-* **`Geocoder`** (v6) — English geographic descriptions:
-  `geoDescriptionForNumber(region, input)`,
-  `geoDescriptionForValidNumber(region, input)` (`''` when none).
+* **`Carrier`** (v5; v7 adds `lang`) — carrier names:
+  `carrierNameForNumber(region, input, lang = 'en')`,
+  `carrierNameForValidNumber(region, input, lang = 'en')` (`''` when none). The
+  `lang` is an optional ISO code that localizes the result and defaults to `'en'`.
+* **`Geocoder`** (v6; v7 adds `lang`) — geographic descriptions:
+  `geoDescriptionForNumber(region, input, lang = 'en')`,
+  `geoDescriptionForValidNumber(region, input, lang = 'en')` (`''` when none). The
+  `lang` is an optional ISO code that localizes the result and defaults to `'en'`.
 
 ### Constants
 
@@ -152,7 +157,7 @@ or, with the engine built for you:
 aeb javascript/aether/.tests.ae
 ```
 
-The suite is the 45-check v6 conformance contract in `docs/conformance.md`. It
+The suite is the 45-check v7 conformance contract in `docs/conformance.md`. It
 uses `node:test` and `node:assert`, so koffi is the only dependency that has to
 be installed.
 

@@ -9,12 +9,13 @@ every function marshals to an `aether_pn_embed_*` call across the flat C ABI
 described in `core/embed.ae`. One engine, one set of behaviours, N language
 surfaces.
 
-Speaks **ABI v6** (`abiVersion()` → 6): the full `PhoneNumberUtil` surface —
+Speaks **ABI v7** (`abiVersion()` → 7): the full `PhoneNumberUtil` surface —
 parse, validation with reasons, all four format styles, an
 AsYouTypeFormatter, and a matcher that finds numbers in free text — plus the
 `ShortNumberInfo` side-library (short / emergency numbers) and the `TimeZones`,
-`Carrier` and `Geocoder` mappers (IANA time zones, English carrier names and
-English geographic descriptions). The ABI is
+`Carrier` and `Geocoder` mappers (IANA time zones, localized carrier names and
+localized geographic descriptions; the carrier/geocoder calls take a per-call
+`lang` ISO code, default "en"). The ABI is
 scalar-only (`const char*` and `int`); there is no handle and no callbacks. Two
 constructs thread a *string* rather than an opaque handle: a parsed number
 and the AsYouType state are each a caller-owned string you get back and free.
@@ -39,7 +40,7 @@ aeb core/.build.ae
 Then:
 
 ```sh
-zig build test        # the 45-check v6 conformance suite
+zig build test        # the 45-check v7 conformance suite
 zig build example     # build and run the demo
 ```
 
@@ -157,8 +158,10 @@ defer allocator.free(ex);
 All take a raw `(region, input)` and let the engine parse to E.164 itself.
 `timeZonesForNumber` returns an owned slice of IANA ids (free it with
 `freeTimeZones`) — a number with no known zones comes back as
-`&.{"Etc/Unknown"}`, never empty. Carrier names and geographic descriptions are
-English only, and `""` when nothing is known.
+`&.{"Etc/Unknown"}`, never empty. Carrier names and geographic descriptions take
+an ISO `lang` code — the plain form defaults to `"en"` (always available, and
+the fallback for any language not compiled in); the `*InLang` overload takes an
+explicit one. Both are `""` when nothing is known.
 
 ```zig
 const zones = try pn.timeZonesForNumber(allocator, "US", "2015550123");
@@ -169,11 +172,18 @@ const n = try pn.timeZoneCount(allocator, "US", "2015550123");   // 1
 const unk = try pn.unknownTimeZone(allocator);      // "Etc/Unknown"
 defer allocator.free(unk);
 
-const carrier = try pn.carrierNameForNumber(allocator, "GB", "7106000000");  // "O2"
+const carrier = try pn.carrierNameForNumber(allocator, "GB", "7106000000");  // "O2" (lang "en")
 defer allocator.free(carrier);
+
+// Explicit language via the *InLang overload (falls back to "en"):
+const carrier_de = try pn.carrierNameForNumberInLang(allocator, "GB", "7106000000", "de");
+defer allocator.free(carrier_de);
 
 const geo = try pn.geoDescriptionForNumber(allocator, "US", "6502530000");   // "Mountain View, CA"
 defer allocator.free(geo);
+
+const geo_de = try pn.geoDescriptionForNumberInLang(allocator, "US", "6502530000", "de");
+defer allocator.free(geo_de);
 ```
 
 ### The surface
@@ -250,13 +260,17 @@ freeTimeZones(alloc, list)
 timeZoneCount(alloc, region, input) !usize          // 0 == only the unknown zone
 unknownTimeZone(alloc) ![]u8                         // "Etc/Unknown"
 
-// carrier (PhoneNumberToCarrierMapper, English names)
-carrierNameForNumber(alloc, region, input) ![]u8         // "" if none known
-carrierNameForValidNumber(alloc, region, input) ![]u8    // "" unless the number is valid
+// carrier (PhoneNumberToCarrierMapper, localized; plain form is lang "en")
+carrierNameForNumber(alloc, region, input) ![]u8               // "" if none known
+carrierNameForNumberInLang(alloc, region, input, lang) ![]u8   // explicit lang, "en" fallback
+carrierNameForValidNumber(alloc, region, input) ![]u8          // "" unless the number is valid
+carrierNameForValidNumberInLang(alloc, region, input, lang) ![]u8
 
-// geocoder (PhoneNumberOfflineGeocoder, English descriptions)
-geoDescriptionForNumber(alloc, region, input) ![]u8         // "" if none known
-geoDescriptionForValidNumber(alloc, region, input) ![]u8    // "" unless the number is valid
+// geocoder (PhoneNumberOfflineGeocoder, localized; plain form is lang "en")
+geoDescriptionForNumber(alloc, region, input) ![]u8               // "" if none known
+geoDescriptionForNumberInLang(alloc, region, input, lang) ![]u8   // explicit lang, "en" fallback
+geoDescriptionForValidNumber(alloc, region, input) ![]u8          // "" unless the number is valid
+geoDescriptionForValidNumberInLang(alloc, region, input, lang) ![]u8
 ```
 
 The constant groups are exposed as non-exhaustive enums — `Format`,
@@ -289,7 +303,7 @@ not a silent truncation: Zig slices carry NULs happily and C strings do not.
 
 ## Conformance
 
-The 45-check v6 suite (`docs/conformance.md`) lives in `src/conformance.zig`,
+The 45-check v7 suite (`docs/conformance.md`) lives in `src/conformance.zig`,
 pulled into `zig build test` by a `test` block at the bottom of `src/root.zig`.
 It samples every value shape that crosses the FFI — parse accessors, all four
 format styles, the AsYouTypeFormatter, and the matcher — plus a few Zig-specific

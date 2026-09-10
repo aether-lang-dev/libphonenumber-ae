@@ -43,7 +43,7 @@ exports(
 )
 
 // ABI revision (see the header note).
-pn_embed_abi_version() -> int { return 6 }
+pn_embed_abi_version() -> int { return 7 }
 
 pn_embed_free_string(s: string) { pn_raw_free(s) }
 

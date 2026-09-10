@@ -6,7 +6,7 @@ This package is a **thin cgo binding** over the monorepo's one shared native
 engine — `core/native/libphonenumber_ae.so`, compiled from pure Aether over
 Google libphonenumber's own metadata. It contains **no phone-number logic**:
 every function marshals to an `aether_pn_embed_*` call across the flat C ABI in
-[`docs/abi.md`](../docs/abi.md) (**v6**, full `PhoneNumberUtil` parity plus
+[`docs/abi.md`](../docs/abi.md) (**v7**, full `PhoneNumberUtil` parity plus
 `ShortNumberInfo`, `TimeZones`, `Carrier` and `Geocoder`). One engine, one set of
 behaviours, N language surfaces.
 
@@ -128,18 +128,24 @@ A number with no known zone maps to a single-element `["Etc/Unknown"]`.
 ```go
 pn.CarrierNameForNumber("GB", "7106000000")        // "O2"
 pn.CarrierNameForValidNumber("GB", "7106000000")   // "O2" (or "" if invalid)
+pn.CarrierNameForNumber("GB", "7106000000", "de")  // localized (optional lang, defaults to "en")
 ```
 
-English names only; `""` means no carrier is known for the number.
+The optional trailing `lang` (an ISO code, defaults to `"en"`) localizes the
+name; `"en"` is always available and is the fallback for any language the engine
+was not built with. `""` means no carrier is known for the number.
 
 ### Geocoding
 
 ```go
 pn.GeoDescriptionForNumber("US", "6502530000")        // "Mountain View, CA"
 pn.GeoDescriptionForValidNumber("US", "6502530000")   // "Mountain View, CA" (or "" if invalid)
+pn.GeoDescriptionForNumber("US", "6502530000", "de")  // localized (optional lang, defaults to "en")
 ```
 
-English descriptions only; `""` means no description is known for the number.
+The optional trailing `lang` (an ISO code, defaults to `"en"`) localizes the
+description; `"en"` is always available and is the fallback for any language the
+engine was not built with. `""` means no description is known for the number.
 
 ### Functions
 
@@ -205,15 +211,15 @@ pn.TimeZonesForNumber(region, input)         []string // IANA zone ids
 pn.TimeZoneCount(region, input)              int      // 0 = only the unknown zone
 pn.UnknownTimeZone()                         // "Etc/Unknown"
 
-// carrier names (English)
-pn.CarrierNameForNumber(region, input)       // a name, or ""
-pn.CarrierNameForValidNumber(region, input)  // a name only if valid, else ""
+// carrier names (optional trailing lang, defaults to "en")
+pn.CarrierNameForNumber(region, input, lang...)       // a name, or ""
+pn.CarrierNameForValidNumber(region, input, lang...)  // a name only if valid, else ""
 
-// geographic descriptions (English)
-pn.GeoDescriptionForNumber(region, input)       // a description, or ""
-pn.GeoDescriptionForValidNumber(region, input)  // a description only if valid, else ""
+// geographic descriptions (optional trailing lang, defaults to "en")
+pn.GeoDescriptionForNumber(region, input, lang...)       // a description, or ""
+pn.GeoDescriptionForValidNumber(region, input, lang...)  // a description only if valid, else ""
 
-pn.ABIVersion()     int            // the engine's ABI revision (6)
+pn.ABIVersion()     int            // the engine's ABI revision (7)
 ```
 
 ### Constants

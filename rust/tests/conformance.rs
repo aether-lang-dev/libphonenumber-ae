@@ -1,4 +1,4 @@
-//! The binding conformance suite (docs/conformance.md, v6 — 45 checks).
+//! The binding conformance suite (docs/conformance.md, v7 — 45 checks).
 //!
 //! Proves the Rust binding marshals every value shape across the FFI. It is
 //! NOT a phone-number test suite — the behavioural cases live in the engine's
@@ -222,7 +222,7 @@ fn t33_matcher_raw() {
 
 #[test]
 fn t34_abi_version() {
-    assert_eq!(engine().abi_version(), 6);
+    assert_eq!(engine().abi_version(), 7);
 }
 
 #[test]
@@ -278,13 +278,13 @@ fn t43_unknown_time_zone() {
 
 #[test]
 fn t44_carrier_name() {
-    assert_eq!(engine().carrier_name_for_number("GB", "7106000000"), "O2");
+    assert_eq!(engine().carrier_name_for_number("GB", "7106000000", None), "O2");
 }
 
 #[test]
 fn t45_geo_description() {
     assert_eq!(
-        engine().geo_description_for_number("US", "6502530000"),
+        engine().geo_description_for_number("US", "6502530000", None),
         "Mountain View, CA"
     );
 }
@@ -339,7 +339,7 @@ fn cost_enum_matches_raw() {
 #[test]
 fn free_functions_share_one_engine() {
     // The crate-level free functions load one process-wide engine.
-    assert_eq!(pn::abi_version(), 6);
+    assert_eq!(pn::abi_version(), 7);
     assert_eq!(pn::country_code("US"), "1");
     let num = pn::parse("+1 201 555 0123", "US");
     assert_eq!(num.national_number(), "2015550123");

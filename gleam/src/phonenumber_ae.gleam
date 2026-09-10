@@ -1,4 +1,4 @@
-//// Validate, parse and format international phone numbers (ABI v6).
+//// Validate, parse and format international phone numbers (ABI v7).
 ////
 //// This is a thin Gleam surface over the monorepo's **canonical BEAM NIF**,
 //// which lives in `erlang/` and is compiled exactly once. There is no C source
@@ -459,19 +459,27 @@ fn tz_at_ffi(region: String, input: String, idx: Int) -> String
 @external(erlang, "phonenumber_ae_nif", "tz_unknown")
 fn tz_unknown_ffi() -> String
 
-// PhoneNumberToCarrierMapper
+// PhoneNumberToCarrierMapper (v7: a trailing lang arg)
 @external(erlang, "phonenumber_ae_nif", "carrier_name")
-fn carrier_name_ffi(region: String, input: String) -> String
+fn carrier_name_ffi(region: String, input: String, lang: String) -> String
 
 @external(erlang, "phonenumber_ae_nif", "carrier_name_for_valid")
-fn carrier_name_for_valid_ffi(region: String, input: String) -> String
+fn carrier_name_for_valid_ffi(
+  region: String,
+  input: String,
+  lang: String,
+) -> String
 
-// PhoneNumberOfflineGeocoder
+// PhoneNumberOfflineGeocoder (v7: a trailing lang arg)
 @external(erlang, "phonenumber_ae_nif", "geo_description")
-fn geo_description_ffi(region: String, input: String) -> String
+fn geo_description_ffi(region: String, input: String, lang: String) -> String
 
 @external(erlang, "phonenumber_ae_nif", "geo_description_for_valid")
-fn geo_description_for_valid_ffi(region: String, input: String) -> String
+fn geo_description_for_valid_ffi(
+  region: String,
+  input: String,
+  lang: String,
+) -> String
 
 // ---- metadata ----
 
@@ -856,33 +864,73 @@ pub fn unknown_time_zone() -> String {
   tz_unknown_ffi()
 }
 
-// ---- PhoneNumberToCarrierMapper (English carrier names) ----
+// ---- PhoneNumberToCarrierMapper (localized carrier names) ----
+//
+// Gleam has no default arguments; the `_number` forms default the language to
+// "en" (English, always available) and the `_in_language` forms take an ISO
+// code. A language not compiled into the engine falls back to English.
 
-/// The carrier name for a number (English), or "" if none is known.
+/// The carrier name for a number in English, or "" if none is known.
 pub fn carrier_name_for_number(region: String, input: String) -> String {
-  carrier_name_ffi(region, input)
+  carrier_name_ffi(region, input, "en")
 }
 
-/// The carrier name, but only when the number is valid; else "".
+/// The carrier name for a number, localized by `lang`, or "" if none is known.
+pub fn carrier_name_for_number_in_language(
+  region: String,
+  input: String,
+  lang: String,
+) -> String {
+  carrier_name_ffi(region, input, lang)
+}
+
+/// The carrier name (English), but only when the number is valid; else "".
 pub fn carrier_name_for_valid_number(region: String, input: String) -> String {
-  carrier_name_for_valid_ffi(region, input)
+  carrier_name_for_valid_ffi(region, input, "en")
 }
 
-// ---- PhoneNumberOfflineGeocoder (English geographic descriptions) ----
+/// The carrier name localized by `lang`, only when the number is valid; else "".
+pub fn carrier_name_for_valid_number_in_language(
+  region: String,
+  input: String,
+  lang: String,
+) -> String {
+  carrier_name_for_valid_ffi(region, input, lang)
+}
 
-/// A geographic description for a number (English), or "" if none is known.
+// ---- PhoneNumberOfflineGeocoder (localized geographic descriptions) ----
+
+/// A geographic description for a number in English, or "" if none is known.
 pub fn geo_description_for_number(region: String, input: String) -> String {
-  geo_description_ffi(region, input)
+  geo_description_ffi(region, input, "en")
 }
 
-/// A geographic description, but only when the number is valid; else "".
+/// A geographic description localized by `lang`, or "" if none is known.
+pub fn geo_description_for_number_in_language(
+  region: String,
+  input: String,
+  lang: String,
+) -> String {
+  geo_description_ffi(region, input, lang)
+}
+
+/// A geographic description (English), but only when the number is valid; else "".
 pub fn geo_description_for_valid_number(region: String, input: String) -> String {
-  geo_description_for_valid_ffi(region, input)
+  geo_description_for_valid_ffi(region, input, "en")
+}
+
+/// A geographic description localized by `lang`, only when valid; else "".
+pub fn geo_description_for_valid_number_in_language(
+  region: String,
+  input: String,
+  lang: String,
+) -> String {
+  geo_description_for_valid_ffi(region, input, lang)
 }
 
 // ---- introspection ----
 
-/// The engine's ABI revision (6).
+/// The engine's ABI revision (7).
 pub fn abi_version() -> Int {
   abi_version_ffi()
 }

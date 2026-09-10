@@ -22,6 +22,16 @@
 #   core/gen/assemble_embed.sh core/embed_geo.ae geo         # validation + geocoder
 #   core/gen/assemble_embed.sh core/embed_full.ae all        # everything
 #
+# LANGUAGE selection is a SEPARATE, orthogonal axis handled by
+# core/gen/generate_metadata.sh <langs...>: it picks which carrier/geocoder
+# languages get compiled in (English is always the default/fallback). So a
+# consumer chooses features here and languages there. Run generate_metadata.sh
+# BEFORE assembling/building, e.g.:
+#   core/gen/generate_metadata.sh en de fr    # metadata for en+de+fr
+#   core/gen/assemble_embed.sh core/embed_geo.ae geo
+#   ae build --emit=lib core/embed_geo.ae --extra core/_embed_support.c -o out.so
+#   # -> the .so answers geo_description(region,input,"de") etc.
+#
 # Then build:
 #   ae build --emit=lib core/embed_geo.ae --extra core/_embed_support.c \
 #       -o core/native/libphonenumber_ae.so

@@ -10,14 +10,15 @@
 //! looks wrong, the bug is in the engine or in this marshalling — it is never a
 //! policy decision made here.
 //!
-//! ## ABI v6
+//! ## ABI v7
 //!
-//! This binding speaks **ABI v6** (`abiVersion()` → 6): the full
+//! This binding speaks **ABI v7** (`abiVersion()` → 7): the full
 //! `PhoneNumberUtil` surface plus the `ShortNumberInfo`, `TimeZones`,
 //! `Carrier` and `Geocoder` side-libraries, 66 exported symbols. The ABI is
-//! scalar-only (`const char*` and `int`) — v6 adds no new mechanism, only more
-//! calls (the 2 `geo_*` symbols on top of the 2 `carrier_*`, 4 `tz_*` and 8
-//! `short_*`). Two constructs
+//! scalar-only (`const char*` and `int`). v7 changes the four `carrier_*` /
+//! `geo_*` calls: each gained a trailing `const char*` `lang` argument (an ISO
+//! code — "en" is always available and is the fallback). No new symbols. Two
+//! constructs
 //! thread a *string* rather than an opaque handle:
 //!
 //!   * `parse` returns a caller-owned **parsed-number string**. Pass it to the
@@ -64,7 +65,7 @@
 const std = @import("std");
 
 // =========================================================================
-// The C ABI — a 1:1 transcription of core/embed.ae (v6, 66 symbols).
+// The C ABI — a 1:1 transcription of core/embed.ae (v7, 66 symbols).
 //
 // `core/embed.ae` names its exports `pn_embed_<name>`; building with
 // `--emit=lib` mangles them to `aether_pn_embed_<name>`, which is what we
@@ -158,13 +159,13 @@ const c = struct {
     extern "c" fn aether_pn_embed_tz_all(region: [*c]const u8, input: [*c]const u8) [*c]u8;
     extern "c" fn aether_pn_embed_tz_unknown() [*c]u8;
 
-    // ---- PhoneNumberToCarrierMapper (English carrier names) ----
-    extern "c" fn aether_pn_embed_carrier_name(region: [*c]const u8, input: [*c]const u8) [*c]u8;
-    extern "c" fn aether_pn_embed_carrier_name_for_valid(region: [*c]const u8, input: [*c]const u8) [*c]u8;
+    // ---- PhoneNumberToCarrierMapper (localized carrier names) ----
+    extern "c" fn aether_pn_embed_carrier_name(region: [*c]const u8, input: [*c]const u8, lang: [*c]const u8) [*c]u8;
+    extern "c" fn aether_pn_embed_carrier_name_for_valid(region: [*c]const u8, input: [*c]const u8, lang: [*c]const u8) [*c]u8;
 
-    // ---- PhoneNumberOfflineGeocoder (English geographic descriptions) ----
-    extern "c" fn aether_pn_embed_geo_description(region: [*c]const u8, input: [*c]const u8) [*c]u8;
-    extern "c" fn aether_pn_embed_geo_description_for_valid(region: [*c]const u8, input: [*c]const u8) [*c]u8;
+    // ---- PhoneNumberOfflineGeocoder (localized geographic descriptions) ----
+    extern "c" fn aether_pn_embed_geo_description(region: [*c]const u8, input: [*c]const u8, lang: [*c]const u8) [*c]u8;
+    extern "c" fn aether_pn_embed_geo_description_for_valid(region: [*c]const u8, input: [*c]const u8, lang: [*c]const u8) [*c]u8;
 };
 
 // =========================================================================
@@ -304,7 +305,8 @@ pub const Error = error{
 };
 
 /// The ABI revision this engine implements. Check it to fail fast against an
-/// engine older than the features you expect — v6 is what this binding needs.
+/// engine older than the features you expect — v7 is what this binding needs
+/// (the carrier/geocoder calls take a per-call `lang` argument).
 pub fn abiVersion() i32 {
     return @intCast(c.aether_pn_embed_abi_version());
 }
@@ -1018,53 +1020,91 @@ pub fn freeTimeZones(allocator: std.mem.Allocator, list: [][]u8) void {
 }
 
 // =========================================================================
-// PhoneNumberToCarrierMapper (English carrier names).
+// PhoneNumberToCarrierMapper (localized carrier names).
 //
-// Longest-prefix match over the E.164 digits; English names only. "" when no
-// carrier is known for the number. Caller frees each returned slice.
+// Longest-prefix match over the E.164 digits. `lang` is an ISO code ("en",
+// "de", …); "en" is always available and is the fallback for any language not
+// compiled into the engine. "" when no carrier is known for the number. Caller
+// frees each returned slice.
+//
+// Zig has no default arguments, so the `lang`-taking form is a `*InLang`
+// overload; the plain form is the "en" convenience over it, keeping existing
+// two-string call sites unchanged.
 // =========================================================================
 
-/// The carrier name for a number (English), or "" if none is known.
-pub fn carrierNameForNumber(allocator: std.mem.Allocator, region: []const u8, input: []const u8) Error![]u8 {
+/// The carrier name for a number in `lang` (e.g. "en"), or "" if none is known.
+pub fn carrierNameForNumberInLang(allocator: std.mem.Allocator, region: []const u8, input: []const u8, lang: []const u8) Error![]u8 {
     var r = try CStr.init(allocator, region);
     defer r.deinit();
     var i = try CStr.init(allocator, input);
     defer i.deinit();
-    return takeString(allocator, c.aether_pn_embed_carrier_name(r.ptr(), i.ptr()));
+    var l = try CStr.init(allocator, lang);
+    defer l.deinit();
+    return takeString(allocator, c.aether_pn_embed_carrier_name(r.ptr(), i.ptr(), l.ptr()));
+}
+
+/// The carrier name for a number (English), or "" if none is known.
+pub fn carrierNameForNumber(allocator: std.mem.Allocator, region: []const u8, input: []const u8) Error![]u8 {
+    return carrierNameForNumberInLang(allocator, region, input, "en");
+}
+
+/// The carrier name in `lang` only when the number is valid, else "".
+pub fn carrierNameForValidNumberInLang(allocator: std.mem.Allocator, region: []const u8, input: []const u8, lang: []const u8) Error![]u8 {
+    var r = try CStr.init(allocator, region);
+    defer r.deinit();
+    var i = try CStr.init(allocator, input);
+    defer i.deinit();
+    var l = try CStr.init(allocator, lang);
+    defer l.deinit();
+    return takeString(allocator, c.aether_pn_embed_carrier_name_for_valid(r.ptr(), i.ptr(), l.ptr()));
 }
 
 /// The carrier name only when the number is valid, else "".
 pub fn carrierNameForValidNumber(allocator: std.mem.Allocator, region: []const u8, input: []const u8) Error![]u8 {
-    var r = try CStr.init(allocator, region);
-    defer r.deinit();
-    var i = try CStr.init(allocator, input);
-    defer i.deinit();
-    return takeString(allocator, c.aether_pn_embed_carrier_name_for_valid(r.ptr(), i.ptr()));
+    return carrierNameForValidNumberInLang(allocator, region, input, "en");
 }
 
 // =========================================================================
-// PhoneNumberOfflineGeocoder (English geographic descriptions).
+// PhoneNumberOfflineGeocoder (localized geographic descriptions).
 //
-// Longest-prefix match over the E.164 digits; English descriptions only. ""
-// when no description is known for the number. Caller frees each returned slice.
+// Longest-prefix match over the E.164 digits. `lang` is an ISO code ("en",
+// "de", …); "en" is always available and is the fallback. "" when no
+// description is known for the number. Caller frees each returned slice.
+//
+// As with the carrier calls, the plain form is the "en" convenience over the
+// `*InLang` form.
 // =========================================================================
 
-/// A geographic description for a number (English), or "" if none is known.
-pub fn geoDescriptionForNumber(allocator: std.mem.Allocator, region: []const u8, input: []const u8) Error![]u8 {
+/// A geographic description for a number in `lang`, or "" if none is known.
+pub fn geoDescriptionForNumberInLang(allocator: std.mem.Allocator, region: []const u8, input: []const u8, lang: []const u8) Error![]u8 {
     var r = try CStr.init(allocator, region);
     defer r.deinit();
     var i = try CStr.init(allocator, input);
     defer i.deinit();
-    return takeString(allocator, c.aether_pn_embed_geo_description(r.ptr(), i.ptr()));
+    var l = try CStr.init(allocator, lang);
+    defer l.deinit();
+    return takeString(allocator, c.aether_pn_embed_geo_description(r.ptr(), i.ptr(), l.ptr()));
+}
+
+/// A geographic description for a number (English), or "" if none is known.
+pub fn geoDescriptionForNumber(allocator: std.mem.Allocator, region: []const u8, input: []const u8) Error![]u8 {
+    return geoDescriptionForNumberInLang(allocator, region, input, "en");
+}
+
+/// A geographic description in `lang` only when the number is valid, else "".
+pub fn geoDescriptionForValidNumberInLang(allocator: std.mem.Allocator, region: []const u8, input: []const u8, lang: []const u8) Error![]u8 {
+    var r = try CStr.init(allocator, region);
+    defer r.deinit();
+    var i = try CStr.init(allocator, input);
+    defer i.deinit();
+    var l = try CStr.init(allocator, lang);
+    defer l.deinit();
+    return takeString(allocator, c.aether_pn_embed_geo_description_for_valid(r.ptr(), i.ptr(), l.ptr()));
 }
 
 /// A geographic description only when the number is valid, else "".
 pub fn geoDescriptionForValidNumber(allocator: std.mem.Allocator, region: []const u8, input: []const u8) Error![]u8 {
-    var r = try CStr.init(allocator, region);
-    defer r.deinit();
-    var i = try CStr.init(allocator, input);
-    defer i.deinit();
-    return takeString(allocator, c.aether_pn_embed_geo_description_for_valid(r.ptr(), i.ptr()));
+    return geoDescriptionForValidNumberInLang(allocator, region, input, "en");
 }
 
 test {

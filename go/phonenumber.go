@@ -4,7 +4,7 @@
 // (core/native/libphonenumber_ae.so, compiled from pure Aether over Google
 // libphonenumber's own metadata). No phone-number logic lives in this package —
 // every function marshals to an `aether_pn_embed_*` call across the flat C ABI
-// described in docs/abi.md (v6, full PhoneNumberUtil parity plus
+// described in docs/abi.md (v7, full PhoneNumberUtil parity plus
 // ShortNumberInfo, TimeZones, Carrier and Geocoder). One engine, one set of behaviours,
 // N language surfaces.
 //
@@ -112,13 +112,13 @@ char* aether_pn_embed_tz_at(const char* region, const char* input, int idx);
 char* aether_pn_embed_tz_all(const char* region, const char* input);
 char* aether_pn_embed_tz_unknown(void);
 
-// PhoneNumberToCarrierMapper (English carrier names)
-char* aether_pn_embed_carrier_name(const char* region, const char* input);
-char* aether_pn_embed_carrier_name_for_valid(const char* region, const char* input);
+// PhoneNumberToCarrierMapper (localized carrier names)
+char* aether_pn_embed_carrier_name(const char* region, const char* input, const char* lang);
+char* aether_pn_embed_carrier_name_for_valid(const char* region, const char* input, const char* lang);
 
-// PhoneNumberOfflineGeocoder (English geographic descriptions)
-char* aether_pn_embed_geo_description(const char* region, const char* input);
-char* aether_pn_embed_geo_description_for_valid(const char* region, const char* input);
+// PhoneNumberOfflineGeocoder (localized geographic descriptions)
+char* aether_pn_embed_geo_description(const char* region, const char* input, const char* lang);
+char* aether_pn_embed_geo_description_for_valid(const char* region, const char* input, const char* lang);
 */
 import "C"
 
@@ -784,42 +784,59 @@ func UnknownTimeZone() string {
 	return takeString(C.aether_pn_embed_tz_unknown())
 }
 
-// ---- PhoneNumberToCarrierMapper (English carrier names) ----
+// ---- PhoneNumberToCarrierMapper (localized carrier names) ----
 
-// CarrierNameForNumber returns the English carrier name for a number, or "" if
-// no carrier is known.
-func CarrierNameForNumber(region, input string) string {
-	cr, ci := cStr(region), cStr(input)
-	defer C.free(unsafe.Pointer(cr))
-	defer C.free(unsafe.Pointer(ci))
-	return takeString(C.aether_pn_embed_carrier_name(cr, ci))
+// langOrEn resolves the optional trailing lang argument of the carrier/geo
+// wrappers. Go has no default parameters, so the language is a variadic tail:
+// callers that pass nothing get "en" (always available, and the fallback for
+// any language the engine was not built with); the first value, if given, wins.
+func langOrEn(lang []string) string {
+	if len(lang) > 0 && lang[0] != "" {
+		return lang[0]
+	}
+	return "en"
 }
 
-// CarrierNameForValidNumber returns the English carrier name only when the
-// number is valid, else "".
-func CarrierNameForValidNumber(region, input string) string {
-	cr, ci := cStr(region), cStr(input)
+// CarrierNameForNumber returns the carrier name for a number, localized by the
+// optional lang (an ISO code such as "en", "de", "fr"; defaults to "en"), or
+// "" if no carrier is known.
+func CarrierNameForNumber(region, input string, lang ...string) string {
+	cr, ci, cl := cStr(region), cStr(input), cStr(langOrEn(lang))
 	defer C.free(unsafe.Pointer(cr))
 	defer C.free(unsafe.Pointer(ci))
-	return takeString(C.aether_pn_embed_carrier_name_for_valid(cr, ci))
+	defer C.free(unsafe.Pointer(cl))
+	return takeString(C.aether_pn_embed_carrier_name(cr, ci, cl))
 }
 
-// ---- PhoneNumberOfflineGeocoder (English geographic descriptions) ----
-
-// GeoDescriptionForNumber returns the English geographic description for a
-// number, or "" if no description is known.
-func GeoDescriptionForNumber(region, input string) string {
-	cr, ci := cStr(region), cStr(input)
+// CarrierNameForValidNumber returns the carrier name only when the number is
+// valid, else "". Localized by the optional lang (defaults to "en").
+func CarrierNameForValidNumber(region, input string, lang ...string) string {
+	cr, ci, cl := cStr(region), cStr(input), cStr(langOrEn(lang))
 	defer C.free(unsafe.Pointer(cr))
 	defer C.free(unsafe.Pointer(ci))
-	return takeString(C.aether_pn_embed_geo_description(cr, ci))
+	defer C.free(unsafe.Pointer(cl))
+	return takeString(C.aether_pn_embed_carrier_name_for_valid(cr, ci, cl))
 }
 
-// GeoDescriptionForValidNumber returns the English geographic description only
-// when the number is valid, else "".
-func GeoDescriptionForValidNumber(region, input string) string {
-	cr, ci := cStr(region), cStr(input)
+// ---- PhoneNumberOfflineGeocoder (localized geographic descriptions) ----
+
+// GeoDescriptionForNumber returns the geographic description for a number,
+// localized by the optional lang (an ISO code such as "en", "de", "fr";
+// defaults to "en"), or "" if no description is known.
+func GeoDescriptionForNumber(region, input string, lang ...string) string {
+	cr, ci, cl := cStr(region), cStr(input), cStr(langOrEn(lang))
 	defer C.free(unsafe.Pointer(cr))
 	defer C.free(unsafe.Pointer(ci))
-	return takeString(C.aether_pn_embed_geo_description_for_valid(cr, ci))
+	defer C.free(unsafe.Pointer(cl))
+	return takeString(C.aether_pn_embed_geo_description(cr, ci, cl))
+}
+
+// GeoDescriptionForValidNumber returns the geographic description only when the
+// number is valid, else "". Localized by the optional lang (defaults to "en").
+func GeoDescriptionForValidNumber(region, input string, lang ...string) string {
+	cr, ci, cl := cStr(region), cStr(input), cStr(langOrEn(lang))
+	defer C.free(unsafe.Pointer(cr))
+	defer C.free(unsafe.Pointer(ci))
+	defer C.free(unsafe.Pointer(cl))
+	return takeString(C.aether_pn_embed_geo_description_for_valid(cr, ci, cl))
 }

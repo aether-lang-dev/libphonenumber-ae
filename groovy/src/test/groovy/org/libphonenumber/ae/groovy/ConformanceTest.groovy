@@ -41,7 +41,7 @@ import static org.libphonenumber.ae.groovy.PhoneNumbers.truncateTooLong
 import static org.libphonenumber.ae.groovy.PhoneNumbers.unknownTimeZone
 
 /**
- * The 45-check binding conformance suite (docs/conformance.md, v6), in Groovy.
+ * The 45-check binding conformance suite (docs/conformance.md, v7), in Groovy.
  *
  * Proves the <b>Groovy layer</b> reaches the same engine behaviour the Java and
  * Python suites see. Since that layer sits on the Java binding rather than on
@@ -144,7 +144,7 @@ class ConformanceTest {
             def ms = findNumbers('call 201-555-0123 now', 'US', Leniency.VALID)
             assertEquals('201-555-0123', ms[0].raw())
         }
-        check('34 abiVersion') { assertEquals(6, abiVersion()) }
+        check('34 abiVersion') { assertEquals(7, abiVersion()) }
         check('35 isEmergencyNumber US 911') { assertTrue('911 emergency US', isEmergencyNumber('US', '911')) }
         check('36 isEmergencyNumber US 999') { assertTrue('999 not emergency US', !isEmergencyNumber('US', '999')) }
         check('37 isEmergencyNumber GB 999') { assertTrue('999 emergency GB', isEmergencyNumber('GB', '999')) }
@@ -180,10 +180,10 @@ class ConformanceTest {
         // ---- report ----
         println()
         if (failures.isEmpty()) {
-            println("PASS (v6, timezones + carrier + geocoder) — $passed checks")
+            println("PASS (v7, timezones + carrier + geocoder, localized) — $passed checks")
             System.exit(0)
         }
-        println("FAIL (v6) — ${failures.size()} of ${passed + failures.size()} checks failed:")
+        println("FAIL (v7) — ${failures.size()} of ${passed + failures.size()} checks failed:")
         failures.each { println("  $it") }
         System.exit(1)
     }

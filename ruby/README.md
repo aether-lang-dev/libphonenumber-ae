@@ -1,7 +1,7 @@
 # phonenumber_ae (Ruby)
 
 A thin Ruby binding over the shared, pure-Aether libphonenumber engine — the
-full **v6 ABI** (full `PhoneNumberUtil` parity plus `ShortNumberInfo`, time
+full **v7 ABI** (full `PhoneNumberUtil` parity plus `ShortNumberInfo`, time
 zones, carrier names and geocoding).
 
 ```ruby
@@ -70,20 +70,26 @@ A number with no known zone maps to a single-element `["Etc/Unknown"]`.
 ### Carrier names
 
 ```ruby
-PhoneNumberAe::Carrier.carrier_name_for_number("GB", "7106000000")        # => "O2"
-PhoneNumberAe::Carrier.carrier_name_for_valid_number("GB", "7106000000")  # => "O2" (or "" if invalid)
+PhoneNumberAe::Carrier.carrier_name_for_number("GB", "7106000000")              # => "O2"
+PhoneNumberAe::Carrier.carrier_name_for_valid_number("GB", "7106000000")        # => "O2" (or "" if invalid)
+PhoneNumberAe::Carrier.carrier_name_for_number("GB", "7106000000", "de")        # localized (optional lang, defaults to "en")
 ```
 
-Names are English only; `""` means no carrier is known for the number.
+The optional `lang` (an ISO code, defaults to `"en"`) localizes the name;
+`"en"` is always available and is the fallback for any language the engine was
+not built with. `""` means no carrier is known for the number.
 
 ### Geocoding
 
 ```ruby
-PhoneNumberAe::Geocoder.geo_description_for_number("US", "6502530000")        # => "Mountain View, CA"
-PhoneNumberAe::Geocoder.geo_description_for_valid_number("US", "6502530000")  # => "Mountain View, CA" (or "" if invalid)
+PhoneNumberAe::Geocoder.geo_description_for_number("US", "6502530000")              # => "Mountain View, CA"
+PhoneNumberAe::Geocoder.geo_description_for_valid_number("US", "6502530000")        # => "Mountain View, CA" (or "" if invalid)
+PhoneNumberAe::Geocoder.geo_description_for_number("US", "6502530000", "de")        # localized (optional lang, defaults to "en")
 ```
 
-Descriptions are English only; `""` means no description is known for the number.
+The optional `lang` (an ISO code, defaults to `"en"`) localizes the
+description; `"en"` is always available and is the fallback for any language the
+engine was not built with. `""` means no description is known for the number.
 
 This gem is a **thin Fiddle binding** over the monorepo's one shared native
 engine — `libphonenumber_ae.so`, compiled from pure Aether over Google
@@ -152,7 +158,7 @@ truncate_too_long(region, input)
 normalize_digits_only(str)
 convert_alpha_characters(str)
 is_alpha_number(str)                             # => true / false
-abi_version                                      # => 6
+abi_version                                      # => 7
 ```
 
 Short / emergency numbers live in the `PhoneNumberAe::ShortNumber` module
@@ -177,10 +183,10 @@ Time zones live in the `PhoneNumberAe::TimeZones` module, carrier names in
 PhoneNumberAe::TimeZones.time_zones_for_number(region, input)        # => ["America/New_York", …]
 PhoneNumberAe::TimeZones.time_zone_count(region, input)              # => an Integer (0 = only the unknown zone)
 PhoneNumberAe::TimeZones.unknown_time_zone                           # => "Etc/Unknown"
-PhoneNumberAe::Carrier.carrier_name_for_number(region, input)        # => a name, or ""
-PhoneNumberAe::Carrier.carrier_name_for_valid_number(region, input)  # => a name only if valid, else ""
-PhoneNumberAe::Geocoder.geo_description_for_number(region, input)        # => a description, or ""
-PhoneNumberAe::Geocoder.geo_description_for_valid_number(region, input)  # => a description only if valid, else ""
+PhoneNumberAe::Carrier.carrier_name_for_number(region, input, lang = "en")        # => a name, or ""
+PhoneNumberAe::Carrier.carrier_name_for_valid_number(region, input, lang = "en")  # => a name only if valid, else ""
+PhoneNumberAe::Geocoder.geo_description_for_number(region, input, lang = "en")        # => a description, or ""
+PhoneNumberAe::Geocoder.geo_description_for_valid_number(region, input, lang = "en")  # => a description only if valid, else ""
 ```
 
 Classes: `PhoneNumberAe::ParsedNumber`, `PhoneNumberAe::AsYouTypeFormatter`
@@ -212,7 +218,7 @@ freed the same way.
 
 ## Testing
 
-The v6 45-check conformance suite (`docs/conformance.md`) lives in
+The v7 45-check conformance suite (`docs/conformance.md`) lives in
 `spec/conformance_spec.rb`.
 
 ```sh

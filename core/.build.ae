@@ -1,29 +1,37 @@
 // The shared phonenumber engine, built ONCE for the whole monorepo.
 //
-// Output: target/core/lib/libphonenumber_ae.so — every binding's .tests.ae
-// deps this node and then links (cgo/NIF) or loads (ctypes/Fiddle/koffi/FFM,
-// via LIBPHONENUMBER_AE_LIB) that single artifact.
+// Output: target/build/core/lib/libphonenumber_ae.so — every binding's
+// .tests.ae deps this node and loads/links that single artifact.
 //
-// Source: core/embed.ae (the aether_pn_embed_* C ABI) imports the local
-// `phonenumber` engine (core/phonenumber.ae + the generated core/metadata.ae)
-// — the WHOLE engine (metadata table, isPossible/isValid, number-type,
-// formatter) is PURE AETHER. The only C is core/_embed_support.c: the
-// caller-owned-string bridge, linked via --extra. There are no callbacks.
+// The engine's metadata tables (core/*metadata*.ae, core/*_blobs.ae) and the
+// assembled ABI (core/embed.ae) are BUILD ARTIFACTS, not source — generated
+// from the pristine in-tree resources/ by core/gen/generate_metadata.sh and
+// assembled by core/gen/assemble_embed.sh. This node runs both (inline, via
+// os.system, BEFORE the aether.shared_lib builder) so a fresh checkout builds
+// with no generated .ae committed. Default: FULL variant, English names.
 //
-// No caps(): the engine is a pure (region, input) -> answer transform over a
-// baked-in table. It touches no filesystem, no network, no OS. That is a
-// property worth keeping — if this ever needs caps("fs"), something is wrong.
+// (Ordering note: an os.system prep step composes with aether.shared_lib() in
+// one bldr.build() block; a dep() before the builder does NOT — the builder
+// then produces no output — so generation is inline here, not a dep'd node.)
 //
-// aether.shared_lib publishes the whole native-lib wiring set (shared_lib,
-// shared_library, ldlibdeps, shared_library_deps_including_transitive), so a
-// JVM or Go consumer that deps this node finds the .so with no path plumbing.
+// For other languages / feature subsets, run generate_metadata.sh with more
+// languages + assemble_embed.sh with a feature list, then build the assembled
+// embed (see docs/composable-builds.md). No caps(): the generation runs at BUILD
+// time in this orchestrator, not in the produced .so.
 
 import bldr
 import aether
+import std.os
+import bldr (_get)
 import aether (source, extra_source, output)
 
 aeb(cap) {
     bldr.build() {
+        root = _get("root")
+        rc0 = os.system("cd \"${root}\" && core/gen/generate_metadata.sh en")
+        if rc0 != 0 { println("core: generate_metadata.sh failed"); return 1 }
+        rc1 = os.system("cd \"${root}\" && core/gen/assemble_embed.sh core/embed.ae all")
+        if rc1 != 0 { println("core: assemble_embed.sh (full) failed"); return 1 }
         aether.shared_lib() {
             source("embed.ae")
             extra_source("_embed_support.c")

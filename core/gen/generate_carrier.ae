@@ -18,19 +18,21 @@
 import std.string
 import std.list
 import std.file
+import std.os
 
 main() {
-    // The country codes we have carrier files for. Discover by trying to read
-    // each numeric <cc>.txt; std has no dir listing here, so we drive off a
-    // known cc list derived from the phone metadata's country codes. Simpler:
-    // read a manifest we build by scanning — but without dir listing, we
-    // enumerate the plausible cc space (1..1999) and emit whatever files exist.
-    println("// core.carrier_metadata — GENERATED, do not edit.")
+    // Language argument (ISO code matching resources/carrier/<lang>/), default en.
+    // Usage (arg needs a compiled run; ae run does not forward argv):
+    //   ae build core/gen/generate_carrier.ae -o /tmp/gc && /tmp/gc de > core/carrier_metadata_de.ae
+    lang = "en"
+    if os.args_count() > 1 { lang = os.args_get(1) }
+
+    println("// core.carrier_metadata_${lang} — GENERATED, do not edit.")
     println("//")
     println("// Produced by core/gen/generate_carrier.ae from")
-    println("// resources/carrier/en/<cc>.txt (Apache-2.0, (c) The Libphonenumber Authors).")
+    println("// resources/carrier/${lang}/<cc>.txt (Apache-2.0, (c) The Libphonenumber Authors).")
     println("//")
-    println("// Row (0x1F-separated): cc | prefix | CarrierName  (English names). Longest-")
+    println("// Row (0x1F-separated): cc | prefix | CarrierName (${lang} names). Longest-")
     println("// prefix match within a country code. See core/carrier.ae.")
     println("")
     println("import std.string")
@@ -52,7 +54,7 @@ main() {
     print("blob() -> string { return \"")
 
     for (cc = 1; cc <= 999; cc++) {
-        path = "resources/carrier/en/${string.from_int(cc)}.txt"
+        path = "resources/carrier/${lang}/${string.from_int(cc)}.txt"
         text, ferr = file.read(path)
         if ferr != "" { continue }
         emit_blob_lines(text, string.from_int(cc))

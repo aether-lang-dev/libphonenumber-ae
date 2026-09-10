@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Idiomatic Ruby surface over the phonenumber engine (ABI v6).
+# Idiomatic Ruby surface over the phonenumber engine (ABI v7).
 #
 # Carries no phone-number logic — see the monorepo's one rule in LLM.md. Every
 # method here marshals to an `aether_pn_embed_*` call in `native.rb`.
@@ -474,47 +474,57 @@ module PhoneNumberAe
     end
   end
 
-  # ---- PhoneNumberToCarrierMapper (English carrier names) ----
+  # ---- PhoneNumberToCarrierMapper (localized carrier names) ----
 
-  # Maps a number to the English name of the carrier that originally received
-  # its number range. The engine parses the raw (region, input) to E.164 itself.
+  # Maps a number to the name of the carrier that originally received its
+  # number range, localized by +lang+ (defaults to "en"). The engine parses the
+  # raw (region, input) to E.164 itself.
   module Carrier
     module_function
 
-    # The carrier name for a number (English), or "" if none is known.
-    def carrier_name_for_number(region, number)
+    # The carrier name for a number, localized by +lang+ (an ISO code such as
+    # "en", "de", "fr"; defaults to "en"), or "" if none is known.
+    def carrier_name_for_number(region, number, lang = "en")
       PhoneNumberAe.send(:_s, "aether_pn_embed_carrier_name",
                          PhoneNumberAe.send(:_enc, region),
-                         PhoneNumberAe.send(:_enc, number))
+                         PhoneNumberAe.send(:_enc, number),
+                         PhoneNumberAe.send(:_enc, lang))
     end
 
-    # The carrier name only when the number is valid, else "".
-    def carrier_name_for_valid_number(region, number)
+    # The carrier name only when the number is valid, else "". Localized by
+    # +lang+ (defaults to "en").
+    def carrier_name_for_valid_number(region, number, lang = "en")
       PhoneNumberAe.send(:_s, "aether_pn_embed_carrier_name_for_valid",
                          PhoneNumberAe.send(:_enc, region),
-                         PhoneNumberAe.send(:_enc, number))
+                         PhoneNumberAe.send(:_enc, number),
+                         PhoneNumberAe.send(:_enc, lang))
     end
   end
 
-  # ---- PhoneNumberOfflineGeocoder (English geographic descriptions) ----
+  # ---- PhoneNumberOfflineGeocoder (localized geographic descriptions) ----
 
-  # Maps a number to an English geographic description of the area it belongs
-  # to. The engine parses the raw (region, input) to E.164 itself.
+  # Maps a number to a geographic description of the area it belongs to,
+  # localized by +lang+ (defaults to "en"). The engine parses the raw
+  # (region, input) to E.164 itself.
   module Geocoder
     module_function
 
-    # A geographic description for a number (English), or "" if none is known.
-    def geo_description_for_number(region, number)
+    # A geographic description for a number, localized by +lang+ (an ISO code
+    # such as "en", "de", "fr"; defaults to "en"), or "" if none is known.
+    def geo_description_for_number(region, number, lang = "en")
       PhoneNumberAe.send(:_s, "aether_pn_embed_geo_description",
                          PhoneNumberAe.send(:_enc, region),
-                         PhoneNumberAe.send(:_enc, number))
+                         PhoneNumberAe.send(:_enc, number),
+                         PhoneNumberAe.send(:_enc, lang))
     end
 
-    # A description only when the number is valid, else "".
-    def geo_description_for_valid_number(region, number)
+    # A description only when the number is valid, else "". Localized by +lang+
+    # (defaults to "en").
+    def geo_description_for_valid_number(region, number, lang = "en")
       PhoneNumberAe.send(:_s, "aether_pn_embed_geo_description_for_valid",
                          PhoneNumberAe.send(:_enc, region),
-                         PhoneNumberAe.send(:_enc, number))
+                         PhoneNumberAe.send(:_enc, number),
+                         PhoneNumberAe.send(:_enc, lang))
     end
   end
 end

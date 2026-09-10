@@ -1,4 +1,4 @@
-//! The 1:1 symbol table for the phonenumber C ABI (`core/embed.ae`), **v6**.
+//! The 1:1 symbol table for the phonenumber C ABI (`core/embed.ae`), **v7**.
 //!
 //! This module is the ONLY place in the Rust binding that knows about the C
 //! ABI, and it is the canonical cross-binding reference: every symbol the
@@ -219,13 +219,17 @@ pub struct Api {
     pub tz_all: unsafe extern "C" fn(*const c_char, *const c_char) -> *mut c_char,
     pub tz_unknown: unsafe extern "C" fn() -> *mut c_char,
 
-    // ---- PhoneNumberToCarrierMapper (English carrier names) ----
-    pub carrier_name: unsafe extern "C" fn(*const c_char, *const c_char) -> *mut c_char,
-    pub carrier_name_for_valid: unsafe extern "C" fn(*const c_char, *const c_char) -> *mut c_char,
+    // ---- PhoneNumberToCarrierMapper (localized carrier names) ----
+    pub carrier_name:
+        unsafe extern "C" fn(*const c_char, *const c_char, *const c_char) -> *mut c_char,
+    pub carrier_name_for_valid:
+        unsafe extern "C" fn(*const c_char, *const c_char, *const c_char) -> *mut c_char,
 
-    // ---- PhoneNumberOfflineGeocoder (English geographic descriptions) ----
-    pub geo_description: unsafe extern "C" fn(*const c_char, *const c_char) -> *mut c_char,
-    pub geo_description_for_valid: unsafe extern "C" fn(*const c_char, *const c_char) -> *mut c_char,
+    // ---- PhoneNumberOfflineGeocoder (localized geographic descriptions) ----
+    pub geo_description:
+        unsafe extern "C" fn(*const c_char, *const c_char, *const c_char) -> *mut c_char,
+    pub geo_description_for_valid:
+        unsafe extern "C" fn(*const c_char, *const c_char, *const c_char) -> *mut c_char,
 
     /// Keeps the `dlopen` handle alive. MUST be the last field — every fn
     /// pointer above points into this library's mapping.

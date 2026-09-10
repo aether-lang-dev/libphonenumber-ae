@@ -1,4 +1,4 @@
-// The 45-check binding conformance suite (docs/conformance.md, v6).
+// The 45-check binding conformance suite (docs/conformance.md, v7).
 //
 // Proves the .NET binding marshals every value shape across the P/Invoke
 // boundary — a parsed number and its accessors, an AsYouType formatter, the
@@ -74,7 +74,7 @@ internal static class Conformance
 
     public static int Main()
     {
-        Console.WriteLine("=== phonenumber_ae .NET binding conformance (v6) ===");
+        Console.WriteLine("=== phonenumber_ae .NET binding conformance (v7) ===");
         Console.WriteLine($"engine: {PhoneNumber.NativeLibraryPath ?? "(default probing)"} " +
                           $"(ABI v{PhoneNumber.AbiVersion})");
 
@@ -198,7 +198,7 @@ internal static class Conformance
             Eq(matches[0].Raw, "201-555-0123", "raw");
         });
 
-        Check("34 abi_version == 6", () => Eq(PhoneNumber.AbiVersion, 6, "abi_version"));
+        Check("34 abi_version == 7", () => Eq(PhoneNumber.AbiVersion, 7, "abi_version"));
 
         Check("35 short is_emergency US 911", () =>
             IsTrue(PhoneNumber.IsEmergencyNumber("US", "911"), "is_emergency_number"));
@@ -275,6 +275,14 @@ internal static class Conformance
 
         Check("geo_description_for_valid agrees for a valid number", () =>
             Eq(PhoneNumber.GeoDescriptionForValidNumber("US", "6502530000"), "Mountain View, CA"));
+
+        Check("carrier/geo explicit lang arg agrees with the en default", () =>
+        {
+            // v7 added a trailing lang ISO code; passing "en" explicitly must
+            // match the default (lang omitted -> "en").
+            Eq(PhoneNumber.CarrierNameForNumber("GB", "7106000000", "en"), "O2");
+            Eq(PhoneNumber.GeoDescriptionForNumber("US", "6502530000", "en"), "Mountain View, CA");
+        });
 
         Check("many calls do not leak or crash", () =>
         {

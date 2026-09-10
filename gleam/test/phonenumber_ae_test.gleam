@@ -222,7 +222,7 @@ pub fn t33_matcher_raw_test() {
 
 pub fn t34_abi_version_test() {
   phonenumber_ae.abi_version()
-  |> should.equal(6)
+  |> should.equal(7)
 }
 
 // ---- ShortNumberInfo (docs/conformance.md #35–40, v5) ----

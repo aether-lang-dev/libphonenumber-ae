@@ -6,7 +6,7 @@ import java.util.List;
 
 /**
  * Validate, parse and format international phone numbers — the idiomatic Java
- * entry point over the shared Aether engine (ABI v6, full
+ * entry point over the shared Aether engine (ABI v7, full
  * {@code PhoneNumberUtil} parity plus {@code ShortNumberInfo}, the timezone
  * mapper, the carrier mapper and the offline geocoder).
  *
@@ -348,12 +348,18 @@ public final class PhoneNumbers {
 
     // ---- carrier ----------------------------------------------------------
     //
-    // English carrier names by longest-prefix match over the E.164 digits.
-    // These delegate to {@link Carrier}, which also stands on its own.
+    // Carrier names by longest-prefix match over the E.164 digits, localized by
+    // {@code lang} (defaulting to English). These delegate to {@link Carrier},
+    // which also stands on its own.
 
     /** The carrier name for a number (English), or {@code ""}. See {@link Carrier}. */
     public static String carrierNameForNumber(String region, String input) {
         return Carrier.carrierNameForNumber(region, input);
+    }
+
+    /** The carrier name for a number, localized by {@code lang}, or {@code ""}. See {@link Carrier}. */
+    public static String carrierNameForNumber(String region, String input, String lang) {
+        return Carrier.carrierNameForNumber(region, input, lang);
     }
 
     /** The carrier name only when the number is valid, else {@code ""}. */
@@ -361,14 +367,25 @@ public final class PhoneNumbers {
         return Carrier.carrierNameForValidNumber(region, input);
     }
 
+    /** The carrier name only when the number is valid, localized by {@code lang}, else {@code ""}. */
+    public static String carrierNameForValidNumber(String region, String input, String lang) {
+        return Carrier.carrierNameForValidNumber(region, input, lang);
+    }
+
     // ---- geocoder ---------------------------------------------------------
     //
-    // English geographic descriptions by longest-prefix match over the E.164
-    // digits. These delegate to {@link Geocoder}, which also stands on its own.
+    // Geographic descriptions by longest-prefix match over the E.164 digits,
+    // localized by {@code lang} (defaulting to English). These delegate to
+    // {@link Geocoder}, which also stands on its own.
 
     /** A geographic description for a number (English), or {@code ""}. See {@link Geocoder}. */
     public static String geoDescriptionForNumber(String region, String input) {
         return Geocoder.geoDescriptionForNumber(region, input);
+    }
+
+    /** A geographic description for a number, localized by {@code lang}, or {@code ""}. See {@link Geocoder}. */
+    public static String geoDescriptionForNumber(String region, String input, String lang) {
+        return Geocoder.geoDescriptionForNumber(region, input, lang);
     }
 
     /** A geographic description only when the number is valid, else {@code ""}. */
@@ -376,9 +393,14 @@ public final class PhoneNumbers {
         return Geocoder.geoDescriptionForValidNumber(region, input);
     }
 
+    /** A geographic description only when the number is valid, localized by {@code lang}, else {@code ""}. */
+    public static String geoDescriptionForValidNumber(String region, String input, String lang) {
+        return Geocoder.geoDescriptionForValidNumber(region, input, lang);
+    }
+
     // ---- version ----------------------------------------------------------
 
-    /** The ABI revision the loaded engine reports ({@code 6} for this build). */
+    /** The ABI revision the loaded engine reports ({@code 7} for this build). */
     public static int abiVersion() {
         Native a = api();
         try {

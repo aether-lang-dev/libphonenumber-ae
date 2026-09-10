@@ -1,4 +1,4 @@
-/// The 1:1 symbol table for the phonenumber C ABI (`core/embed.ae`), v6.
+/// The 1:1 symbol table for the phonenumber C ABI (`core/embed.ae`), v7.
 ///
 /// This library is the ONLY place in the Dart binding that knows about the C
 /// ABI. Everything above it (`phonenumber.dart`) is idiomatic Dart over these
@@ -19,10 +19,13 @@
 ///
 /// ## No opaque handles
 ///
-/// v6 adds the PhoneNumberOfflineGeocoder (2 symbols) on top of the v5
-/// PhoneNumberToTimeZonesMapper (4 symbols) and PhoneNumberToCarrierMapper
-/// (2 symbols) side-libraries and the v3 ShortNumberInfo ABI (now 66 symbols),
-/// but every signature is still
+/// v7 makes the carrier + geocoder mappers multi-language: the four
+/// PhoneNumberToCarrierMapper / PhoneNumberOfflineGeocoder symbols each gained a
+/// trailing `const char* lang` (ISO code; "en" is always available and the
+/// fallback). No new symbols — still 66. v6 added the PhoneNumberOfflineGeocoder
+/// (2 symbols) on top of the v5 PhoneNumberToTimeZonesMapper (4 symbols) and
+/// PhoneNumberToCarrierMapper (2 symbols) side-libraries and the v3
+/// ShortNumberInfo ABI, but every signature is still
 /// scalar-only (`const char*` and `int`). A parsed number and an AsYouType
 /// state are themselves caller-owned *strings*: you get one back, pass it to
 /// the accessor calls, and free it like any other returned string. There are
@@ -310,15 +313,15 @@ class Api {
             'aether_pn_embed_tz_all'),
         tzUnknown = lib.lookupFunction<_Str0C, _Str0>(
             'aether_pn_embed_tz_unknown'),
-        // ---- PhoneNumberToCarrierMapper ----
-        carrierName = lib.lookupFunction<_Str2C, _Str2>(
+        // ---- PhoneNumberToCarrierMapper (v7: trailing lang arg) ----
+        carrierName = lib.lookupFunction<_Str3C, _Str3>(
             'aether_pn_embed_carrier_name'),
-        carrierNameForValid = lib.lookupFunction<_Str2C, _Str2>(
+        carrierNameForValid = lib.lookupFunction<_Str3C, _Str3>(
             'aether_pn_embed_carrier_name_for_valid'),
-        // ---- PhoneNumberOfflineGeocoder ----
-        geoDescription = lib.lookupFunction<_Str2C, _Str2>(
+        // ---- PhoneNumberOfflineGeocoder (v7: trailing lang arg) ----
+        geoDescription = lib.lookupFunction<_Str3C, _Str3>(
             'aether_pn_embed_geo_description'),
-        geoDescriptionForValid = lib.lookupFunction<_Str2C, _Str2>(
+        geoDescriptionForValid = lib.lookupFunction<_Str3C, _Str3>(
             'aether_pn_embed_geo_description_for_valid');
 
   final ffi.DynamicLibrary lib;
@@ -407,13 +410,13 @@ class Api {
   final _Str2 tzAll;
   final _Str0 tzUnknown;
 
-  // Carrier
-  final _Str2 carrierName;
-  final _Str2 carrierNameForValid;
+  // Carrier (v7: (region, input, lang) -> char*)
+  final _Str3 carrierName;
+  final _Str3 carrierNameForValid;
 
-  // Geocoder
-  final _Str2 geoDescription;
-  final _Str2 geoDescriptionForValid;
+  // Geocoder (v7: (region, input, lang) -> char*)
+  final _Str3 geoDescription;
+  final _Str3 geoDescriptionForValid;
 
   static Api? _cached;
 

@@ -1,4 +1,4 @@
-// The idiomatic C# surface over the phonenumber engine (ABI v6).
+// The idiomatic C# surface over the phonenumber engine (ABI v7).
 //
 // Carries no phone-number logic — every member here marshals to an
 // aether_pn_embed_* call in Native.cs. The stateless calls hang off the static
@@ -438,42 +438,45 @@ public static class PhoneNumber
         return list;
     }
 
-    // ---- carrier (PhoneNumberToCarrierMapper, English names) ----
+    // ---- carrier (PhoneNumberToCarrierMapper, localized names) ----
     //
-    // Longest-prefix match over the E.164 digits; English names only.
-    // "" when no carrier is known for the number.
+    // Longest-prefix match over the E.164 digits. The optional `lang` is an ISO
+    // code ("en", "de", …) defaulting to "en" (always available, and the
+    // fallback for any language not compiled into the engine), so a two-argument
+    // call keeps working. "" when no carrier is known for the number.
 
-    /// <summary>The carrier name for a number (English), or "" if none is known.</summary>
-    public static string CarrierNameForNumber(string region, string input)
+    /// <summary>The carrier name for a number, localized by <paramref name="lang"/> (default "en"), or "" if none is known.</summary>
+    public static string CarrierNameForNumber(string region, string input, string lang = "en")
     {
         Init();
-        return Native.TakeString(Native.CarrierName(Native.Encode(region), Native.Encode(input)));
+        return Native.TakeString(Native.CarrierName(Native.Encode(region), Native.Encode(input), Native.Encode(lang)));
     }
 
     /// <summary>The carrier name only when the number is valid, else "".</summary>
-    public static string CarrierNameForValidNumber(string region, string input)
+    public static string CarrierNameForValidNumber(string region, string input, string lang = "en")
     {
         Init();
-        return Native.TakeString(Native.CarrierNameForValid(Native.Encode(region), Native.Encode(input)));
+        return Native.TakeString(Native.CarrierNameForValid(Native.Encode(region), Native.Encode(input), Native.Encode(lang)));
     }
 
-    // ---- geocoder (PhoneNumberOfflineGeocoder, English descriptions) ----
+    // ---- geocoder (PhoneNumberOfflineGeocoder, localized descriptions) ----
     //
-    // Longest-prefix match over the E.164 digits; English descriptions only.
-    // "" when no description is known for the number.
+    // Longest-prefix match over the E.164 digits. The optional `lang` ISO code
+    // defaults to "en" (always available, and the fallback). "" when no
+    // description is known for the number.
 
-    /// <summary>A geographic description for a number (English), or "" if none is known.</summary>
-    public static string GeoDescriptionForNumber(string region, string input)
+    /// <summary>A geographic description for a number, localized by <paramref name="lang"/> (default "en"), or "" if none is known.</summary>
+    public static string GeoDescriptionForNumber(string region, string input, string lang = "en")
     {
         Init();
-        return Native.TakeString(Native.GeoDescription(Native.Encode(region), Native.Encode(input)));
+        return Native.TakeString(Native.GeoDescription(Native.Encode(region), Native.Encode(input), Native.Encode(lang)));
     }
 
     /// <summary>A geographic description only when the number is valid, else "".</summary>
-    public static string GeoDescriptionForValidNumber(string region, string input)
+    public static string GeoDescriptionForValidNumber(string region, string input, string lang = "en")
     {
         Init();
-        return Native.TakeString(Native.GeoDescriptionForValid(Native.Encode(region), Native.Encode(input)));
+        return Native.TakeString(Native.GeoDescriptionForValid(Native.Encode(region), Native.Encode(input), Native.Encode(lang)));
     }
 }
 

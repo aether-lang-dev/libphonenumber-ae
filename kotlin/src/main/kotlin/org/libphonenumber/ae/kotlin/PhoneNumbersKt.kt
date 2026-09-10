@@ -18,7 +18,7 @@ import org.libphonenumber.ae.TimeZones
 import org.libphonenumber.ae.ValidationResult
 
 /**
- * Idiomatic Kotlin over the Java binding (ABI v6, full PhoneNumberUtil parity
+ * Idiomatic Kotlin over the Java binding (ABI v7, full PhoneNumberUtil parity
  * plus ShortNumberInfo, the timezone mapper, the carrier mapper and the offline
  * geocoder).
  *
@@ -184,29 +184,29 @@ fun unknownTimeZone(): String = TimeZones.unknownTimeZone()
 
 // ---- carrier ----
 //
-// English carrier names by longest-prefix match over the E.164 digits. These
-// reach the Java Carrier mapper.
+// Carrier names by longest-prefix match over the E.164 digits, localized by
+// `lang` (defaulting to English). These reach the Java Carrier mapper.
 
-/** The carrier name for a number (English), or `""` if none is known. */
-fun carrierNameForNumber(region: String, input: String): String =
-    Carrier.carrierNameForNumber(region, input)
+/** The carrier name for a number, localized by [lang] (default `"en"`), or `""` if none is known. */
+fun carrierNameForNumber(region: String, input: String, lang: String = "en"): String =
+    Carrier.carrierNameForNumber(region, input, lang)
 
-/** The carrier name only when the number is valid, else `""`. */
-fun carrierNameForValidNumber(region: String, input: String): String =
-    Carrier.carrierNameForValidNumber(region, input)
+/** The carrier name only when the number is valid, localized by [lang] (default `"en"`), else `""`. */
+fun carrierNameForValidNumber(region: String, input: String, lang: String = "en"): String =
+    Carrier.carrierNameForValidNumber(region, input, lang)
 
 // ---- geocoder ----
 //
-// English geographic descriptions by longest-prefix match over the E.164
-// digits. These reach the Java Geocoder mapper.
+// Geographic descriptions by longest-prefix match over the E.164 digits,
+// localized by `lang` (defaulting to English). These reach the Java Geocoder mapper.
 
-/** A geographic description for a number (English), or `""` if none is known. */
-fun geoDescriptionForNumber(region: String, input: String): String =
-    Geocoder.geoDescriptionForNumber(region, input)
+/** A geographic description for a number, localized by [lang] (default `"en"`), or `""` if none is known. */
+fun geoDescriptionForNumber(region: String, input: String, lang: String = "en"): String =
+    Geocoder.geoDescriptionForNumber(region, input, lang)
 
-/** A geographic description only when the number is valid, else `""`. */
-fun geoDescriptionForValidNumber(region: String, input: String): String =
-    Geocoder.geoDescriptionForValidNumber(region, input)
+/** A geographic description only when the number is valid, localized by [lang] (default `"en"`), else `""`. */
+fun geoDescriptionForValidNumber(region: String, input: String, lang: String = "en"): String =
+    Geocoder.geoDescriptionForValidNumber(region, input, lang)
 
 // ---- version ----
 

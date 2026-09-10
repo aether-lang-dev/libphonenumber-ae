@@ -1,4 +1,4 @@
---- The 45-check binding conformance suite (docs/conformance.md, v6).
+--- The 45-check binding conformance suite (docs/conformance.md, v7).
 ---
 --- Proves the Lua binding marshals every value shape across the FFI. It is NOT
 --- a phone-number test suite — the behavioural cases live in the engine's own
@@ -62,7 +62,7 @@ local function eq_list(got, want, what)
   end
 end
 
-print("=== phonenumber_ae Lua binding conformance (v6) ===")
+print("=== phonenumber_ae Lua binding conformance (v7) ===")
 print(string.format("engine: %s (ABI v%d)", pn.engine_path(), pn.abi_version()))
 
 -- ---- the forty-five ----
@@ -201,8 +201,8 @@ test("33 matcher_raw", function()
   eq(matches[1].raw, "201-555-0123", "match raw")
 end)
 
-test("34 abi_version == 6", function()
-  eq(pn.abi_version(), 6, "abi_version")
+test("34 abi_version == 7", function()
+  eq(pn.abi_version(), 7, "abi_version")
 end)
 
 test("35 short is_emergency US 911", function()
@@ -282,6 +282,13 @@ end)
 
 test("geo_description_for_valid agrees for a valid number", function()
   eq(pn.geo_description_for_valid_number("US", "6502530000"), "Mountain View, CA")
+end)
+
+test("carrier/geo explicit lang arg agrees with the en default", function()
+  -- v7 added a trailing lang ISO code; passing "en" explicitly must match the
+  -- default (lang omitted -> "en").
+  eq(pn.carrier_name_for_number("GB", "7106000000", "en"), "O2")
+  eq(pn.geo_description_for_number("US", "6502530000", "en"), "Mountain View, CA")
 end)
 
 test("many round trips do not leak", function()

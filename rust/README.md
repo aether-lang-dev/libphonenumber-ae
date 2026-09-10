@@ -6,7 +6,7 @@ This crate is **marshalling only**. The library itself — the metadata table,
 `isPossible`/`isValid`, number-type classification, the formatter, the
 AsYouType formatter, the matcher — is the pure-Aether engine in
 `core/phonenumber.ae`, compiled from Google libphonenumber's own metadata,
-shared by every language binding in this monorepo and reached through the v6
+shared by every language binding in this monorepo and reached through the v7
 `aether_pn_embed_*` C ABI (`core/embed.ae`, full `PhoneNumberUtil` parity plus
 `ShortNumberInfo`, time zones, carrier names and geocoding). Cross-language behaviour is
 therefore identical by construction, not by test.
@@ -111,22 +111,31 @@ A number with no known zone maps to a single-element `vec!["Etc/Unknown"]`.
 ```rust
 use phonenumber_ae as pn;
 
-assert_eq!(pn::carrier_name_for_number("GB", "7106000000"), "O2");
+assert_eq!(pn::carrier_name_for_number("GB", "7106000000", None), "O2");
+// pass an ISO code to localize, or None for the default "en":
+assert_eq!(pn::carrier_name_for_number("GB", "7106000000", "de"), "O2");
 // carrier_name_for_valid_number returns a name only if the number is valid, else ""
 ```
 
-English names only; `""` means no carrier is known for the number.
+The trailing `lang` is `impl Into<Option<&str>>`: pass `None` for the default
+`"en"` (always available, and the fallback for any language the engine was not
+built with), or an ISO code such as `"de"`. `""` means no carrier is known for
+the number.
 
 ### Geocoding
 
 ```rust
 use phonenumber_ae as pn;
 
-assert_eq!(pn::geo_description_for_number("US", "6502530000"), "Mountain View, CA");
+assert_eq!(pn::geo_description_for_number("US", "6502530000", None), "Mountain View, CA");
+// pass an ISO code to localize, or None for the default "en":
+assert_eq!(pn::geo_description_for_number("US", "6502530000", "de"), "Mountain View, CA");
 // geo_description_for_valid_number returns a description only if the number is valid, else ""
 ```
 
-English descriptions only; `""` means no description is known for the number.
+The trailing `lang` is `impl Into<Option<&str>>`: pass `None` for the default
+`"en"`, or an ISO code such as `"de"`. `""` means no description is known for
+the number.
 
 To load a specific `.so`, use the [`PhoneNumbers`] type — the same surface over
 an engine you loaded yourself:
@@ -155,7 +164,7 @@ assert_eq!(num.national_number(), "1212345678");
 | Time zones | `time_zones_for_number` → `Vec<String>`, `time_zone_count`, `unknown_time_zone` |
 | Carrier | `carrier_name_for_number`, `carrier_name_for_valid_number` |
 | Geocoder | `geo_description_for_number`, `geo_description_for_valid_number` |
-| Metadata | `abi_version` (→ `6`) |
+| Metadata | `abi_version` (→ `7`) |
 
 Every metadata/free-function surface is available both crate-level (over one
 process-wide engine) and as a method on `PhoneNumbers`.
@@ -192,7 +201,7 @@ or, with the engine built for you:
 aeb rust/.tests.ae
 ```
 
-The suite is the 45-check v6 conformance contract in `docs/conformance.md`,
+The suite is the 45-check v7 conformance contract in `docs/conformance.md`,
 plus a few extras covering the typed idiomatic surface.
 
 ## Notes for maintainers

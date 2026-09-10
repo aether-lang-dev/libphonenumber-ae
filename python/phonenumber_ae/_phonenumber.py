@@ -327,23 +327,23 @@ def unknown_time_zone():
 
 # ---- PhoneNumberToCarrierMapper (English carrier names) ----
 
-def carrier_name_for_number(region, number):
-    """The carrier name for a number (English), or '' if none is known."""
-    return _s("aether_pn_embed_carrier_name", _enc(region), _enc(number))
+def carrier_name_for_number(region, number, lang="en"):
+    """The carrier name for a number, or '' if none is known (localized by lang)."""
+    return _s("aether_pn_embed_carrier_name", _enc(region), _enc(number), _enc(lang))
 
 
-def carrier_name_for_valid_number(region, number):
+def carrier_name_for_valid_number(region, number, lang="en"):
     """The carrier name only when the number is valid, else ''."""
-    return _s("aether_pn_embed_carrier_name_for_valid", _enc(region), _enc(number))
+    return _s("aether_pn_embed_carrier_name_for_valid", _enc(region), _enc(number), _enc(lang))
 
 
 # ---- PhoneNumberOfflineGeocoder (English geographic descriptions) ----
 
-def geo_description_for_number(region, number):
-    """A geographic description for a number (English), or '' if none is known."""
-    return _s("aether_pn_embed_geo_description", _enc(region), _enc(number))
+def geo_description_for_number(region, number, lang="en"):
+    """A geographic description for a number, or '' if none is known (localized by lang)."""
+    return _s("aether_pn_embed_geo_description", _enc(region), _enc(number), _enc(lang))
 
 
-def geo_description_for_valid_number(region, number):
+def geo_description_for_valid_number(region, number, lang="en"):
     """A description only when the number is valid, else ''."""
-    return _s("aether_pn_embed_geo_description_for_valid", _enc(region), _enc(number))
+    return _s("aether_pn_embed_geo_description_for_valid", _enc(region), _enc(number), _enc(lang))

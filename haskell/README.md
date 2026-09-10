@@ -9,11 +9,13 @@ every function marshals to an `aether_pn_embed_*` call across the flat C ABI
 described in `core/embed.ae`. One engine, one set of behaviours, N language
 surfaces.
 
-As of **ABI v6** the surface is full `PhoneNumberUtil` parity plus the
+As of **ABI v7** the surface is full `PhoneNumberUtil` parity plus the
 `ShortNumberInfo` side-library (short / emergency numbers), the
 `PhoneNumberToTimeZonesMapper` (IANA time zones), the
-`PhoneNumberToCarrierMapper` (English carrier names) and the
-`PhoneNumberOfflineGeocoder` (English geographic descriptions) — 66 symbols. A
+`PhoneNumberToCarrierMapper` (localized carrier names) and the
+`PhoneNumberOfflineGeocoder` (localized geographic descriptions) — 66 symbols;
+v7 adds a per-call `lang` ISO code to the carrier and geocoder calls (default
+"en", the always-available fallback). A
 parsed number is a caller-owned string you carry in a `ParsedNumber`; the
 `AsYouTypeFormatter` threads its state through the same caller-owned-string
 mechanism; and `findNumbers` walks free text for numbers.
@@ -194,13 +196,17 @@ timeZonesForNumber :: ByteString -> ByteString -> IO [ByteString]  -- ["Etc/Unkn
 timeZoneCount      :: ByteString -> ByteString -> IO Int           -- 0 == only the unknown zone
 unknownTimeZone    :: IO ByteString                                 -- "Etc/Unknown"
 
--- PhoneNumberToCarrierMapper (English carrier names)
-carrierNameForNumber      :: ByteString -> ByteString -> IO ByteString  -- "" if none known
-carrierNameForValidNumber :: ByteString -> ByteString -> IO ByteString  -- "" unless the number is valid
+-- PhoneNumberToCarrierMapper (localized carrier names; plain form is lang "en")
+carrierNameForNumber            :: ByteString -> ByteString -> IO ByteString  -- "" if none known
+carrierNameForNumberInLang      :: ByteString -> ByteString -> ByteString -> IO ByteString  -- explicit lang, "en" fallback
+carrierNameForValidNumber       :: ByteString -> ByteString -> IO ByteString  -- "" unless the number is valid
+carrierNameForValidNumberInLang :: ByteString -> ByteString -> ByteString -> IO ByteString
 
--- PhoneNumberOfflineGeocoder (English geographic descriptions)
-geoDescriptionForNumber      :: ByteString -> ByteString -> IO ByteString  -- "" if none known
-geoDescriptionForValidNumber :: ByteString -> ByteString -> IO ByteString  -- "" unless the number is valid
+-- PhoneNumberOfflineGeocoder (localized geographic descriptions; plain form is lang "en")
+geoDescriptionForNumber            :: ByteString -> ByteString -> IO ByteString  -- "" if none known
+geoDescriptionForNumberInLang      :: ByteString -> ByteString -> ByteString -> IO ByteString  -- explicit lang, "en" fallback
+geoDescriptionForValidNumber       :: ByteString -> ByteString -> IO ByteString  -- "" unless the number is valid
+geoDescriptionForValidNumberInLang :: ByteString -> ByteString -> ByteString -> IO ByteString
 
 abiVersion :: IO Int
 ```
@@ -223,7 +229,9 @@ shortExampleNumber "US"         -- "112"
 All take a raw `(region, input)` and let the engine parse to E.164 itself.
 `timeZonesForNumber` returns a list of IANA ids — a number with no known zones
 comes back as `["Etc/Unknown"]`, never the empty list. Carrier names and
-geographic descriptions are English only, and `""` when nothing is known.
+geographic descriptions take an ISO `lang` code — the plain form is English
+(`"en"`, always available and the fallback for any language not compiled in);
+the `…InLang` form takes an explicit one. Both are `""` when nothing is known.
 
 ```haskell
 timeZonesForNumber "US" "2015550123"      -- ["America/New_York"]
@@ -231,11 +239,13 @@ timeZonesForNumber "GB" "2070313000"      -- ["Europe/London"]
 timeZoneCount "US" "2015550123"           -- 1
 unknownTimeZone                            -- "Etc/Unknown"
 
-carrierNameForNumber "GB" "7106000000"        -- "O2"
-carrierNameForValidNumber "GB" "7106000000"   -- "O2" (only if valid)
+carrierNameForNumber "GB" "7106000000"            -- "O2" (lang "en")
+carrierNameForNumberInLang "GB" "7106000000" "de" -- explicit lang (falls back to "en")
+carrierNameForValidNumber "GB" "7106000000"       -- "O2" (only if valid)
 
-geoDescriptionForNumber "US" "6502530000"        -- "Mountain View, CA"
-geoDescriptionForValidNumber "US" "6502530000"   -- "Mountain View, CA" (only if valid)
+geoDescriptionForNumber "US" "6502530000"            -- "Mountain View, CA"
+geoDescriptionForNumberInLang "US" "6502530000" "de" -- explicit lang (falls back to "en")
+geoDescriptionForValidNumber "US" "6502530000"       -- "Mountain View, CA" (only if valid)
 ```
 
 ### Constants

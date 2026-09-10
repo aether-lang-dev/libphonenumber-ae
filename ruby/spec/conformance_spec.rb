@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# The binding conformance suite (docs/conformance.md, v6).
+# The binding conformance suite (docs/conformance.md, v7).
 #
 # Proves the Ruby binding marshals every value shape across the FFI. It is NOT
 # a phone-number test suite — the behavioural cases live in the engine's own
@@ -154,7 +154,7 @@ RSpec.describe PhoneNumberAe do
   end
 
   it "34 abi version" do
-    expect(PhoneNumberAe.abi_version).to eq(6)
+    expect(PhoneNumberAe.abi_version).to eq(7)
   end
 
   it "35 short is_emergency_number US 911" do

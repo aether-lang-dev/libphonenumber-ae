@@ -2,15 +2,18 @@ package org.libphonenumber.ae;
 
 /**
  * Carrier names — the idiomatic Java surface over the shared Aether engine's
- * {@code PhoneNumberToCarrierMapper} side-library (ABI v5).
+ * {@code PhoneNumberToCarrierMapper} side-library (ABI v7).
  *
  * <p>A longest-prefix match over the number's E.164 digits. Every call takes a
- * raw {@code (region, input)}; the engine parses to E.164 internally. English
- * names only; {@code ""} means no carrier is known for the number.
+ * raw {@code (region, input)}; the engine parses to E.164 internally. Names are
+ * localized by {@code lang} (an ISO code such as {@code "en"}, {@code "de"});
+ * {@code "en"} is always available and is the fallback for any language not
+ * compiled into the engine. {@code ""} means no carrier is known for the number.
  *
  * <pre>{@code
- * Carrier.carrierNameForNumber("GB", "7106000000");        // "O2"
- * Carrier.carrierNameForValidNumber("GB", "7106000000");   // "O2" (only if valid)
+ * Carrier.carrierNameForNumber("GB", "7106000000");         // "O2" (English)
+ * Carrier.carrierNameForNumber("GB", "7106000000", "de");   // localized to German
+ * Carrier.carrierNameForValidNumber("GB", "7106000000");    // "O2" (only if valid)
  * }</pre>
  *
  * <p>Carries <b>no phone-number logic</b>: every method marshals to an
@@ -31,13 +34,23 @@ public final class Carrier {
 
     /** The carrier name for a number (English), or {@code ""} if none is known. */
     public static String carrierNameForNumber(String region, String input) {
-        Native a = api();
-        return a.call2s(a.carrierName, region, input);
+        return carrierNameForNumber(region, input, "en");
     }
 
-    /** The carrier name only when the number is valid, else {@code ""}. */
-    public static String carrierNameForValidNumber(String region, String input) {
+    /** The carrier name for a number, localized by {@code lang}, or {@code ""} if none is known. */
+    public static String carrierNameForNumber(String region, String input, String lang) {
         Native a = api();
-        return a.call2s(a.carrierNameForValid, region, input);
+        return a.call3s(a.carrierName, region, input, lang);
+    }
+
+    /** The carrier name only when the number is valid (English), else {@code ""}. */
+    public static String carrierNameForValidNumber(String region, String input) {
+        return carrierNameForValidNumber(region, input, "en");
+    }
+
+    /** The carrier name only when the number is valid, localized by {@code lang}, else {@code ""}. */
+    public static String carrierNameForValidNumber(String region, String input, String lang) {
+        Native a = api();
+        return a.call3s(a.carrierNameForValid, region, input, lang);
     }
 }

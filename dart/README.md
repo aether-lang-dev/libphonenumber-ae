@@ -8,7 +8,7 @@ over Google libphonenumber's own metadata. It contains **no phone-number
 logic**: every member marshals to an `aether_pn_embed_*` call. One engine, one
 set of behaviours, N language surfaces.
 
-It speaks the full **v6** `aether_pn_embed_*` C ABI (66 symbols, full
+It speaks the full **v7** `aether_pn_embed_*` C ABI (66 symbols, full
 PhoneNumberUtil parity plus ShortNumberInfo, TimeZones, Carrier and Geocoder — `docs/abi.md`). Every signature is still scalar-only
 (`const char*` and `int`), and there are still no opaque handles: a parsed
 number and an as-you-type state are themselves caller-owned *strings*.
@@ -79,10 +79,12 @@ pn.ShortNumberInfo.exampleNumber('US');              // '112'
 pn.TimeZones.timeZonesForNumber('US', '2015550123'); // ['America/New_York']
 pn.TimeZones.timeZonesForNumber('GB', '2070313000'); // ['Europe/London']
 pn.TimeZones.unknownTimeZone();                      // 'Etc/Unknown'
-pn.Carrier.carrierNameForNumber('GB', '7106000000'); // 'O2'
+pn.Carrier.carrierNameForNumber('GB', '7106000000');       // 'O2'
+pn.Carrier.carrierNameForNumber('GB', '7106000000', 'en'); // 'O2' (lang is optional, defaults to 'en')
 
-// Geographic descriptions (v6 — Geocoder).
-pn.Geocoder.geoDescriptionForNumber('US', '6502530000'); // 'Mountain View, CA'
+// Geographic descriptions (v6 — Geocoder; v7 adds an optional lang).
+pn.Geocoder.geoDescriptionForNumber('US', '6502530000');       // 'Mountain View, CA'
+pn.Geocoder.geoDescriptionForNumber('US', '6502530000', 'en'); // 'Mountain View, CA'
 ```
 
 ### Surface
@@ -113,11 +115,14 @@ pn.Geocoder.geoDescriptionForNumber('US', '6502530000'); // 'Mountain View, CA'
 * **`TimeZones`** (v5) — IANA time-zone lookup:
   `timeZonesForNumber(region, input)` (a `List<String>`; `['Etc/Unknown']` when
   none), `timeZoneCount(region, input)`, `unknownTimeZone()`.
-* **`Carrier`** (v5) — English carrier names: `carrierNameForNumber(region,
-  input)`, `carrierNameForValidNumber(region, input)` (`''` when none).
-* **`Geocoder`** (v6) — English geographic descriptions:
-  `geoDescriptionForNumber(region, input)`,
-  `geoDescriptionForValidNumber(region, input)` (`''` when none).
+* **`Carrier`** (v5; v7 adds `lang`) — carrier names:
+  `carrierNameForNumber(region, input, [lang = 'en'])`,
+  `carrierNameForValidNumber(region, input, [lang = 'en'])` (`''` when none). The
+  optional `lang` is an ISO code that localizes the result and defaults to `'en'`.
+* **`Geocoder`** (v6; v7 adds `lang`) — geographic descriptions:
+  `geoDescriptionForNumber(region, input, [lang = 'en'])`,
+  `geoDescriptionForValidNumber(region, input, [lang = 'en'])` (`''` when none). The
+  optional `lang` is an ISO code that localizes the result and defaults to `'en'`.
 
 ### Enums
 
@@ -160,7 +165,7 @@ and nothing borrowed to track.
 
 ## Tests
 
-The 45-check v6 conformance suite (`docs/conformance.md`) lives in
+The 45-check v7 conformance suite (`docs/conformance.md`) lives in
 `test/conformance_test.dart`.
 
 ```sh

@@ -1,5 +1,5 @@
 (ns org.libphonenumber.ae.core
-  "Idiomatic Clojure over the Java binding (ABI v6, full PhoneNumberUtil parity
+  "Idiomatic Clojure over the Java binding (ABI v7, full PhoneNumberUtil parity
   plus ShortNumberInfo, the timezone mapper, the carrier mapper and the offline
   geocoder).
 
@@ -362,37 +362,45 @@
 
 ;; ---- carrier -------------------------------------------------------------
 ;;
-;; English carrier names by longest-prefix match over the E.164 digits. These
-;; reach the Java Carrier mapper.
+;; Carrier names by longest-prefix match over the E.164 digits, localized by
+;; `lang` (defaulting to English). These reach the Java Carrier mapper.
 
 (defn carrier-name-for-number
-  "The carrier name for a number (English), or \"\" if none is known."
-  [^String region ^String input]
-  (Carrier/carrierNameForNumber region input))
+  "The carrier name for a number, localized by `lang` (default \"en\"),
+  or \"\" if none is known."
+  ([^String region ^String input] (carrier-name-for-number region input "en"))
+  ([^String region ^String input ^String lang]
+   (Carrier/carrierNameForNumber region input lang)))
 
 (defn carrier-name-for-valid-number
-  "The carrier name only when the number is valid, else \"\"."
-  [^String region ^String input]
-  (Carrier/carrierNameForValidNumber region input))
+  "The carrier name only when the number is valid, localized by `lang`
+  (default \"en\"), else \"\"."
+  ([^String region ^String input] (carrier-name-for-valid-number region input "en"))
+  ([^String region ^String input ^String lang]
+   (Carrier/carrierNameForValidNumber region input lang)))
 
 ;; ---- geocoder ------------------------------------------------------------
 ;;
-;; English geographic descriptions by longest-prefix match over the E.164
-;; digits. These reach the Java Geocoder mapper.
+;; Geographic descriptions by longest-prefix match over the E.164 digits,
+;; localized by `lang` (defaulting to English). These reach the Java Geocoder mapper.
 
 (defn geo-description-for-number
-  "A geographic description for a number (English), or \"\" if none is known."
-  [^String region ^String input]
-  (Geocoder/geoDescriptionForNumber region input))
+  "A geographic description for a number, localized by `lang` (default \"en\"),
+  or \"\" if none is known."
+  ([^String region ^String input] (geo-description-for-number region input "en"))
+  ([^String region ^String input ^String lang]
+   (Geocoder/geoDescriptionForNumber region input lang)))
 
 (defn geo-description-for-valid-number
-  "A geographic description only when the number is valid, else \"\"."
-  [^String region ^String input]
-  (Geocoder/geoDescriptionForValidNumber region input))
+  "A geographic description only when the number is valid, localized by `lang`
+  (default \"en\"), else \"\"."
+  ([^String region ^String input] (geo-description-for-valid-number region input "en"))
+  ([^String region ^String input ^String lang]
+   (Geocoder/geoDescriptionForValidNumber region input lang)))
 
 ;; ---- version -------------------------------------------------------------
 
 (defn abi-version
-  "The ABI revision the loaded engine reports (6 for this build)."
+  "The ABI revision the loaded engine reports (7 for this build)."
   []
   (PhoneNumbers/abiVersion))

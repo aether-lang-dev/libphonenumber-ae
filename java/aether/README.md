@@ -40,7 +40,7 @@ PhoneNumbers.formatInternational("US", "2015550123");          // "+1 (201) 555-
 
 PhoneNumbers.numberType("US", "2015550123");           // NumberType.FIXED_LINE
 PhoneNumbers.regions();                                // ["AC", "AD", "AE", ...]
-PhoneNumbers.abiVersion();                             // 6
+PhoneNumbers.abiVersion();                             // 7
 
 // short / emergency numbers (ShortNumberInfo)
 ShortNumberInfo.isEmergencyNumber("US", "911");        // true
@@ -53,13 +53,15 @@ TimeZones.timeZonesForNumber("US", "2015550123");      // ["America/New_York"]
 TimeZones.timeZonesForNumber("GB", "2070313000");      // ["Europe/London"]
 TimeZones.unknownTimeZone();                           // "Etc/Unknown"
 
-// carrier names (PhoneNumberToCarrierMapper)
-Carrier.carrierNameForNumber("GB", "7106000000");      // "O2"
-Carrier.carrierNameForValidNumber("GB", "7106000000"); // "O2" (only if valid)
+// carrier names (PhoneNumberToCarrierMapper) — lang defaults to "en"
+Carrier.carrierNameForNumber("GB", "7106000000");            // "O2"
+Carrier.carrierNameForNumber("GB", "7106000000", "de");      // localized to German
+Carrier.carrierNameForValidNumber("GB", "7106000000");       // "O2" (only if valid)
 
-// geographic descriptions (PhoneNumberOfflineGeocoder)
-Geocoder.geoDescriptionForNumber("US", "6502530000");      // "Mountain View, CA"
-Geocoder.geoDescriptionForValidNumber("US", "6502530000"); // "Mountain View, CA" (only if valid)
+// geographic descriptions (PhoneNumberOfflineGeocoder) — lang defaults to "en"
+Geocoder.geoDescriptionForNumber("US", "6502530000");        // "Mountain View, CA"
+Geocoder.geoDescriptionForNumber("US", "6502530000", "de");  // localized to German
+Geocoder.geoDescriptionForValidNumber("US", "6502530000");   // "Mountain View, CA" (only if valid)
 ```
 
 All entry points are static and stateless — the ABI has no handle. The engine
@@ -88,12 +90,13 @@ is loaded lazily and cached on first use.
   `timeZonesForNumber` (a `List<String>` of IANA zone ids; a number with no
   known zone maps to `["Etc/Unknown"]`), `timeZoneCount`, `unknownTimeZone`.
   Also delegated from `PhoneNumbers`.
-* `Carrier` — static methods for the carrier mapper (English names):
-  `carrierNameForNumber`, `carrierNameForValidNumber` (`""` = no known carrier).
-  Also delegated from `PhoneNumbers`.
-* `Geocoder` — static methods for the offline geocoder (English descriptions):
-  `geoDescriptionForNumber`, `geoDescriptionForValidNumber` (`""` = no known
-  description). Also delegated from `PhoneNumbers`.
+* `Carrier` — static methods for the carrier mapper (localized names, `lang`
+  defaults to `"en"`): `carrierNameForNumber`, `carrierNameForValidNumber`
+  (`""` = no known carrier). Also delegated from `PhoneNumbers`.
+* `Geocoder` — static methods for the offline geocoder (localized descriptions,
+  `lang` defaults to `"en"`): `geoDescriptionForNumber`,
+  `geoDescriptionForValidNumber` (`""` = no known description). Also delegated
+  from `PhoneNumbers`.
 * `Native` — the FFM symbol table. The only class that knows the C ABI.
 
 ## Tests

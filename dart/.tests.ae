@@ -30,7 +30,7 @@ aeb(cap) {
             println("dart: `dart test` reported failures")
             return 1
         }
-        println("dart: PASS — v6 45-check conformance (incl. ShortNumberInfo, TimeZones, Carrier + Geocoder)")
+        println("dart: PASS — v7 45-check conformance (incl. ShortNumberInfo, TimeZones, Carrier + Geocoder with lang)")
         return 0
     }
 }

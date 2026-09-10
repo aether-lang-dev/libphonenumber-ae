@@ -183,11 +183,11 @@ def _declare(lib):
         "aether_pn_embed_tz_all": ([S, S], P),
         "aether_pn_embed_tz_unknown": ([], P),
         # PhoneNumberToCarrierMapper
-        "aether_pn_embed_carrier_name": ([S, S], P),
-        "aether_pn_embed_carrier_name_for_valid": ([S, S], P),
+        "aether_pn_embed_carrier_name": ([S, S, S], P),
+        "aether_pn_embed_carrier_name_for_valid": ([S, S, S], P),
         # PhoneNumberOfflineGeocoder
-        "aether_pn_embed_geo_description": ([S, S], P),
-        "aether_pn_embed_geo_description_for_valid": ([S, S], P),
+        "aether_pn_embed_geo_description": ([S, S, S], P),
+        "aether_pn_embed_geo_description_for_valid": ([S, S, S], P),
     }
     for name, (argtypes, restype) in sigs.items():
         fn = getattr(lib, name)

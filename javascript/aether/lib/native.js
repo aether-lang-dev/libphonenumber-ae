@@ -1,15 +1,19 @@
 'use strict';
 /**
- * koffi bindings for the phonenumber engine (libphonenumber_ae.so), ABI v6.
+ * koffi bindings for the phonenumber engine (libphonenumber_ae.so), ABI v7.
  *
  * This module is the ONLY place in the JavaScript binding that knows about the
  * C ABI. Everything above it (`phonenumber.js`) is idiomatic JavaScript over
  * these symbols. No phone-number logic lives here or anywhere else in this
  * package — the engine is `core/phonenumber.ae`, shared by every binding.
  *
- * v6 adds the PhoneNumberOfflineGeocoder (2 symbols) on top of the v5
- * PhoneNumberToTimeZonesMapper (4 symbols) and PhoneNumberToCarrierMapper
- * (2 symbols) side-libraries and the v3 ShortNumberInfo ABI (now 66 symbols).
+ * v7 makes the carrier + geocoder mappers multi-language: the four
+ * PhoneNumberToCarrierMapper / PhoneNumberOfflineGeocoder symbols each gained a
+ * trailing `const char *lang` (ISO code; "en" is always available and the
+ * fallback). No new symbols — still 66. v6 added the PhoneNumberOfflineGeocoder
+ * (2 symbols) on top of the v5 PhoneNumberToTimeZonesMapper (4 symbols) and
+ * PhoneNumberToCarrierMapper (2 symbols) side-libraries and the v3
+ * ShortNumberInfo ABI.
  * Every signature is still scalar-only
  * (`const char *` and `int`), and every returned `char*` is caller-owned. There
  * are still no opaque handles: a parsed number and an AsYouType state are
@@ -220,13 +224,13 @@ function declare(lib) {
     tzAll: f('void *aether_pn_embed_tz_all(const char *region, const char *input)'),
     tzUnknown: f('void *aether_pn_embed_tz_unknown()'),
 
-    // ---- PhoneNumberToCarrierMapper (English carrier names) ----
-    carrierName: f('void *aether_pn_embed_carrier_name(const char *region, const char *input)'),
-    carrierNameForValid: f('void *aether_pn_embed_carrier_name_for_valid(const char *region, const char *input)'),
+    // ---- PhoneNumberToCarrierMapper (localized carrier names) ----
+    carrierName: f('void *aether_pn_embed_carrier_name(const char *region, const char *input, const char *lang)'),
+    carrierNameForValid: f('void *aether_pn_embed_carrier_name_for_valid(const char *region, const char *input, const char *lang)'),
 
-    // ---- PhoneNumberOfflineGeocoder (English geographic descriptions) ----
-    geoDescription: f('void *aether_pn_embed_geo_description(const char *region, const char *input)'),
-    geoDescriptionForValid: f('void *aether_pn_embed_geo_description_for_valid(const char *region, const char *input)'),
+    // ---- PhoneNumberOfflineGeocoder (localized geographic descriptions) ----
+    geoDescription: f('void *aether_pn_embed_geo_description(const char *region, const char *input, const char *lang)'),
+    geoDescriptionForValid: f('void *aether_pn_embed_geo_description_for_valid(const char *region, const char *input, const char *lang)'),
   };
 }
 

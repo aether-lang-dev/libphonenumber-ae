@@ -2,7 +2,7 @@
 
 -- |
 -- Module      : PhoneNumber.Native
--- Description : The 1:1 symbol table for the phonenumber C ABI (v6).
+-- Description : The 1:1 symbol table for the phonenumber C ABI (v7).
 --
 -- This module is the ONLY place in the Haskell binding that knows about the C
 -- ABI. Every symbol the engine exports appears here once, with the exact C
@@ -10,13 +10,14 @@
 -- lives here or anywhere else in this package — the engine is
 -- @core\/phonenumber.ae@, compiled to @libphonenumber_ae.so@.
 --
--- == ABI v6
+-- == ABI v7
 --
 -- The ABI is __full @PhoneNumberUtil@ parity plus the @ShortNumberInfo@,
 -- @PhoneNumberToTimeZonesMapper@, @PhoneNumberToCarrierMapper@ and
--- @PhoneNumberOfflineGeocoder@ side-libraries__ — 66 symbols, ABI version @6@
--- (the 2 @geo_*@ symbols are the v6 addition, on top of the 2 @carrier_*@ and 4
--- @tz_*@ from v5 and the 8 @short_*@ from v3).
+-- @PhoneNumberOfflineGeocoder@ side-libraries__ — 66 symbols, ABI version @7@.
+-- v7 changes the four @carrier_*@ \/ @geo_*@ symbols: each gained a trailing
+-- @const char* lang@ argument (an ISO code — "en" is always available and is
+-- the fallback). No new symbols.
 -- Signatures remain scalar-only (@const char*@ and @int@), so nothing here
 -- re-enters the Haskell RTS and every import is still @unsafe@. Two symbols are
 -- __stateful in disguise__: 'aether_pn_embed_parse' returns a caller-owned
@@ -120,11 +121,11 @@ module PhoneNumber.Native
   , aether_pn_embed_tz_all
   , aether_pn_embed_tz_unknown
 
-    -- * PhoneNumberToCarrierMapper (English carrier names)
+    -- * PhoneNumberToCarrierMapper (localized carrier names)
   , aether_pn_embed_carrier_name
   , aether_pn_embed_carrier_name_for_valid
 
-    -- * PhoneNumberOfflineGeocoder (English geographic descriptions)
+    -- * PhoneNumberOfflineGeocoder (localized geographic descriptions)
   , aether_pn_embed_geo_description
   , aether_pn_embed_geo_description_for_valid
 
@@ -350,21 +351,24 @@ foreign import ccall unsafe "aether_pn_embed_tz_all"
 foreign import ccall unsafe "aether_pn_embed_tz_unknown"
   aether_pn_embed_tz_unknown :: IO CString
 
--- PhoneNumberToCarrierMapper (English carrier names) -----------------------
+-- PhoneNumberToCarrierMapper (localized carrier names) ---------------------
+-- v7: a trailing @const char* lang@ ISO code ("en", "de", …). "en" is always
+-- available and is the fallback for any language not compiled into the engine.
 
 foreign import ccall unsafe "aether_pn_embed_carrier_name"
-  aether_pn_embed_carrier_name :: CString -> CString -> IO CString
+  aether_pn_embed_carrier_name :: CString -> CString -> CString -> IO CString
 
 foreign import ccall unsafe "aether_pn_embed_carrier_name_for_valid"
-  aether_pn_embed_carrier_name_for_valid :: CString -> CString -> IO CString
+  aether_pn_embed_carrier_name_for_valid :: CString -> CString -> CString -> IO CString
 
--- PhoneNumberOfflineGeocoder (English geographic descriptions) -------------
+-- PhoneNumberOfflineGeocoder (localized geographic descriptions) -----------
+-- v7: same trailing @const char* lang@ ISO code.
 
 foreign import ccall unsafe "aether_pn_embed_geo_description"
-  aether_pn_embed_geo_description :: CString -> CString -> IO CString
+  aether_pn_embed_geo_description :: CString -> CString -> CString -> IO CString
 
 foreign import ccall unsafe "aether_pn_embed_geo_description_for_valid"
-  aether_pn_embed_geo_description_for_valid :: CString -> CString -> IO CString
+  aether_pn_embed_geo_description_for_valid :: CString -> CString -> CString -> IO CString
 
 -- ---------------------------------------------------------------------------
 -- String marshalling

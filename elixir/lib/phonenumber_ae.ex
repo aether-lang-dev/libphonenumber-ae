@@ -1,6 +1,6 @@
 defmodule PhonenumberAe do
   @moduledoc """
-  Validate, parse and format international phone numbers (ABI v6).
+  Validate, parse and format international phone numbers (ABI v7).
 
   This is a thin Elixir surface over the monorepo's **canonical BEAM NIF**,
   which lives in `erlang/` and is compiled exactly once. There is no C source
@@ -369,31 +369,38 @@ defmodule PhonenumberAe do
 
   # ---- carrier (PhoneNumberToCarrierMapper) ----
 
-  @doc ~S'The carrier name for a number (English), or "" if none is known.'
-  @spec carrier_name_for_number(iodata(), iodata()) :: binary()
-  def carrier_name_for_number(region, input),
-    do: :phonenumber_ae_nif.carrier_name(region, input)
+  @doc ~S'''
+  The carrier name for a number, or "" if none is known. `lang` defaults to
+  "en"; a language not compiled into the engine falls back to English.
+  '''
+  @spec carrier_name_for_number(iodata(), iodata(), iodata()) :: binary()
+  def carrier_name_for_number(region, input, lang \\ "en"),
+    do: :phonenumber_ae_nif.carrier_name(region, input, lang)
 
-  @doc ~S'The carrier name, but only when the number is valid; else "".'
-  @spec carrier_name_for_valid_number(iodata(), iodata()) :: binary()
-  def carrier_name_for_valid_number(region, input),
-    do: :phonenumber_ae_nif.carrier_name_for_valid(region, input)
+  @doc ~S'The carrier name, but only when the number is valid; else "". `lang` defaults to "en".'
+  @spec carrier_name_for_valid_number(iodata(), iodata(), iodata()) :: binary()
+  def carrier_name_for_valid_number(region, input, lang \\ "en"),
+    do: :phonenumber_ae_nif.carrier_name_for_valid(region, input, lang)
 
   # ---- geocoder (PhoneNumberOfflineGeocoder) ----
 
-  @doc ~S'A geographic description for a number (English), or "" if none is known.'
-  @spec geo_description_for_number(iodata(), iodata()) :: binary()
-  def geo_description_for_number(region, input),
-    do: :phonenumber_ae_nif.geo_description(region, input)
+  @doc ~S'''
+  A geographic description for a number, or "" if none is known. `lang`
+  defaults to "en"; a language not compiled into the engine falls back to
+  English.
+  '''
+  @spec geo_description_for_number(iodata(), iodata(), iodata()) :: binary()
+  def geo_description_for_number(region, input, lang \\ "en"),
+    do: :phonenumber_ae_nif.geo_description(region, input, lang)
 
-  @doc ~S'A geographic description, but only when the number is valid; else "".'
-  @spec geo_description_for_valid_number(iodata(), iodata()) :: binary()
-  def geo_description_for_valid_number(region, input),
-    do: :phonenumber_ae_nif.geo_description_for_valid(region, input)
+  @doc ~S'A geographic description, but only when the number is valid; else "". `lang` defaults to "en".'
+  @spec geo_description_for_valid_number(iodata(), iodata(), iodata()) :: binary()
+  def geo_description_for_valid_number(region, input, lang \\ "en"),
+    do: :phonenumber_ae_nif.geo_description_for_valid(region, input, lang)
 
   # ---- introspection ----
 
-  @doc "The engine's ABI revision (6)."
+  @doc "The engine's ABI revision (7)."
   @spec abi_version() :: non_neg_integer()
   defdelegate abi_version(), to: :phonenumber_ae_nif
 

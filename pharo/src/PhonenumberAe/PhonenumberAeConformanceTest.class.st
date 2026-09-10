@@ -272,7 +272,7 @@ PhonenumberAeConformanceTest >> test33MatcherRaw [
 { #category : 'tests' }
 PhonenumberAeConformanceTest >> test34AbiVersion [
 
-	self assert: PhonenumberAe abiVersion equals: 6
+	self assert: PhonenumberAe abiVersion equals: 7
 ]
 
 { #category : 'tests - short numbers' }

@@ -60,7 +60,7 @@ PhonenumberAe.number_type("US", "2015550123")          # => :fixed_line
 PhonenumberAe.format("US", "2015550123", :national)    # => "(201) 555-0123"
 PhonenumberAe.format_e164("US", "2015550123")          # => "+12015550123"
 PhonenumberAe.regions()                                # => ["AC", "AD", ...]
-PhonenumberAe.abi_version()                            # => 6
+PhonenumberAe.abi_version()                            # => 7
 ```
 
 ### Parsing
@@ -117,22 +117,24 @@ PhonenumberAe.short_example_number("US")          # => "112"
 
 ### Time zones, carrier and geocoder
 
-The engine also maps a number to its IANA time zones, its (English) carrier, and
-an (English) geographic description. All take a region plus the raw input,
-exactly like the calls above:
+The engine also maps a number to its IANA time zones, its carrier, and a
+geographic description. All take a region plus the raw input, exactly like the
+calls above; carrier and geocoder also take an optional trailing `lang` (an ISO
+code, default `"en"`):
 
 ```elixir
 PhonenumberAe.time_zones_for_number("US", "2015550123")   # => ["America/New_York"]
 PhonenumberAe.time_zones_for_number("GB", "2070313000")   # => ["Europe/London"]
 PhonenumberAe.unknown_time_zone()                         # => "Etc/Unknown"
 PhonenumberAe.carrier_name_for_number("GB", "7106000000") # => "O2"
+PhonenumberAe.carrier_name_for_number("GB", "7106000000", "en") # => "O2"
 PhonenumberAe.geo_description_for_number("US", "6502530000") # => "Mountain View, CA"
 ```
 
 `time_zones_for_number/2` always returns a non-empty list — a number the engine
 knows no zone for comes back as `["Etc/Unknown"]`, not `[]`.
 
-### The surface (v6 — full PhoneNumberUtil parity + ShortNumberInfo + TimeZones + Carrier + Geocoder)
+### The surface (v7 — full PhoneNumberUtil parity + ShortNumberInfo + TimeZones + Carrier + Geocoder)
 
 - **Metadata**: `country_code/1`, `example_number/1`,
   `example_number_for_type/2`, `invalid_example_number/1`, `possible_lengths/1`,
@@ -161,14 +163,17 @@ knows no zone for comes back as `["Etc/Unknown"]`, not `[]`.
   for the raw int), `short_example_number/1`.
 - **Time zones**: `time_zones_for_number/2` (a non-empty list of IANA zone
   ids), `time_zone_count/2`, `unknown_time_zone/0` (`"Etc/Unknown"`).
-- **Carrier**: `carrier_name_for_number/2`, `carrier_name_for_valid_number/2`
-  (English name, or `""`).
-- **Geocoder**: `geo_description_for_number/2`,
-  `geo_description_for_valid_number/2` (English geographic description, or `""`).
-- `abi_version/0` (returns `6`).
+- **Carrier**: `carrier_name_for_number/2,3`, `carrier_name_for_valid_number/2,3`
+  (name, or `""`; an optional trailing `lang` ISO code, default `"en"`).
+- **Geocoder**: `geo_description_for_number/2,3`,
+  `geo_description_for_valid_number/2,3` (geographic description, or `""`; an
+  optional trailing `lang` ISO code, default `"en"`).
+- `abi_version/0` (returns `7`).
 
-> **v6 note.** The geocoder calls (`geo_description_for_number/2`, …) are new in
-> v6; the time-zone and carrier calls arrived in v5; ShortNumberInfo in v3.
+> **v7 note.** The carrier and geocoder calls gained an optional trailing `lang`
+> argument (an ISO code, default `"en"`; a language not compiled into the engine
+> falls back to English). The geocoder calls arrived in v6; the time-zone and
+> carrier calls in v5; ShortNumberInfo in v3.
 > The v2 format-style selectors are unchanged: `:e164` is `0` (it was `2` in
 > v1). Callers that use the style atoms never see the number.
 
@@ -181,6 +186,6 @@ is a direct FFI crossing.
 ## Conformance
 
 `elixir/.tests.ae` runs the 45-check binding conformance suite
-(`docs/conformance.md`, v6) as ExUnit. It samples each *kind* of value crossing
+(`docs/conformance.md`, v7) as ExUnit. It samples each *kind* of value crossing
 the FFI — it proves the marshalling, not the library. The node SKIPs (green)
 when Elixir/Mix or the shared NIF is absent.

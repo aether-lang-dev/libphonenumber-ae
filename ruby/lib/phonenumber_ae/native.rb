@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Fiddle bindings for the phonenumber engine (libphonenumber_ae.so), ABI v6.
+# Fiddle bindings for the phonenumber engine (libphonenumber_ae.so), ABI v7.
 #
 # This file is the ONLY place in the Ruby binding that knows about the C ABI.
 # Everything above it (`phone_number.rb`) is idiomatic Ruby over these symbols.
@@ -160,11 +160,11 @@ module PhoneNumberAe
       "aether_pn_embed_tz_all" => [[P, P], P],
       "aether_pn_embed_tz_unknown" => [[], P],
       # PhoneNumberToCarrierMapper
-      "aether_pn_embed_carrier_name" => [[P, P], P],
-      "aether_pn_embed_carrier_name_for_valid" => [[P, P], P],
+      "aether_pn_embed_carrier_name" => [[P, P, P], P],
+      "aether_pn_embed_carrier_name_for_valid" => [[P, P, P], P],
       # PhoneNumberOfflineGeocoder
-      "aether_pn_embed_geo_description" => [[P, P], P],
-      "aether_pn_embed_geo_description_for_valid" => [[P, P], P]
+      "aether_pn_embed_geo_description" => [[P, P, P], P],
+      "aether_pn_embed_geo_description_for_valid" => [[P, P, P], P]
     }.freeze
 
     # A loaded engine: the Fiddle::Handle plus a memoized Fiddle::Function per

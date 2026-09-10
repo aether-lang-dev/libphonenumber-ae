@@ -1,4 +1,4 @@
-%%% phonenumber_ae_nif — the raw NIF surface (ABI v6).
+%%% phonenumber_ae_nif — the raw NIF surface (ABI v7).
 %%%
 %%% This module exists only to load c_src/phonenumber_ae_nif.c and to give each
 %%% native function a stub. Nothing here is meant to be called directly;
@@ -44,9 +44,9 @@
          %% PhoneNumberToTimeZonesMapper
          tz_count/2, tz_at/3, tz_all/2, tz_unknown/0,
          %% PhoneNumberToCarrierMapper
-         carrier_name/2, carrier_name_for_valid/2,
+         carrier_name/3, carrier_name_for_valid/3,
          %% PhoneNumberOfflineGeocoder
-         geo_description/2, geo_description_for_valid/2,
+         geo_description/3, geo_description_for_valid/3,
          %% introspection
          abi_version/0]).
 
@@ -290,19 +290,19 @@ tz_unknown() -> not_loaded(?LINE).
 
 %% ---- PhoneNumberToCarrierMapper ----
 
--spec carrier_name(iodata(), iodata()) -> binary().
-carrier_name(_Region, _Input) -> not_loaded(?LINE).
+-spec carrier_name(iodata(), iodata(), iodata()) -> binary().
+carrier_name(_Region, _Input, _Lang) -> not_loaded(?LINE).
 
--spec carrier_name_for_valid(iodata(), iodata()) -> binary().
-carrier_name_for_valid(_Region, _Input) -> not_loaded(?LINE).
+-spec carrier_name_for_valid(iodata(), iodata(), iodata()) -> binary().
+carrier_name_for_valid(_Region, _Input, _Lang) -> not_loaded(?LINE).
 
 %% ---- PhoneNumberOfflineGeocoder ----
 
--spec geo_description(iodata(), iodata()) -> binary().
-geo_description(_Region, _Input) -> not_loaded(?LINE).
+-spec geo_description(iodata(), iodata(), iodata()) -> binary().
+geo_description(_Region, _Input, _Lang) -> not_loaded(?LINE).
 
--spec geo_description_for_valid(iodata(), iodata()) -> binary().
-geo_description_for_valid(_Region, _Input) -> not_loaded(?LINE).
+-spec geo_description_for_valid(iodata(), iodata(), iodata()) -> binary().
+geo_description_for_valid(_Region, _Input, _Lang) -> not_loaded(?LINE).
 
 %% ---- introspection ----
 

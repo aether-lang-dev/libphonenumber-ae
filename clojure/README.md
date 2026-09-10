@@ -35,7 +35,7 @@ classes.
 
 (pn/number-type "US" "2015550123")           ;; => :fixed-line
 (pn/regions)                                  ;; => ["AC" "AD" ...]
-(pn/abi-version)                              ;; => 6
+(pn/abi-version)                              ;; => 7
 
 ;; short / emergency numbers (ShortNumberInfo)
 (pn/emergency-number? "US" "911")            ;; => true
@@ -48,12 +48,14 @@ classes.
 (pn/time-zones-for-number "GB" "2070313000") ;; => ["Europe/London"]
 (pn/unknown-time-zone)                        ;; => "Etc/Unknown"
 
-;; carrier names (PhoneNumberToCarrierMapper)
+;; carrier names (PhoneNumberToCarrierMapper) — lang defaults to "en"
 (pn/carrier-name-for-number "GB" "7106000000")       ;; => "O2"
+(pn/carrier-name-for-number "GB" "7106000000" "de")  ;; => localized to German
 (pn/carrier-name-for-valid-number "GB" "7106000000") ;; => "O2" (only if valid)
 
-;; geographic descriptions (PhoneNumberOfflineGeocoder)
+;; geographic descriptions (PhoneNumberOfflineGeocoder) — lang defaults to "en"
 (pn/geo-description-for-number "US" "6502530000")       ;; => "Mountain View, CA"
+(pn/geo-description-for-number "US" "6502530000" "de")  ;; => localized to German
 (pn/geo-description-for-valid-number "US" "6502530000") ;; => "Mountain View, CA" (only if valid)
 ```
 

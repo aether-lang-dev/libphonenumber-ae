@@ -106,11 +106,11 @@ int main(int argc, char **argv) {
     int   (*tz_count)(const char*,const char*)                   = sym("aether_pn_embed_tz_count");
     char* (*tz_all)(const char*,const char*)                     = sym("aether_pn_embed_tz_all");
     char* (*tz_unknown)(void)                                    = sym("aether_pn_embed_tz_unknown");
-    char* (*carrier_name)(const char*,const char*)               = sym("aether_pn_embed_carrier_name");
-    char* (*geo_desc)(const char*,const char*)                   = sym("aether_pn_embed_geo_description");
+    char* (*carrier_name)(const char*,const char*,const char*)               = sym("aether_pn_embed_carrier_name");
+    char* (*geo_desc)(const char*,const char*,const char*)                   = sym("aether_pn_embed_geo_description");
 
     /* ABI version */
-    ck_i("abi_version", abi_version(), 6);
+    ck_i("abi_version", abi_version(), 7);
 
     /* metadata plumbing */
     ck_s("US cc", country_code("US"), "1");
@@ -214,12 +214,12 @@ int main(int argc, char **argv) {
 
 
     /* PhoneNumberToCarrierMapper */
-    ck_s("GB carrier", carrier_name("GB","7106000000"), "O2");
+    ck_s("GB carrier", carrier_name("GB","7106000000","en"), "O2");
 
 
     /* PhoneNumberOfflineGeocoder */
-    ck_s("US geocode", geo_desc("US","6502530000"), "Mountain View, CA");
-    ck_s("GB geocode", geo_desc("GB","2070313000"), "London");
+    ck_s("US geocode", geo_desc("US","6502530000","en"), "Mountain View, CA");
+    ck_s("GB geocode", geo_desc("GB","2070313000","en"), "London");
 
     dlclose(H);
     if (failures) { fprintf(stderr, "abi_smoke: %d FAILURE(S)\n", failures); return 1; }

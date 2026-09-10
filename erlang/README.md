@@ -71,7 +71,7 @@ fixed_line           = phonenumber_ae:number_type(<<"US">>, <<"2015550123">>),
 <<"(201) 555-0123">> = phonenumber_ae:format(<<"US">>, <<"2015550123">>, national),
 <<"+12015550123">>   = phonenumber_ae:format_e164(<<"US">>, <<"2015550123">>),
 Regions              = phonenumber_ae:regions(),   %% [<<"AC">>, <<"AD">>, ...]
-6                    = phonenumber_ae:abi_version().
+7                    = phonenumber_ae:abi_version().
 ```
 
 All string inputs accept `iodata` (a binary, a string, or an iolist); all
@@ -128,9 +128,10 @@ toll_free  = phonenumber_ae:short_expected_cost(<<"US">>, <<"911">>),
 
 ### Time zones, carrier and geocoder
 
-The engine also maps a number to its IANA time zones, its (English) carrier, and
-an (English) geographic description. All take a region plus the raw input,
-exactly like the calls above:
+The engine also maps a number to its IANA time zones, its carrier, and a
+geographic description. All take a region plus the raw input, exactly like the
+calls above; carrier and geocoder also take an optional trailing language (an
+ISO code, default `<<"en">>`):
 
 ```erlang
 [<<"America/New_York">>] =
@@ -140,13 +141,15 @@ exactly like the calls above:
 <<"Etc/Unknown">> = phonenumber_ae:unknown_time_zone(),
 <<"O2">>          = phonenumber_ae:carrier_name_for_number(<<"GB">>, <<"7106000000">>),
 <<"Mountain View, CA">> =
-    phonenumber_ae:geo_description_for_number(<<"US">>, <<"6502530000">>).
+    phonenumber_ae:geo_description_for_number(<<"US">>, <<"6502530000">>),
+%% carrier/geo take an optional trailing language (ISO code), default <<"en">>:
+<<"O2">>          = phonenumber_ae:carrier_name_for_number(<<"GB">>, <<"7106000000">>, <<"en">>).
 ```
 
 `time_zones_for_number/2` always returns a non-empty list — a number the engine
 knows no zone for comes back as `[<<"Etc/Unknown">>]`, not `[]`.
 
-### The surface (v6 — full PhoneNumberUtil parity + ShortNumberInfo + TimeZones + Carrier + Geocoder)
+### The surface (v7 — full PhoneNumberUtil parity + ShortNumberInfo + TimeZones + Carrier + Geocoder)
 
 - **Metadata**: `country_code/1`, `example_number/1`,
   `example_number_for_type/2`, `invalid_example_number/1`, `possible_lengths/1`,
@@ -181,15 +184,18 @@ knows no zone for comes back as `[<<"Etc/Unknown">>]`, not `[]`.
   the raw int), `short_example_number/1`.
 - **Time zones**: `time_zones_for_number/2` (a non-empty list of IANA zone
   ids), `time_zone_count/2`, `unknown_time_zone/0` (`<<"Etc/Unknown">>`).
-- **Carrier**: `carrier_name_for_number/2`, `carrier_name_for_valid_number/2`
-  (English name, or `<<>>`).
-- **Geocoder**: `geo_description_for_number/2`,
-  `geo_description_for_valid_number/2` (English geographic description, or
-  `<<>>`).
-- `abi_version/0` (returns `6`).
+- **Carrier**: `carrier_name_for_number/2,3`,
+  `carrier_name_for_valid_number/2,3` (name, or `<<>>`; an optional trailing
+  language ISO code, default `<<"en">>`).
+- **Geocoder**: `geo_description_for_number/2,3`,
+  `geo_description_for_valid_number/2,3` (geographic description, or `<<>>`; an
+  optional trailing language ISO code, default `<<"en">>`).
+- `abi_version/0` (returns `7`).
 
-> **v6 note.** The geocoder calls (`geo_description_for_number/2`, …) are new in
-> v6; the time-zone and carrier calls arrived in v5; ShortNumberInfo in v3.
+> **v7 note.** The carrier and geocoder calls gained an optional trailing
+> language argument (an ISO code, default `<<"en">>`; a language not compiled
+> into the engine falls back to English). The geocoder calls arrived in v6; the
+> time-zone and carrier calls in v5; ShortNumberInfo in v3.
 > The format-style selectors from v2 are unchanged: `e164` is `0` (it was `2` in
 > v1). Callers that use the style atoms never see the number; callers that
 > hard-coded the old integer must switch to the atoms.
@@ -205,7 +211,7 @@ strings (every `char*` the ABI returns is caller-owned).
 ## Conformance
 
 `erlang/.tests.ae` runs the 45-check binding conformance suite
-(`docs/conformance.md`, v6) as EUnit, against the very same compiled module
+(`docs/conformance.md`, v7) as EUnit, against the very same compiled module
 Elixir and Gleam load. It samples each *kind* of value crossing the FFI — it
 proves the marshalling, not the library. The suite SKIPs (green) when `erl`,
 `erl_nif.h`, or `eunit` is absent.

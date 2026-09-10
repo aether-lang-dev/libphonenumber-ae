@@ -52,7 +52,7 @@ PhonenumberAe format: '2015550123' region: 'US' style: #national.
 "-> '(201) 555-0123'"
 PhonenumberAe formatE164: '2015550123' region: 'US'.         "-> '+12015550123'"
 PhonenumberAe regions.                                        "-> an OrderedCollection: 'AC' 'AD' ..."
-PhonenumberAe abiVersion.                                     "-> 6"
+PhonenumberAe abiVersion.                                     "-> 7"
 ```
 
 ### Parsing
@@ -102,9 +102,10 @@ PhonenumberAe shortExampleNumber: 'US'.                "-> '112'"
 
 ### Time zones, carrier and geocoder
 
-The engine also maps a number to its IANA time zones, its (English) carrier, and
-an (English) geographic description. All take a region plus the raw input,
-exactly like the calls above:
+The engine also maps a number to its IANA time zones, its carrier, and a
+geographic description. All take a region plus the raw input, exactly like the
+calls above; carrier and geocoder also take an optional trailing language (an
+ISO code, default `'en'`):
 
 ```smalltalk
 PhonenumberAe timeZonesForNumber: '2015550123' region: 'US'.
@@ -113,6 +114,8 @@ PhonenumberAe timeZonesForNumber: '2070313000' region: 'GB'.
 "-> an OrderedCollection: 'Europe/London'"
 PhonenumberAe unknownTimeZone.                            "-> 'Etc/Unknown'"
 PhonenumberAe carrierNameForNumber: '7106000000' region: 'GB'.  "-> 'O2'"
+"carrier/geo also take an optional trailing language (ISO code, default 'en'):"
+PhonenumberAe carrierNameForNumber: '7106000000' region: 'GB' lang: 'en'.  "-> 'O2'"
 PhonenumberAe geoDescriptionForNumber: '6502530000' region: 'US'.
 "-> 'Mountain View, CA'"
 ```
@@ -121,7 +124,7 @@ PhonenumberAe geoDescriptionForNumber: '6502530000' region: 'US'.
 the engine knows no zone for comes back as a one-element collection of
 `'Etc/Unknown'`, never empty.
 
-### The surface (v6 — full PhoneNumberUtil parity + ShortNumberInfo + TimeZones + Carrier + Geocoder)
+### The surface (v7 — full PhoneNumberUtil parity + ShortNumberInfo + TimeZones + Carrier + Geocoder)
 
 - **Metadata**: `countryCode:`, `exampleNumber:`, `exampleNumberForType:region:`,
   `invalidExampleNumber:`, `possibleLengths:`, `regionCodeForCountryCode:`,
@@ -155,14 +158,20 @@ the engine knows no zone for comes back as a one-element collection of
   of IANA zone ids), `timeZoneCount:region:`, `unknownTimeZone`
   (`'Etc/Unknown'`).
 - **Carrier**: `carrierNameForNumber:region:`,
-  `carrierNameForValidNumber:region:` (English name, or `''`).
+  `carrierNameForValidNumber:region:` (name, or `''`), plus
+  `carrierNameForNumber:region:lang:`,
+  `carrierNameForValidNumber:region:lang:` (an ISO code).
 - **Geocoder**: `geoDescriptionForNumber:region:`,
-  `geoDescriptionForValidNumber:region:` (English geographic description, or
-  `''`).
-- `abiVersion` (returns `6`).
+  `geoDescriptionForValidNumber:region:` (geographic description, or `''`), plus
+  `geoDescriptionForNumber:region:lang:`,
+  `geoDescriptionForValidNumber:region:lang:` (an ISO code).
+- `abiVersion` (returns `7`).
 
-> **v6 note.** The geocoder calls (`geoDescriptionForNumber:region:`, …) are new
-> in v6; the time-zone and carrier calls arrived in v5; ShortNumberInfo in v3.
+> **v7 note.** The carrier and geocoder calls gained a language argument (an ISO
+> code; a language not compiled into the engine falls back to English).
+> Smalltalk has no default arguments, so this is a separate `…lang:` selector
+> beside each English form. The geocoder calls arrived in v6; the time-zone and
+> carrier calls in v5; ShortNumberInfo in v3.
 > The v2 format-style selectors are unchanged: `#e164` is `0` (it was `2` in
 > v1). Callers that use the style symbols never see the number.
 
@@ -195,7 +204,7 @@ Matching every other binding in the monorepo (see `PhonenumberAeLibrary`):
 `pharo/run-tests.sh` loads the Tonel package into a **throwaway copy** of a
 Pharo image (loading code mutates an image permanently, so the developer's own
 image is never touched) and runs the 45-check binding conformance suite
-(`docs/conformance.md`, v6) headless. `pharo/.tests.ae` drives it, threading the
+(`docs/conformance.md`, v7) headless. `pharo/.tests.ae` drives it, threading the
 engine `.so` through `$LIBPHONENUMBER_AE_LIB`.
 
 Exit codes: `0` pass, `1` fail, `77` = no Pharo VM (a clean **SKIP** — nothing

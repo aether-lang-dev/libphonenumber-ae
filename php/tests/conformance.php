@@ -1,7 +1,7 @@
 <?php
 
 /**
- * The 45-check binding conformance suite (docs/conformance.md, v6).
+ * The 45-check binding conformance suite (docs/conformance.md, v7).
  *
  * Proves the PHP binding marshals every value shape across the FFI. It is NOT a
  * phone-number test suite — the behavioural cases live in the engine's own
@@ -116,7 +116,7 @@ function atLeast(int $got, int $min, string $what): void
     }
 }
 
-echo "=== phonenumber_ae PHP binding conformance (v6) ===\n";
+echo "=== phonenumber_ae PHP binding conformance (v7) ===\n";
 if (!extension_loaded('ffi')) {
     fwrite(STDERR, "php: ext-ffi is not loaded\n");
     exit(2);
@@ -266,7 +266,7 @@ check('33 matcher raw', function (): void {
 });
 
 check('34 abi version', function (): void {
-    eqInt(PhoneNumber::abiVersion(), 6, 'abi version');
+    eqInt(PhoneNumber::abiVersion(), 7, 'abi version');
 });
 
 // ---- ShortNumberInfo (v3) ----

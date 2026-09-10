@@ -3,7 +3,7 @@
 %%% A thin Erlang binding over the monorepo's ONE shared native engine
 %%% (core/native/libphonenumber_ae.so, compiled from Google libphonenumber's
 %%% own metadata as pure Aether). No phone-number logic lives here: every
-%%% function marshals to an `aether_pn_embed_*` call (ABI v6, docs/abi.md)
+%%% function marshals to an `aether_pn_embed_*` call (ABI v7, docs/abi.md)
 %%% through phonenumber_ae_nif.
 %%%
 %%%     <<"1">>          = phonenumber_ae:country_code(<<"US">>),
@@ -59,9 +59,11 @@
          %% PhoneNumberToTimeZonesMapper
          time_zones_for_number/2, time_zone_count/2, unknown_time_zone/0,
          %% PhoneNumberToCarrierMapper
-         carrier_name_for_number/2, carrier_name_for_valid_number/2,
+         carrier_name_for_number/2, carrier_name_for_number/3,
+         carrier_name_for_valid_number/2, carrier_name_for_valid_number/3,
          %% PhoneNumberOfflineGeocoder
-         geo_description_for_number/2, geo_description_for_valid_number/2,
+         geo_description_for_number/2, geo_description_for_number/3,
+         geo_description_for_valid_number/2, geo_description_for_valid_number/3,
          %% introspection
          abi_version/0]).
 
@@ -475,35 +477,56 @@ unknown_time_zone() -> phonenumber_ae_nif:tz_unknown().
 %% PhoneNumberToCarrierMapper (English carrier names)
 %%------------------------------------------------------------------
 
-%% The carrier name for a number (English), or <<>> if none is known.
+%% The carrier name for a number, or <<>> if none is known. Lang defaults to
+%% <<"en">>; any language not compiled into the engine falls back to English.
 -spec carrier_name_for_number(iodata(), iodata()) -> binary().
 carrier_name_for_number(Region, Input) ->
-    phonenumber_ae_nif:carrier_name(Region, Input).
+    carrier_name_for_number(Region, Input, <<"en">>).
 
-%% The carrier name, but only when the number is valid; else <<>>.
+-spec carrier_name_for_number(iodata(), iodata(), iodata()) -> binary().
+carrier_name_for_number(Region, Input, Lang) ->
+    phonenumber_ae_nif:carrier_name(Region, Input, Lang).
+
+%% The carrier name, but only when the number is valid; else <<>>. Lang
+%% defaults to <<"en">>.
 -spec carrier_name_for_valid_number(iodata(), iodata()) -> binary().
 carrier_name_for_valid_number(Region, Input) ->
-    phonenumber_ae_nif:carrier_name_for_valid(Region, Input).
+    carrier_name_for_valid_number(Region, Input, <<"en">>).
+
+-spec carrier_name_for_valid_number(iodata(), iodata(), iodata()) -> binary().
+carrier_name_for_valid_number(Region, Input, Lang) ->
+    phonenumber_ae_nif:carrier_name_for_valid(Region, Input, Lang).
 
 %%------------------------------------------------------------------
 %% PhoneNumberOfflineGeocoder (English geographic descriptions)
 %%------------------------------------------------------------------
 
-%% A geographic description for a number (English), or <<>> if none is known.
+%% A geographic description for a number, or <<>> if none is known. Lang
+%% defaults to <<"en">>; any language not compiled into the engine falls back
+%% to English.
 -spec geo_description_for_number(iodata(), iodata()) -> binary().
 geo_description_for_number(Region, Input) ->
-    phonenumber_ae_nif:geo_description(Region, Input).
+    geo_description_for_number(Region, Input, <<"en">>).
+
+-spec geo_description_for_number(iodata(), iodata(), iodata()) -> binary().
+geo_description_for_number(Region, Input, Lang) ->
+    phonenumber_ae_nif:geo_description(Region, Input, Lang).
 
 %% A geographic description, but only when the number is valid; else <<>>.
+%% Lang defaults to <<"en">>.
 -spec geo_description_for_valid_number(iodata(), iodata()) -> binary().
 geo_description_for_valid_number(Region, Input) ->
-    phonenumber_ae_nif:geo_description_for_valid(Region, Input).
+    geo_description_for_valid_number(Region, Input, <<"en">>).
+
+-spec geo_description_for_valid_number(iodata(), iodata(), iodata()) -> binary().
+geo_description_for_valid_number(Region, Input, Lang) ->
+    phonenumber_ae_nif:geo_description_for_valid(Region, Input, Lang).
 
 %%------------------------------------------------------------------
 %% Introspection
 %%------------------------------------------------------------------
 
-%% The engine's ABI revision (6).
+%% The engine's ABI revision (7).
 -spec abi_version() -> non_neg_integer().
 abi_version() -> phonenumber_ae_nif:abi_version().
 

@@ -13,7 +13,7 @@
 // ("<cc><national>", no '+'); the ABI layer parses a raw (region, input) to that.
 
 import std.string
-import core.geocoder_metadata
+import core.geocoder_blobs
 
 exports(description_for_e164)
 
@@ -28,11 +28,11 @@ fn digits(s: string) -> string {
 }
 
 // The geographic description for the longest prefix of the E.164 digits, or "".
-description_for_e164(e164: string) -> string {
+description_for_e164(e164: string, lang: string) -> string {
     d = digits(e164)
     dlen = string.length(d)
     if dlen == 0 { return "" }
-    b = geocoder_metadata.blob()
+    b = geocoder_blobs.blob_for_lang(lang)
     n = string.length(b)
     us = 31   // 0x1F field separator
     nl = 10   // '\n' row separator

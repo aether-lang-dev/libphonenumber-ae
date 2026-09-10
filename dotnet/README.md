@@ -6,9 +6,10 @@ This package is a **thin P/Invoke binding** over the monorepo's one shared
 native engine — `core/native/libphonenumber_ae.so`, compiled from pure Aether
 over Google libphonenumber's own metadata. It contains **no phone-number
 logic**: every member marshals to an `aether_pn_embed_*` call. One engine, one
-set of behaviours, N language surfaces. This is the **v6 ABI** (66 symbols, full
+set of behaviours, N language surfaces. This is the **v7 ABI** (66 symbols, full
 `PhoneNumberUtil` parity plus the `ShortNumberInfo`, `TimeZones`, `Carrier` and
-`Geocoder` side-libraries).
+`Geocoder` side-libraries; the Carrier and Geocoder calls take a per-call `lang`
+ISO code, default "en").
 
 | File | Role |
 |---|---|
@@ -82,13 +83,15 @@ PhoneNumber.TimeZonesForNumber("GB", "2070313000");         // ["Europe/London"]
 PhoneNumber.TimeZoneCount("US", "2015550123");              // 1
 PhoneNumber.UnknownTimeZone();                              // "Etc/Unknown"
 
-// carrier (English names; "" when none is known)
-PhoneNumber.CarrierNameForNumber("GB", "7106000000");       // "O2"
-PhoneNumber.CarrierNameForValidNumber("GB", "7106000000");  // "O2" (only if valid)
+// carrier (localized; optional lang defaults to "en"; "" when none is known)
+PhoneNumber.CarrierNameForNumber("GB", "7106000000");        // "O2"
+PhoneNumber.CarrierNameForNumber("GB", "7106000000", "de");  // localized (falls back to "en")
+PhoneNumber.CarrierNameForValidNumber("GB", "7106000000");   // "O2" (only if valid)
 
-// geocoder (English descriptions; "" when none is known)
-PhoneNumber.GeoDescriptionForNumber("US", "6502530000");       // "Mountain View, CA"
-PhoneNumber.GeoDescriptionForValidNumber("US", "6502530000");  // "Mountain View, CA" (only if valid)
+// geocoder (localized; optional lang defaults to "en"; "" when none is known)
+PhoneNumber.GeoDescriptionForNumber("US", "6502530000");        // "Mountain View, CA"
+PhoneNumber.GeoDescriptionForNumber("US", "6502530000", "de");  // localized (falls back to "en")
+PhoneNumber.GeoDescriptionForValidNumber("US", "6502530000");   // "Mountain View, CA" (only if valid)
 ```
 
 The surface:
@@ -153,15 +156,15 @@ PhoneNumber.TimeZonesForNumber(region, input)   // IReadOnlyList<string>; ["Etc/
 PhoneNumber.TimeZoneCount(region, input)        // int; 0 == only the unknown zone
 PhoneNumber.UnknownTimeZone()                   // "Etc/Unknown"
 
-// carrier (PhoneNumberToCarrierMapper, English names)
-PhoneNumber.CarrierNameForNumber(region, input)       // string; "" if none known
-PhoneNumber.CarrierNameForValidNumber(region, input)  // string; "" unless the number is valid
+// carrier (PhoneNumberToCarrierMapper, localized; lang default "en")
+PhoneNumber.CarrierNameForNumber(region, input, lang = "en")       // string; "" if none known
+PhoneNumber.CarrierNameForValidNumber(region, input, lang = "en")  // string; "" unless the number is valid
 
-// geocoder (PhoneNumberOfflineGeocoder, English descriptions)
-PhoneNumber.GeoDescriptionForNumber(region, input)       // string; "" if none known
-PhoneNumber.GeoDescriptionForValidNumber(region, input)  // string; "" unless the number is valid
+// geocoder (PhoneNumberOfflineGeocoder, localized; lang default "en")
+PhoneNumber.GeoDescriptionForNumber(region, input, lang = "en")       // string; "" if none known
+PhoneNumber.GeoDescriptionForValidNumber(region, input, lang = "en")  // string; "" unless the number is valid
 
-PhoneNumber.AbiVersion                          // 5
+PhoneNumber.AbiVersion                          // 7
 ```
 
 ### Constants

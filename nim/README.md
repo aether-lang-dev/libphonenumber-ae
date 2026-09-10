@@ -6,11 +6,12 @@ This package is a **thin `importc` binding** over the monorepo's one shared
 native engine — `core/native/libphonenumber_ae.so`, compiled from pure Aether
 over Google libphonenumber's own metadata. It contains **no phone-number
 logic**: every proc marshals to an `aether_pn_embed_*` call across the flat C
-ABI (v6, full `PhoneNumberUtil` parity plus the ShortNumberInfo, TimeZones,
-Carrier and Geocoder surfaces) described in `core/embed.ae`. One engine, one set
+ABI (v7, full `PhoneNumberUtil` parity plus the ShortNumberInfo, TimeZones,
+Carrier and Geocoder surfaces; the Carrier and Geocoder calls take a per-call
+`lang` ISO code) described in `core/embed.ae`. One engine, one set
 of behaviours, N language surfaces.
 
-The v6 ABI has **no opaque handle**: a parsed number and an AsYouType state are
+The v7 ABI has **no opaque handle**: a parsed number and an AsYouType state are
 themselves caller-owned *strings* — you get one back, pass it to accessor calls,
 and free it like any other returned string.
 
@@ -103,7 +104,9 @@ echo shortExampleNumber("US")                # "112"
 All take a raw `(region, input)` and let the engine parse to E.164 itself.
 `timeZonesForNumber` returns a `seq[string]` of IANA ids — a number with no
 known zones comes back as `@["Etc/Unknown"]`, never empty. Carrier names and
-geographic descriptions are English only, and `""` when nothing is known.
+geographic descriptions take an optional `lang` ISO code (default `"en"`, always
+available and the fallback for any language not compiled in), and are `""` when
+nothing is known.
 
 ```nim
 echo timeZonesForNumber("US", "2015550123")  # @["America/New_York"]
@@ -111,11 +114,13 @@ echo timeZonesForNumber("GB", "2070313000")  # @["Europe/London"]
 echo timeZoneCount("US", "2015550123")       # 1
 echo unknownTimeZone()                        # "Etc/Unknown"
 
-echo carrierNameForNumber("GB", "7106000000")        # "O2"
-echo carrierNameForValidNumber("GB", "7106000000")   # "O2" (only if valid)
+echo carrierNameForNumber("GB", "7106000000")            # "O2"
+echo carrierNameForNumber("GB", "7106000000", "en")      # "O2" (explicit lang)
+echo carrierNameForValidNumber("GB", "7106000000")       # "O2" (only if valid)
 
-echo geoDescriptionForNumber("US", "6502530000")        # "Mountain View, CA"
-echo geoDescriptionForValidNumber("US", "6502530000")   # "Mountain View, CA" (only if valid)
+echo geoDescriptionForNumber("US", "6502530000")         # "Mountain View, CA"
+echo geoDescriptionForNumber("US", "6502530000", "de")   # localized (falls back to "en")
+echo geoDescriptionForValidNumber("US", "6502530000")    # "Mountain View, CA" (only if valid)
 ```
 
 ### The surface
@@ -180,13 +185,13 @@ timeZonesForNumber(region, input): seq[string]   # @["Etc/Unknown"] if none
 timeZoneCount(region, input): int                # 0 == only the unknown zone
 unknownTimeZone(): string                         # "Etc/Unknown"
 
-# carrier (PhoneNumberToCarrierMapper, English names)
-carrierNameForNumber(region, input): string       # "" if none known
-carrierNameForValidNumber(region, input): string  # "" unless the number is valid
+# carrier (PhoneNumberToCarrierMapper, localized; lang default "en")
+carrierNameForNumber(region, input, lang = "en"): string       # "" if none known
+carrierNameForValidNumber(region, input, lang = "en"): string  # "" unless the number is valid
 
-# geocoder (PhoneNumberOfflineGeocoder, English descriptions)
-geoDescriptionForNumber(region, input): string       # "" if none known
-geoDescriptionForValidNumber(region, input): string  # "" unless the number is valid
+# geocoder (PhoneNumberOfflineGeocoder, localized; lang default "en")
+geoDescriptionForNumber(region, input, lang = "en"): string       # "" if none known
+geoDescriptionForValidNumber(region, input, lang = "en"): string  # "" unless the number is valid
 
 # AsYouTypeFormatter, findNumbers (above)
 ```
@@ -229,7 +234,7 @@ explicitly. Do not "simplify" one of them to `int`.
 
 ## Conformance
 
-The 45-check conformance suite (`docs/conformance.md`, v6) lives in
+The 45-check conformance suite (`docs/conformance.md`, v7) lives in
 `tests/tconformance.nim`, alongside a few surface extras (the format-style
 aliases, the raw-int overload, out-of-range `regionAt`, AsYouType clear, and a
 several-thousand round-trip loop over `takeString`).

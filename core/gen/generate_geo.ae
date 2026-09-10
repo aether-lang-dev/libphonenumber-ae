@@ -18,14 +18,21 @@
 import std.string
 import std.list
 import std.file
+import std.os
 
 main() {
-    println("// core.geocoder_metadata — GENERATED, do not edit.")
+    // Language argument (ISO code matching resources/geocoding/<lang>/), default en.
+    // Usage (arg needs a compiled run; ae run does not forward argv):
+    //   ae build core/gen/generate_geo.ae -o /tmp/gg && /tmp/gg de > core/geocoder_metadata_de.ae
+    lang = "en"
+    if os.args_count() > 1 { lang = os.args_get(1) }
+
+    println("// core.geocoder_metadata_${lang} — GENERATED, do not edit.")
     println("//")
     println("// Produced by core/gen/generate_geo.ae from")
-    println("// resources/geocoding/en/<cc>.txt (Apache-2.0, (c) The Libphonenumber Authors).")
+    println("// resources/geocoding/${lang}/<cc>.txt (Apache-2.0, (c) The Libphonenumber Authors).")
     println("//")
-    println("// One newline-joined blob of \"cc<0x1F>prefix<0x1F>desc\" rows (English).")
+    println("// One newline-joined blob of \"cc<0x1F>prefix<0x1F>desc\" rows (${lang}).")
     println("// Longest-prefix match; see core/geocoder.ae.")
     println("")
     println("import std.string")
@@ -35,7 +42,7 @@ main() {
     print("blob() -> string { return \"")
 
     for (cc = 1; cc <= 999; cc++) {
-        path = "resources/geocoding/en/${string.from_int(cc)}.txt"
+        path = "resources/geocoding/${lang}/${string.from_int(cc)}.txt"
         text, ferr = file.read(path)
         if ferr != "" { continue }
         emit_blob_lines(text, string.from_int(cc))

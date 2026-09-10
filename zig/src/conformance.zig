@@ -1,4 +1,4 @@
-//! The 45-check binding conformance suite (docs/conformance.md, v6).
+//! The 45-check binding conformance suite (docs/conformance.md, v7).
 //!
 //! Proves the Zig binding marshals every value shape across the FFI. It is NOT
 //! a phone-number test suite — the behavioural cases live in the engine's own
@@ -25,7 +25,7 @@ fn expectStr(want: []const u8, got: anyerror![]u8) !void {
 }
 
 // =========================================================================
-// The forty-five (docs/conformance.md, v6)
+// The forty-five (docs/conformance.md, v7)
 // =========================================================================
 
 test "01 country_code US == 1" {
@@ -182,8 +182,8 @@ test "33 matcher_raw" {
     try testing.expectEqualStrings("201-555-0123", matches[0].raw);
 }
 
-test "34 abi_version == 6" {
-    try testing.expectEqual(@as(i32, 6), pn.abiVersion());
+test "34 abi_version == 7" {
+    try testing.expectEqual(@as(i32, 7), pn.abiVersion());
 }
 
 test "35 short is_emergency US 911" {
@@ -256,6 +256,13 @@ test "extra carrier_name_for_valid agrees for a valid number" {
 
 test "extra geo_description_for_valid agrees for a valid number" {
     try expectStr("Mountain View, CA", pn.geoDescriptionForValidNumber(alloc, "US", "6502530000"));
+}
+
+test "extra carrier/geo explicit lang overload agrees with the en default" {
+    // The *InLang overloads carry the v7 `lang` argument; passing "en"
+    // explicitly must match the plain (default-en) form.
+    try expectStr("O2", pn.carrierNameForNumberInLang(alloc, "GB", "7106000000", "en"));
+    try expectStr("Mountain View, CA", pn.geoDescriptionForNumberInLang(alloc, "US", "6502530000", "en"));
 }
 
 test "extra region_at out of range is an owned empty string" {

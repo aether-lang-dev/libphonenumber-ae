@@ -1,5 +1,5 @@
 "
-I validate, parse and format international phone numbers (ABI v6).
+I validate, parse and format international phone numbers (ABI v7).
 
 ```
 PhonenumberAe countryCode: 'US'.                      ""-> '1'""
@@ -608,31 +608,31 @@ PhonenumberAe class >> primTzUnknown [
 ]
 
 { #category : 'private - ffi carrier' }
-PhonenumberAe class >> primCarrierName: region input: input [
+PhonenumberAe class >> primCarrierName: region input: input lang: lang [
 
 	^ self ffiCall: #( void * aether_pn_embed_carrier_name (
-		    char * region, char * input ) )
+		    char * region, char * input, char * lang ) )
 ]
 
 { #category : 'private - ffi carrier' }
-PhonenumberAe class >> primCarrierNameForValid: region input: input [
+PhonenumberAe class >> primCarrierNameForValid: region input: input lang: lang [
 
 	^ self ffiCall: #( void * aether_pn_embed_carrier_name_for_valid (
-		    char * region, char * input ) )
+		    char * region, char * input, char * lang ) )
 ]
 
 { #category : 'private - ffi geocoder' }
-PhonenumberAe class >> primGeoDescription: region input: input [
+PhonenumberAe class >> primGeoDescription: region input: input lang: lang [
 
 	^ self ffiCall: #( void * aether_pn_embed_geo_description (
-		    char * region, char * input ) )
+		    char * region, char * input, char * lang ) )
 ]
 
 { #category : 'private - ffi geocoder' }
-PhonenumberAe class >> primGeoDescriptionForValid: region input: input [
+PhonenumberAe class >> primGeoDescriptionForValid: region input: input lang: lang [
 
 	^ self ffiCall: #( void * aether_pn_embed_geo_description_for_valid (
-		    char * region, char * input ) )
+		    char * region, char * input, char * lang ) )
 ]
 
 { #category : 'private - strings' }
@@ -1096,43 +1096,93 @@ PhonenumberAe class >> unknownTimeZone [
 
 { #category : 'carrier' }
 PhonenumberAe class >> carrierNameForNumber: anInput region: aRegion [
-	"The carrier name for a number (English), or '' if none is known."
+	"The carrier name for a number (English), or '' if none is known.
+	 Smalltalk has no default arguments; this defaults the language to 'en'."
+
+	^ self
+		  carrierNameForNumber: anInput
+		  region: aRegion
+		  lang: 'en'
+]
+
+{ #category : 'carrier' }
+PhonenumberAe class >> carrierNameForNumber: anInput region: aRegion lang: aLang [
+	"The carrier name for a number, localized by aLang, or '' if none is known.
+	 A language not compiled into the engine falls back to English."
 
 	^ self takeString: (self
 			   primCarrierName: (aRegion ifNil: [ '' ])
-			   input: (anInput ifNil: [ '' ]))
+			   input: (anInput ifNil: [ '' ])
+			   lang: (aLang ifNil: [ 'en' ]))
 ]
 
 { #category : 'carrier' }
 PhonenumberAe class >> carrierNameForValidNumber: anInput region: aRegion [
-	"The carrier name, but only when the number is valid; else ''."
+	"The carrier name (English), but only when the number is valid; else ''.
+	 Smalltalk has no default arguments; this defaults the language to 'en'."
+
+	^ self
+		  carrierNameForValidNumber: anInput
+		  region: aRegion
+		  lang: 'en'
+]
+
+{ #category : 'carrier' }
+PhonenumberAe class >> carrierNameForValidNumber: anInput region: aRegion lang: aLang [
+	"The carrier name localized by aLang, but only when the number is valid; else ''."
 
 	^ self takeString: (self
 			   primCarrierNameForValid: (aRegion ifNil: [ '' ])
-			   input: (anInput ifNil: [ '' ]))
+			   input: (anInput ifNil: [ '' ])
+			   lang: (aLang ifNil: [ 'en' ]))
 ]
 
 { #category : 'geocoder' }
 PhonenumberAe class >> geoDescriptionForNumber: anInput region: aRegion [
-	"A geographic description for a number (English), or '' if none is known."
+	"A geographic description for a number (English), or '' if none is known.
+	 Smalltalk has no default arguments; this defaults the language to 'en'."
+
+	^ self
+		  geoDescriptionForNumber: anInput
+		  region: aRegion
+		  lang: 'en'
+]
+
+{ #category : 'geocoder' }
+PhonenumberAe class >> geoDescriptionForNumber: anInput region: aRegion lang: aLang [
+	"A geographic description localized by aLang, or '' if none is known.
+	 A language not compiled into the engine falls back to English."
 
 	^ self takeString: (self
 			   primGeoDescription: (aRegion ifNil: [ '' ])
-			   input: (anInput ifNil: [ '' ]))
+			   input: (anInput ifNil: [ '' ])
+			   lang: (aLang ifNil: [ 'en' ]))
 ]
 
 { #category : 'geocoder' }
 PhonenumberAe class >> geoDescriptionForValidNumber: anInput region: aRegion [
-	"A geographic description, but only when the number is valid; else ''."
+	"A geographic description (English), but only when the number is valid; else ''.
+	 Smalltalk has no default arguments; this defaults the language to 'en'."
+
+	^ self
+		  geoDescriptionForValidNumber: anInput
+		  region: aRegion
+		  lang: 'en'
+]
+
+{ #category : 'geocoder' }
+PhonenumberAe class >> geoDescriptionForValidNumber: anInput region: aRegion lang: aLang [
+	"A geographic description localized by aLang, but only when the number is valid; else ''."
 
 	^ self takeString: (self
 			   primGeoDescriptionForValid: (aRegion ifNil: [ '' ])
-			   input: (anInput ifNil: [ '' ]))
+			   input: (anInput ifNil: [ '' ])
+			   lang: (aLang ifNil: [ 'en' ]))
 ]
 
 { #category : 'introspection' }
 PhonenumberAe class >> abiVersion [
-	"The engine's ABI revision (6)."
+	"The engine's ABI revision (7)."
 
 	^ self primAbiVersion
 ]

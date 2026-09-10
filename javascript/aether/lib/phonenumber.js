@@ -1,6 +1,6 @@
 'use strict';
 /**
- * Idiomatic JavaScript surface over the phonenumber engine (ABI v6).
+ * Idiomatic JavaScript surface over the phonenumber engine (ABI v7).
  *
  * Carries no phone-number logic — see the monorepo's one rule. Every function
  * here marshals to an `aether_pn_embed_*` call in `native.js`.
@@ -418,41 +418,45 @@ const TimeZones = {
   },
 };
 
-// ---- PhoneNumberToCarrierMapper (English carrier names) ----
+// ---- PhoneNumberToCarrierMapper (localized carrier names) ----
 
 /**
- * English carrier-name lookup for a number, mirroring libphonenumber's
+ * Carrier-name lookup for a number, mirroring libphonenumber's
  * `PhoneNumberToCarrierMapper`. Every method marshals to an
- * `aether_pn_embed_carrier_*` ABI call; `""` means no carrier is known.
+ * `aether_pn_embed_carrier_*` ABI call; `""` means no carrier is known. The
+ * `lang` argument (an ISO code) localizes the result and defaults to English
+ * ("en"), which is always available and the fallback for any other language.
  */
 const Carrier = {
-  /** The carrier name for a number (English), or "" if none is known. */
-  carrierNameForNumber(region, input) {
-    return _s('carrierName', _str(region), _str(input));
+  /** The carrier name for a number, or "" if none is known (localized by `lang`, default "en"). */
+  carrierNameForNumber(region, input, lang = 'en') {
+    return _s('carrierName', _str(region), _str(input), _str(lang));
   },
 
-  /** The carrier name only when the number is valid, else "". */
-  carrierNameForValidNumber(region, input) {
-    return _s('carrierNameForValid', _str(region), _str(input));
+  /** The carrier name only when the number is valid, else "" (localized by `lang`, default "en"). */
+  carrierNameForValidNumber(region, input, lang = 'en') {
+    return _s('carrierNameForValid', _str(region), _str(input), _str(lang));
   },
 };
 
-// ---- PhoneNumberOfflineGeocoder (English geographic descriptions) ----
+// ---- PhoneNumberOfflineGeocoder (localized geographic descriptions) ----
 
 /**
- * English geographic-description lookup for a number, mirroring
- * libphonenumber's `PhoneNumberOfflineGeocoder`. Every method marshals to an
- * `aether_pn_embed_geo_*` ABI call; `""` means no description is known.
+ * Geographic-description lookup for a number, mirroring libphonenumber's
+ * `PhoneNumberOfflineGeocoder`. Every method marshals to an
+ * `aether_pn_embed_geo_*` ABI call; `""` means no description is known. The
+ * `lang` argument (an ISO code) localizes the result and defaults to English
+ * ("en"), which is always available and the fallback for any other language.
  */
 const Geocoder = {
-  /** A geographic description for a number (English), or "" if none is known. */
-  geoDescriptionForNumber(region, input) {
-    return _s('geoDescription', _str(region), _str(input));
+  /** A geographic description for a number, or "" if none is known (localized by `lang`, default "en"). */
+  geoDescriptionForNumber(region, input, lang = 'en') {
+    return _s('geoDescription', _str(region), _str(input), _str(lang));
   },
 
-  /** A geographic description only when the number is valid, else "". */
-  geoDescriptionForValidNumber(region, input) {
-    return _s('geoDescriptionForValid', _str(region), _str(input));
+  /** A geographic description only when the number is valid, else "" (localized by `lang`, default "en"). */
+  geoDescriptionForValidNumber(region, input, lang = 'en') {
+    return _s('geoDescriptionForValid', _str(region), _str(input), _str(lang));
   },
 };
 

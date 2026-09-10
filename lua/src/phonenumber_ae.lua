@@ -1,4 +1,4 @@
---- Validate, parse and format international phone numbers (ABI v6).
+--- Validate, parse and format international phone numbers (ABI v7).
 ---
 --- The idiomatic Lua surface over the phonenumber engine. Carries no
 --- phone-number logic — every function here marshals to the C extension in
@@ -445,32 +445,34 @@ function M.time_zones_for_number(region, input)
   return out
 end
 
--- ---- PhoneNumberToCarrierMapper (English carrier names) ----
--- Longest-prefix match over the E.164 digits; English names only. "" when no
--- carrier is known for the number.
+-- ---- PhoneNumberToCarrierMapper (localized carrier names) ----
+-- Longest-prefix match over the E.164 digits. `lang` is an ISO code ("en",
+-- "de", …), defaulting to "en" (always available, and the fallback for any
+-- language not compiled into the engine). "" when no carrier is known.
 
---- The carrier name for a number (English), or "" if none is known.
-function M.carrier_name_for_number(region, input)
-  return native.carrier_name(region, input)
+--- The carrier name for a number, localized by `lang` (default "en"), or "".
+function M.carrier_name_for_number(region, input, lang)
+  return native.carrier_name(region, input, lang or "en")
 end
 
 --- The carrier name only when the number is valid, else "".
-function M.carrier_name_for_valid_number(region, input)
-  return native.carrier_name_for_valid(region, input)
+function M.carrier_name_for_valid_number(region, input, lang)
+  return native.carrier_name_for_valid(region, input, lang or "en")
 end
 
--- ---- PhoneNumberOfflineGeocoder (English geographic descriptions) ----
--- Longest-prefix match over the E.164 digits; English descriptions only. "" when
--- no description is known for the number.
+-- ---- PhoneNumberOfflineGeocoder (localized geographic descriptions) ----
+-- Longest-prefix match over the E.164 digits. `lang` is an ISO code defaulting
+-- to "en" (always available, and the fallback). "" when nothing is known.
 
---- A geographic description for a number (English), or "" if none is known.
-function M.geo_description_for_number(region, input)
-  return native.geo_description(region, input)
+--- A geographic description for a number, localized by `lang` (default "en"),
+--- or "" if none is known.
+function M.geo_description_for_number(region, input, lang)
+  return native.geo_description(region, input, lang or "en")
 end
 
 --- A geographic description only when the number is valid, else "".
-function M.geo_description_for_valid_number(region, input)
-  return native.geo_description_for_valid(region, input)
+function M.geo_description_for_valid_number(region, input, lang)
+  return native.geo_description_for_valid(region, input, lang or "en")
 end
 
 -- ---- lifecycle ----

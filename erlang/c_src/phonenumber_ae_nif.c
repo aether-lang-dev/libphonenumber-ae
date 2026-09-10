@@ -1,4 +1,4 @@
-/* erlang/c_src/phonenumber_ae_nif.c — the canonical BEAM binding (ABI v6).
+/* erlang/c_src/phonenumber_ae_nif.c — the canonical BEAM binding (ABI v7).
  *
  * ONE NIF, shared by all three BEAM languages. Erlang loads it directly;
  * Elixir `defdelegate`s to it; Gleam reaches it with `@external(erlang, ...)`.
@@ -127,12 +127,12 @@ static int   (*pn_tz_count)(const char *, const char *);
 static char *(*pn_tz_at)(const char *, const char *, int);
 static char *(*pn_tz_all)(const char *, const char *);
 static char *(*pn_tz_unknown)(void);
-/* PhoneNumberToCarrierMapper */
-static char *(*pn_carrier_name)(const char *, const char *);
-static char *(*pn_carrier_name_for_valid)(const char *, const char *);
-/* PhoneNumberOfflineGeocoder */
-static char *(*pn_geo_description)(const char *, const char *);
-static char *(*pn_geo_description_for_valid)(const char *, const char *);
+/* PhoneNumberToCarrierMapper (v7: a trailing lang arg) */
+static char *(*pn_carrier_name)(const char *, const char *, const char *);
+static char *(*pn_carrier_name_for_valid)(const char *, const char *, const char *);
+/* PhoneNumberOfflineGeocoder (v7: a trailing lang arg) */
+static char *(*pn_geo_description)(const char *, const char *, const char *);
+static char *(*pn_geo_description_for_valid)(const char *, const char *, const char *);
 
 static void *pn_lib = NULL;
 
@@ -226,6 +226,24 @@ static ERL_NIF_TERM do_ss_str(ErlNifEnv *env, const ERL_NIF_TERM argv[],
     out = fn(a, b);
     enif_free(a);
     enif_free(b);
+    return take_binary(env, out);
+}
+
+/* (string, string, string) -> string. */
+static ERL_NIF_TERM do_sss_str(ErlNifEnv *env, const ERL_NIF_TERM argv[],
+                               char *(*fn)(const char *, const char *, const char *))
+{
+    char *a, *b, *c, *out;
+    a = term_to_cstr(env, argv[0]);
+    if (!a) return enif_make_badarg(env);
+    b = term_to_cstr(env, argv[1]);
+    if (!b) { enif_free(a); return enif_make_badarg(env); }
+    c = term_to_cstr(env, argv[2]);
+    if (!c) { enif_free(a); enif_free(b); return enif_make_badarg(env); }
+    out = fn(a, b, c);
+    enif_free(a);
+    enif_free(b);
+    enif_free(c);
     return take_binary(env, out);
 }
 
@@ -554,21 +572,21 @@ static ERL_NIF_TERM nif_tz_all(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv
 static ERL_NIF_TERM nif_tz_unknown(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 { (void)argc; (void)argv; return take_binary(env, pn_tz_unknown()); }
 
-/* ---- PhoneNumberToCarrierMapper (English carrier names) ---- */
+/* ---- PhoneNumberToCarrierMapper (localized carrier names) ---- */
 
 static ERL_NIF_TERM nif_carrier_name(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
-{ (void)argc; return do_ss_str(env, argv, pn_carrier_name); }
+{ (void)argc; return do_sss_str(env, argv, pn_carrier_name); }
 
 static ERL_NIF_TERM nif_carrier_name_for_valid(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
-{ (void)argc; return do_ss_str(env, argv, pn_carrier_name_for_valid); }
+{ (void)argc; return do_sss_str(env, argv, pn_carrier_name_for_valid); }
 
-/* ---- PhoneNumberOfflineGeocoder (English geographic descriptions) ---- */
+/* ---- PhoneNumberOfflineGeocoder (localized geographic descriptions) ---- */
 
 static ERL_NIF_TERM nif_geo_description(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
-{ (void)argc; return do_ss_str(env, argv, pn_geo_description); }
+{ (void)argc; return do_sss_str(env, argv, pn_geo_description); }
 
 static ERL_NIF_TERM nif_geo_description_for_valid(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
-{ (void)argc; return do_ss_str(env, argv, pn_geo_description_for_valid); }
+{ (void)argc; return do_sss_str(env, argv, pn_geo_description_for_valid); }
 
 /* ---- region enumeration ---- */
 
@@ -853,12 +871,12 @@ static ErlNifFunc nif_funcs[] = {
     {"tz_at",                         3, nif_tz_at,                         0},
     {"tz_all",                        2, nif_tz_all,                        0},
     {"tz_unknown",                    0, nif_tz_unknown,                    0},
-    /* PhoneNumberToCarrierMapper */
-    {"carrier_name",                  2, nif_carrier_name,                  0},
-    {"carrier_name_for_valid",        2, nif_carrier_name_for_valid,        0},
-    /* PhoneNumberOfflineGeocoder */
-    {"geo_description",               2, nif_geo_description,               0},
-    {"geo_description_for_valid",     2, nif_geo_description_for_valid,     0},
+    /* PhoneNumberToCarrierMapper (v7: region, input, lang) */
+    {"carrier_name",                  3, nif_carrier_name,                  0},
+    {"carrier_name_for_valid",        3, nif_carrier_name_for_valid,        0},
+    /* PhoneNumberOfflineGeocoder (v7: region, input, lang) */
+    {"geo_description",               3, nif_geo_description,               0},
+    {"geo_description_for_valid",     3, nif_geo_description_for_valid,     0},
     /* introspection */
     {"abi_version",                   0, nif_abi_version,                   0}
 };

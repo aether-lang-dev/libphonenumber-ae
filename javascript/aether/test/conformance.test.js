@@ -1,6 +1,6 @@
 'use strict';
 /**
- * The 45-check binding conformance suite (docs/conformance.md, v6).
+ * The 45-check binding conformance suite (docs/conformance.md, v7).
  *
  * Proves the JavaScript binding marshals every value shape across the FFI. It
  * is NOT a phone-number test suite — the behavioural cases live in the engine's
@@ -156,7 +156,7 @@ test('33 matcher raw', () => {
 });
 
 test('34 abi version', () => {
-  assert.strictEqual(pn.abiVersion(), 6);
+  assert.strictEqual(pn.abiVersion(), 7);
 });
 
 // ---- ShortNumberInfo (v3) ----

@@ -1,5 +1,5 @@
 (ns org.libphonenumber.ae.conformance-test
-  "The 45-check binding conformance suite (docs/conformance.md, v6), in Clojure.
+  "The 45-check binding conformance suite (docs/conformance.md, v7), in Clojure.
 
   Proves the **Clojure layer** reaches the same engine behaviour the Java and
   Python suites see. Since that layer sits on the Java binding rather than on
@@ -116,7 +116,7 @@
   (is (= "201-555-0123" (:raw (first (pn/find-numbers "call 201-555-0123 now" "US" :valid))))))
 
 (deftest test-34-abi-version
-  (is (= 6 (pn/abi-version))))
+  (is (= 7 (pn/abi-version))))
 
 (deftest test-35-emergency-us-911
   (is (true? (pn/emergency-number? "US" "911"))))

@@ -1,4 +1,4 @@
-/// Validate, parse and format international phone numbers (ABI v6).
+/// Validate, parse and format international phone numbers (ABI v7).
 ///
 /// A thin `dart:ffi` binding over the monorepo's one shared native engine
 /// (`core/native/libphonenumber_ae.so`, compiled from pure Aether over Google

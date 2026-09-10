@@ -4,10 +4,12 @@
 // the gate tracks fidelity honestly without pretending we are byte-identical.
 
 import bldr
+import bldr (dep)
 import std.os
 
 aeb(cap) {
     bldr.build() {
+        dep("core/gen.build.ae")
         root = _get("root")
         out = "${root}/target/pn_parity"
         _m = os.system("mkdir -p \"${root}/target\"")

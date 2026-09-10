@@ -9,8 +9,9 @@
 ## `aether_pn_embed_<name>`. Everything below is marshalling: Nim values in, C
 ## scalars and `cstring`s out, and back.
 ##
-## ABI v6 (full `PhoneNumberUtil` parity, plus the ShortNumberInfo, TimeZones,
-## Carrier and Geocoder surfaces). The
+## ABI v7 (full `PhoneNumberUtil` parity, plus the ShortNumberInfo, TimeZones,
+## Carrier and Geocoder surfaces; the Carrier and Geocoder calls take a per-call
+## `lang` ISO code). The
 ## ABI has **no opaque handle**: a
 ## parsed number and an AsYouType state are themselves caller-owned *strings* —
 ## you get one back, pass it to accessor calls, and free it like any other
@@ -321,16 +322,16 @@ proc pnTzAll(region, input: cstring): cstring
 proc pnTzUnknown(): cstring
   {.importc: "aether_pn_embed_tz_unknown", cdecl.}
 
-# ---- PhoneNumberToCarrierMapper (English carrier names) ----
-proc pnCarrierName(region, input: cstring): cstring
+# ---- PhoneNumberToCarrierMapper (localized carrier names) ----
+proc pnCarrierName(region, input, lang: cstring): cstring
   {.importc: "aether_pn_embed_carrier_name", cdecl.}
-proc pnCarrierNameForValid(region, input: cstring): cstring
+proc pnCarrierNameForValid(region, input, lang: cstring): cstring
   {.importc: "aether_pn_embed_carrier_name_for_valid", cdecl.}
 
-# ---- PhoneNumberOfflineGeocoder (English geographic descriptions) ----
-proc pnGeoDescription(region, input: cstring): cstring
+# ---- PhoneNumberOfflineGeocoder (localized geographic descriptions) ----
+proc pnGeoDescription(region, input, lang: cstring): cstring
   {.importc: "aether_pn_embed_geo_description", cdecl.}
-proc pnGeoDescriptionForValid(region, input: cstring): cstring
+proc pnGeoDescriptionForValid(region, input, lang: cstring): cstring
   {.importc: "aether_pn_embed_geo_description_for_valid", cdecl.}
 
 # ---------------------------------------------------------------------------
@@ -577,8 +578,8 @@ proc isAlphaNumber*(s: string): bool =
   pnIsAlphaNumber(s.cstring) != 0
 
 proc abiVersion*(): int =
-  ## The ABI revision the linked engine reports (v6 — adds the Geocoder surface
-  ## on top of the TimeZones and Carrier surfaces).
+  ## The ABI revision the linked engine reports (v7 — the Carrier and Geocoder
+  ## surfaces gained a per-call `lang` argument).
   int(pnAbiVersion())
 
 # ---------------------------------------------------------------------------
@@ -706,32 +707,36 @@ proc timeZonesForNumber*(region, input: string): seq[string] =
     result.add takeString(pnTzAt(region.cstring, input.cstring, i))
 
 # ---------------------------------------------------------------------------
-# PhoneNumberToCarrierMapper (English carrier names)
+# PhoneNumberToCarrierMapper (localized carrier names)
 # ---------------------------------------------------------------------------
 #
-# Longest-prefix match over the E.164 digits; English names only. "" when no
-# carrier is known for the number.
+# Longest-prefix match over the E.164 digits. `lang` is an ISO code ("en", "de",
+# …); "en" is always available and is the fallback for any language not compiled
+# into the engine. "" when no carrier is known for the number.
 
-proc carrierNameForNumber*(region, input: string): string =
-  ## The carrier name for a number (English), or "" if none is known.
-  takeString(pnCarrierName(region.cstring, input.cstring))
+proc carrierNameForNumber*(region, input: string, lang = "en"): string =
+  ## The carrier name for a number, localized by `lang` (default "en"), or "" if
+  ## none is known.
+  takeString(pnCarrierName(region.cstring, input.cstring, lang.cstring))
 
-proc carrierNameForValidNumber*(region, input: string): string =
+proc carrierNameForValidNumber*(region, input: string, lang = "en"): string =
   ## The carrier name only when the number is valid, else "".
-  takeString(pnCarrierNameForValid(region.cstring, input.cstring))
+  takeString(pnCarrierNameForValid(region.cstring, input.cstring, lang.cstring))
 
 # ---------------------------------------------------------------------------
-# PhoneNumberOfflineGeocoder (English geographic descriptions)
+# PhoneNumberOfflineGeocoder (localized geographic descriptions)
 # ---------------------------------------------------------------------------
 #
-# Longest-prefix match over the E.164 digits; English descriptions only. Pass a
-# raw (region, input) like everywhere else; the engine parses to E.164 itself.
-# "" when no description is known for the number.
+# Longest-prefix match over the E.164 digits. Pass a raw (region, input) like
+# everywhere else; the engine parses to E.164 itself. `lang` is an ISO code
+# ("en", "de", …); "en" is always available and is the fallback. "" when no
+# description is known for the number.
 
-proc geoDescriptionForNumber*(region, input: string): string =
-  ## A geographic description for a number (English), or "" if none is known.
-  takeString(pnGeoDescription(region.cstring, input.cstring))
+proc geoDescriptionForNumber*(region, input: string, lang = "en"): string =
+  ## A geographic description for a number, localized by `lang` (default "en"),
+  ## or "" if none is known.
+  takeString(pnGeoDescription(region.cstring, input.cstring, lang.cstring))
 
-proc geoDescriptionForValidNumber*(region, input: string): string =
+proc geoDescriptionForValidNumber*(region, input: string, lang = "en"): string =
   ## A geographic description only when the number is valid, else "".
-  takeString(pnGeoDescriptionForValid(region.cstring, input.cstring))
+  takeString(pnGeoDescriptionForValid(region.cstring, input.cstring, lang.cstring))

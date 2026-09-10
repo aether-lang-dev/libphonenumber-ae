@@ -47,7 +47,7 @@ aeb(cap) {
             println("kotlin: conformance suite reported failures")
             return 1
         }
-        println("kotlin: PASS (v6, timezones + carrier + geocoder) — 45-check conformance")
+        println("kotlin: PASS (v7, timezones + carrier + geocoder, localized) — 45-check conformance")
         return 0
     }
 }

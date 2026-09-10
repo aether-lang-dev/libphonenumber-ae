@@ -14,7 +14,7 @@
 // (region, input) to that.
 
 import std.string
-import core.carrier_metadata
+import core.carrier_blobs
 
 exports(carrier_name_for_e164)
 
@@ -37,11 +37,11 @@ fn digits(s: string) -> string {
 // ~18 s for a handful of lookups). string.char_at_n(s, len, i) takes the cached
 // length and is O(1), so we fetch the length ONCE and use the _n form and
 // substring_n throughout — turning the scan back into O(n) (sub-second).
-carrier_name_for_e164(e164: string) -> string {
+carrier_name_for_e164(e164: string, lang: string) -> string {
     d = digits(e164)
     dlen = string.length(d)
     if dlen == 0 { return "" }
-    b = carrier_metadata.blob()
+    b = carrier_blobs.blob_for_lang(lang)
     n = string.length(b)
     us = 31   // 0x1F field separator
     nl = 10   // '\n' row separator

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The 45-check binding conformance suite (docs/conformance.md, v6).
+ * The 45-check binding conformance suite (docs/conformance.md, v7).
  *
  * <p>Proves the Java binding marshals every value shape across the FFI. It is
  * NOT a phone-number test suite — the behavioural cases live in the engine's
@@ -31,7 +31,7 @@ public final class ConformanceTest {
     private static final List<String> failures = new ArrayList<>();
 
     public static void main(String[] args) {
-        // ---- the 45 required checks (docs/conformance.md v6) ----
+        // ---- the 45 required checks (docs/conformance.md v7) ----
         check("01 country_code US", () ->
                 assertEquals("1", PhoneNumbers.countryCode("US")));
         check("02 country_code GB", () ->
@@ -143,7 +143,7 @@ public final class ConformanceTest {
             assertEquals("201-555-0123", ms.get(0).raw());
         });
         check("34 abi_version", () ->
-                assertEquals(6, PhoneNumbers.abiVersion()));
+                assertEquals(7, PhoneNumbers.abiVersion()));
         check("35 is_emergency_number US 911", () ->
                 assertTrue("911 emergency in US", ShortNumberInfo.isEmergencyNumber("US", "911")));
         check("36 is_emergency_number US 999", () ->
@@ -206,10 +206,10 @@ public final class ConformanceTest {
         // ---- report ----
         System.out.println();
         if (failures.isEmpty()) {
-            System.out.println("PASS (v6, timezones + carrier + geocoder) — " + passed + " checks");
+            System.out.println("PASS (v7, timezones + carrier + geocoder, localized) — " + passed + " checks");
             System.exit(0);
         }
-        System.out.println("FAIL (v6) — " + failures.size() + " of "
+        System.out.println("FAIL (v7) — " + failures.size() + " of "
                 + (passed + failures.size()) + " checks failed:");
         for (String f : failures) System.out.println("  " + f);
         System.exit(1);

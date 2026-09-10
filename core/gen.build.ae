@@ -1,0 +1,22 @@
+// Metadata generation node. Runs core/gen/generate_metadata.sh to produce the
+// engine's metadata tables + language dispatchers from the pristine in-tree
+// resources/. These .ae tables are build artifacts (gitignored), so every node
+// that compiles an engine module (the .so build and each engine gate) deps this
+// so a fresh checkout builds. Default language: English.
+import bldr
+import std.os
+import bldr (_get)
+aeb(cap) {
+    bldr.build() {
+        root = _get("root")
+        rc = os.system("cd \"${root}\" && core/gen/generate_metadata.sh en")
+        if rc != 0 { println("core: generate_metadata.sh failed"); return 1 }
+        // Also assemble the FULL embed ABI so the default .so build (which just
+        // compiles core/embed.ae) has its source present. Feature/language
+        // variants re-run the assembler/generator themselves.
+        rc2 = os.system("cd \"${root}\" && core/gen/assemble_embed.sh core/embed.ae all")
+        if rc2 != 0 { println("core: assemble_embed.sh (full) failed"); return 1 }
+        println("core: metadata generated (en) + full embed assembled")
+        return 0
+    }
+}

@@ -1,4 +1,4 @@
-/// The 45-check binding conformance suite (docs/conformance.md, v6).
+/// The 45-check binding conformance suite (docs/conformance.md, v7).
 ///
 /// Proves the Dart binding marshals every value shape across the FFI. It is NOT
 /// a phone-number test suite — the behavioural cases live in the engine's own
@@ -159,7 +159,7 @@ void main() {
   });
 
   test('34 abi version', () {
-    expect(pn.abiVersion(), equals(6));
+    expect(pn.abiVersion(), equals(7));
   });
 
   // ---- ShortNumberInfo (v3) ----

@@ -15,7 +15,7 @@ import org.libphonenumber.ae.TimeZones
 import org.libphonenumber.ae.ValidationResult
 
 /**
- * Idiomatic Groovy over the Java binding (ABI v6, full PhoneNumberUtil parity
+ * Idiomatic Groovy over the Java binding (ABI v7, full PhoneNumberUtil parity
  * plus ShortNumberInfo, the timezone mapper, the carrier mapper and the offline
  * geocoder).
  *
@@ -229,28 +229,28 @@ class PhoneNumbers {
 
     // ---- carrier ----
     //
-    // English carrier names by longest-prefix match over the E.164 digits.
-    // These reach the Java Carrier mapper.
+    // Carrier names by longest-prefix match over the E.164 digits, localized by
+    // `lang` (defaulting to English). These reach the Java Carrier mapper.
 
-    static String carrierNameForNumber(String region, String input) {
-        Carrier.carrierNameForNumber(region, input)
+    static String carrierNameForNumber(String region, String input, String lang = 'en') {
+        Carrier.carrierNameForNumber(region, input, lang)
     }
 
-    static String carrierNameForValidNumber(String region, String input) {
-        Carrier.carrierNameForValidNumber(region, input)
+    static String carrierNameForValidNumber(String region, String input, String lang = 'en') {
+        Carrier.carrierNameForValidNumber(region, input, lang)
     }
 
     // ---- geocoder ----
     //
-    // English geographic descriptions by longest-prefix match over the E.164
-    // digits. These reach the Java Geocoder mapper.
+    // Geographic descriptions by longest-prefix match over the E.164 digits,
+    // localized by `lang` (defaulting to English). These reach the Java Geocoder mapper.
 
-    static String geoDescriptionForNumber(String region, String input) {
-        Geocoder.geoDescriptionForNumber(region, input)
+    static String geoDescriptionForNumber(String region, String input, String lang = 'en') {
+        Geocoder.geoDescriptionForNumber(region, input, lang)
     }
 
-    static String geoDescriptionForValidNumber(String region, String input) {
-        Geocoder.geoDescriptionForValidNumber(region, input)
+    static String geoDescriptionForValidNumber(String region, String input, String lang = 'en') {
+        Geocoder.geoDescriptionForValidNumber(region, input, lang)
     }
 
     // ---- version ----

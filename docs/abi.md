@@ -1,4 +1,4 @@
-# The C ABI (`aether_pn_embed_*`) — v6: PhoneNumberUtil + ShortNumberInfo + TimeZones + Carrier + Geocoder
+# The C ABI (`aether_pn_embed_*`) — v7: PhoneNumberUtil + ShortNumberInfo + TimeZones + Carrier + Geocoder (multi-language)
 
 The one seam every binding speaks to. Defined by
 [`core/embed.ae`](../core/embed.ae) and the string bridge in
@@ -13,7 +13,7 @@ The one seam every binding speaks to. Defined by
    caller-owned *strings*: you get one back, pass it to accessor calls, and free
    it like any other returned string. Every call is independent.
 3. **Signatures are scalar-only** — `const char*` and `int`.
-4. **Append-only.** ABI version is `6` (`aether_pn_embed_abi_version()`).
+4. **Append-only.** ABI version is `7` (`aether_pn_embed_abi_version()`).
 
 `region` is ISO-3166 alpha-2 (case-insensitive). `input` is a raw number a human
 might type (digits + spaces/dashes/parens/dots, optional `+cc`, optional
@@ -33,7 +33,7 @@ extension `ext`/`x`/`;ext=`, optional vanity letters).
 ### Lifecycle / metadata
 | Symbol | Signature |
 |---|---|
-| `abi_version` | `int ()` → 6 |
+| `abi_version` | `int ()` → 7 |
 | `free_string` | `void (char*)` |
 | `country_code` | `char* (region)` |
 | `example_number` | `char* (region)` |
@@ -142,7 +142,11 @@ sentinel is `"Etc/Unknown"`.
 | `tz_all` | `char* (region, input)` — the `&`-joined zone list (or the unknown zone) |
 | `tz_unknown` | `char* ()` — `"Etc/Unknown"` |
 
-### PhoneNumberToCarrierMapper (English carrier names)
+### PhoneNumberToCarrierMapper (carrier names, per language)
+
+`lang` is an ISO language code (`"en"`, `"de"`, …). English is always available
+and is the fallback for any language not compiled into the `.so` (which
+languages a build carries is chosen at build time — see docs/composable-builds.md).
 
 Longest-prefix match over the E.164 digits. Pass a raw `(region, input)`; the
 engine parses to E.164 internally. English names only. Returns `""` when no
@@ -150,10 +154,10 @@ carrier is known for the number.
 
 | Symbol | Signature |
 |---|---|
-| `carrier_name` | `char* (region, input)` — the carrier name, or `""` |
-| `carrier_name_for_valid` | `char* (region, input)` — a name only if the number is valid, else `""` |
+| `carrier_name` | `char* (region, input, lang)` — the carrier name, or `""` |
+| `carrier_name_for_valid` | `char* (region, input, lang)` — a name only if the number is valid, else `""` |
 
-### PhoneNumberOfflineGeocoder (English geographic descriptions)
+### PhoneNumberOfflineGeocoder (geographic descriptions, per language)
 
 Longest-prefix match over the E.164 digits. Pass a raw `(region, input)`; the
 engine parses to E.164 internally. English descriptions only. Returns `""` when
@@ -161,8 +165,8 @@ no description is known.
 
 | Symbol | Signature |
 |---|---|
-| `geo_description` | `char* (region, input)` — a geographic description, or `""` |
-| `geo_description_for_valid` | `char* (region, input)` — a description only if the number is valid, else `""` |
+| `geo_description` | `char* (region, input, lang)` — a geographic description, or `""` |
+| `geo_description_for_valid` | `char* (region, input, lang)` — a description only if the number is valid, else `""` |
 
 ## Example (C)
 

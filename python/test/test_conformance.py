@@ -111,7 +111,7 @@ def test_33_matcher_raw():
     assert matches[0].raw == "201-555-0123"
 
 def test_34_abi_version():
-    assert pn.abi_version() == 6
+    assert pn.abi_version() == 7
 
 
 def test_35_short_emergency_us():

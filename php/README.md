@@ -8,7 +8,7 @@ over Google libphonenumber's own metadata. It contains **no phone-number
 logic**: every method marshals to an `aether_pn_embed_*` call. One engine, one
 set of behaviours, N language surfaces.
 
-It speaks the full **v6** `aether_pn_embed_*` C ABI (66 symbols, full
+It speaks the full **v7** `aether_pn_embed_*` C ABI (66 symbols, full
 PhoneNumberUtil parity plus ShortNumberInfo, TimeZones, Carrier and Geocoder —
 `docs/abi.md`). Every signature is still scalar-only (`const char*` and `int`),
 and there are still no opaque handles: a parsed number and an as-you-type state
@@ -23,9 +23,9 @@ are themselves caller-owned *strings*.
 | `src/PhoneNumberMatch.php` | one match `findNumbers()` returns (`start`, `end`, `raw`) |
 | `src/ShortNumberInfo.php` | short / emergency-number queries (the v3 ABI addition) |
 | `src/TimeZones.php` | IANA time-zone lookup (the v5 ABI addition) |
-| `src/Carrier.php` | English carrier-name lookup (the v5 ABI addition) |
-| `src/Geocoder.php` | English geographic-description lookup (the v6 ABI addition) |
-| `tests/conformance.php` | the 45-check v6 conformance suite, as an assertion runner |
+| `src/Carrier.php` | carrier-name lookup (v5 ABI addition; v7 optional `$lang`) |
+| `src/Geocoder.php` | geographic-description lookup (v6 ABI addition; v7 optional `$lang`) |
+| `tests/conformance.php` | the 45-check v7 conformance suite, as an assertion runner |
 
 Requires **PHP 8.1+** and **ext-ffi**. No Composer dependencies at all — which
 is also what lets it run on a box with no network.
@@ -121,10 +121,12 @@ ShortNumberInfo::exampleNumber('US');              // '112'
 TimeZones::timeZonesForNumber('US', '2015550123'); // ['America/New_York']
 TimeZones::timeZonesForNumber('GB', '2070313000'); // ['Europe/London']
 TimeZones::unknownTimeZone();                      // 'Etc/Unknown'
-Carrier::carrierNameForNumber('GB', '7106000000'); // 'O2'
+Carrier::carrierNameForNumber('GB', '7106000000');       // 'O2'
+Carrier::carrierNameForNumber('GB', '7106000000', 'en'); // 'O2' ($lang is optional, defaults to 'en')
 
-// Geographic descriptions (v6 — Geocoder).
-Geocoder::geoDescriptionForNumber('US', '6502530000'); // 'Mountain View, CA'
+// Geographic descriptions (v6 — Geocoder; v7 adds an optional $lang).
+Geocoder::geoDescriptionForNumber('US', '6502530000');       // 'Mountain View, CA'
+Geocoder::geoDescriptionForNumber('US', '6502530000', 'en'); // 'Mountain View, CA'
 ```
 
 ### Surface
@@ -156,11 +158,14 @@ Geocoder::geoDescriptionForNumber('US', '6502530000'); // 'Mountain View, CA'
 * **`TimeZones`** (v5) — IANA time-zone lookup:
   `timeZonesForNumber($region, $input)` (a `list<string>`; `['Etc/Unknown']`
   when none), `timeZoneCount($region, $input)`, `unknownTimeZone()`.
-* **`Carrier`** (v5) — English carrier names: `carrierNameForNumber($region,
-  $input)`, `carrierNameForValidNumber($region, $input)` (`''` when none).
-* **`Geocoder`** (v6) — English geographic descriptions:
-  `geoDescriptionForNumber($region, $input)`,
-  `geoDescriptionForValidNumber($region, $input)` (`''` when none).
+* **`Carrier`** (v5; v7 adds `$lang`) — carrier names:
+  `carrierNameForNumber($region, $input, $lang = 'en')`,
+  `carrierNameForValidNumber($region, $input, $lang = 'en')` (`''` when none). The
+  optional `$lang` is an ISO code that localizes the result and defaults to `'en'`.
+* **`Geocoder`** (v6; v7 adds `$lang`) — geographic descriptions:
+  `geoDescriptionForNumber($region, $input, $lang = 'en')`,
+  `geoDescriptionForValidNumber($region, $input, $lang = 'en')` (`''` when none). The
+  optional `$lang` is an ISO code that localizes the result and defaults to `'en'`.
 
 ### Constants
 
@@ -200,7 +205,7 @@ there is no keepalive list and no borrowed pointers to track.
 
 ## Tests
 
-The 45-check v6 conformance suite (`docs/conformance.md`) lives in
+The 45-check v7 conformance suite (`docs/conformance.md`) lives in
 `tests/conformance.php`, alongside a couple of extras and a 5,000-iteration
 loop over the caller-owned-string contract.
 

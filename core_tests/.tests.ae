@@ -8,10 +8,12 @@
 // core_tests/.abi.ae.
 
 import bldr
+import bldr (dep)
 import std.os
 
 aeb(cap) {
     bldr.build() {
+        dep("core/gen.build.ae")
         root = _get("root")
         out = "${root}/target/pn_probe"
 

@@ -13,7 +13,7 @@
 //! table, `isPossible`/`isValid`, number-type classification, the formatter,
 //! the AsYouType formatter, the matcher — is the pure-Aether
 //! `core/phonenumber.ae`, shared by every language binding in this monorepo and
-//! reached over the v6 `aether_pn_embed_*` C ABI (full `PhoneNumberUtil` parity
+//! reached over the v7 `aether_pn_embed_*` C ABI (full `PhoneNumberUtil` parity
 //! plus `ShortNumberInfo`, time zones, carrier names and geocoding). Everything here is
 //! marshalling; see [`native`] for the 1:1 symbol table.
 //!
@@ -646,28 +646,65 @@ impl PhoneNumbers {
         unsafe { self.api.take_string((self.api.tz_unknown)()) }
     }
 
-    // ---- PhoneNumberToCarrierMapper (English carrier names) ----
+    // ---- PhoneNumberToCarrierMapper (localized carrier names) ----
 
-    /// The English carrier name for a number, or `""` if no carrier is known.
-    pub fn carrier_name_for_number(&self, region: &str, input: &str) -> String {
-        self.str_2(self.api.carrier_name, region, input)
+    /// The carrier name for a number, or `""` if no carrier is known.
+    ///
+    /// `lang` is an optional ISO language code (`"en"`, `"de"`, `"fr"`, …);
+    /// pass `None` (or omit via `.into()`) for the default `"en"`, which is
+    /// always available and the fallback for any language the engine lacks.
+    pub fn carrier_name_for_number<'a>(
+        &self,
+        region: &str,
+        input: &str,
+        lang: impl Into<Option<&'a str>>,
+    ) -> String {
+        self.str_3(self.api.carrier_name, region, input, lang.into().unwrap_or("en"))
     }
 
-    /// The English carrier name only when the number is valid, else `""`.
-    pub fn carrier_name_for_valid_number(&self, region: &str, input: &str) -> String {
-        self.str_2(self.api.carrier_name_for_valid, region, input)
+    /// The carrier name only when the number is valid, else `""`. `lang` is an
+    /// optional ISO code; `None` selects the default `"en"`.
+    pub fn carrier_name_for_valid_number<'a>(
+        &self,
+        region: &str,
+        input: &str,
+        lang: impl Into<Option<&'a str>>,
+    ) -> String {
+        self.str_3(
+            self.api.carrier_name_for_valid,
+            region,
+            input,
+            lang.into().unwrap_or("en"),
+        )
     }
 
-    // ---- PhoneNumberOfflineGeocoder (English geographic descriptions) ----
+    // ---- PhoneNumberOfflineGeocoder (localized geographic descriptions) ----
 
-    /// The English geographic description for a number, or `""` if none is known.
-    pub fn geo_description_for_number(&self, region: &str, input: &str) -> String {
-        self.str_2(self.api.geo_description, region, input)
+    /// The geographic description for a number, or `""` if none is known.
+    /// `lang` is an optional ISO code; `None` selects the default `"en"`.
+    pub fn geo_description_for_number<'a>(
+        &self,
+        region: &str,
+        input: &str,
+        lang: impl Into<Option<&'a str>>,
+    ) -> String {
+        self.str_3(self.api.geo_description, region, input, lang.into().unwrap_or("en"))
     }
 
-    /// The English geographic description only when the number is valid, else `""`.
-    pub fn geo_description_for_valid_number(&self, region: &str, input: &str) -> String {
-        self.str_2(self.api.geo_description_for_valid, region, input)
+    /// The geographic description only when the number is valid, else `""`.
+    /// `lang` is an optional ISO code; `None` selects the default `"en"`.
+    pub fn geo_description_for_valid_number<'a>(
+        &self,
+        region: &str,
+        input: &str,
+        lang: impl Into<Option<&'a str>>,
+    ) -> String {
+        self.str_3(
+            self.api.geo_description_for_valid,
+            region,
+            input,
+            lang.into().unwrap_or("en"),
+        )
     }
 
     // ---- marshalling helpers ----
@@ -691,6 +728,20 @@ impl PhoneNumbers {
             _ => return String::new(),
         };
         unsafe { self.api.take_string(f(a.as_ptr(), b.as_ptr())) }
+    }
+
+    fn str_3(
+        &self,
+        f: unsafe extern "C" fn(*const c_char, *const c_char, *const c_char) -> *mut c_char,
+        a: &str,
+        b: &str,
+        c: &str,
+    ) -> String {
+        let (a, b, c) = match (native::to_c(a), native::to_c(b), native::to_c(c)) {
+            (Ok(a), Ok(b), Ok(c)) => (a, b, c),
+            _ => return String::new(),
+        };
+        unsafe { self.api.take_string(f(a.as_ptr(), b.as_ptr(), c.as_ptr())) }
     }
 
     fn int_1(&self, f: unsafe extern "C" fn(*const c_char) -> c_int, a: &str) -> i32 {
@@ -1160,26 +1211,46 @@ pub fn unknown_time_zone() -> String {
     shared().unknown_time_zone()
 }
 
-// ---- PhoneNumberToCarrierMapper (English carrier names) ----
+// ---- PhoneNumberToCarrierMapper (localized carrier names) ----
 
-/// The English carrier name for a number, or `""` if no carrier is known.
-pub fn carrier_name_for_number(region: &str, input: &str) -> String {
-    shared().carrier_name_for_number(region, input)
+/// The carrier name for a number, or `""` if no carrier is known. `lang` is an
+/// optional ISO code; pass `None` for the default `"en"`.
+pub fn carrier_name_for_number<'a>(
+    region: &str,
+    input: &str,
+    lang: impl Into<Option<&'a str>>,
+) -> String {
+    shared().carrier_name_for_number(region, input, lang)
 }
 
-/// The English carrier name only when the number is valid, else `""`.
-pub fn carrier_name_for_valid_number(region: &str, input: &str) -> String {
-    shared().carrier_name_for_valid_number(region, input)
+/// The carrier name only when the number is valid, else `""`. `lang` is an
+/// optional ISO code; `None` selects the default `"en"`.
+pub fn carrier_name_for_valid_number<'a>(
+    region: &str,
+    input: &str,
+    lang: impl Into<Option<&'a str>>,
+) -> String {
+    shared().carrier_name_for_valid_number(region, input, lang)
 }
 
-// ---- PhoneNumberOfflineGeocoder (English geographic descriptions) ----
+// ---- PhoneNumberOfflineGeocoder (localized geographic descriptions) ----
 
-/// The English geographic description for a number, or `""` if none is known.
-pub fn geo_description_for_number(region: &str, input: &str) -> String {
-    shared().geo_description_for_number(region, input)
+/// The geographic description for a number, or `""` if none is known. `lang` is
+/// an optional ISO code; `None` selects the default `"en"`.
+pub fn geo_description_for_number<'a>(
+    region: &str,
+    input: &str,
+    lang: impl Into<Option<&'a str>>,
+) -> String {
+    shared().geo_description_for_number(region, input, lang)
 }
 
-/// The English geographic description only when the number is valid, else `""`.
-pub fn geo_description_for_valid_number(region: &str, input: &str) -> String {
-    shared().geo_description_for_valid_number(region, input)
+/// The geographic description only when the number is valid, else `""`. `lang`
+/// is an optional ISO code; `None` selects the default `"en"`.
+pub fn geo_description_for_valid_number<'a>(
+    region: &str,
+    input: &str,
+    lang: impl Into<Option<&'a str>>,
+) -> String {
+    shared().geo_description_for_valid_number(region, input, lang)
 }

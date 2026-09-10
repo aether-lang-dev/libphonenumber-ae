@@ -1,5 +1,5 @@
 /* lua/src/phonenumber_ae.c — the Lua 5.4 C extension over the phonenumber
- * C ABI (core/embed.ae), ABI v6.
+ * C ABI (core/embed.ae), ABI v7.
  *
  * This file is the ONLY place in the Lua binding that knows about the C ABI.
  * Everything above it (lua/src/phonenumber_ae.lua) is idiomatic Lua over these
@@ -12,9 +12,11 @@
  * LIBPHONENUMBER_AE_LIB resolution order as every other binding applies and one
  * .so serves them all.
  *
- * v6 is full PhoneNumberUtil parity plus the ShortNumberInfo, TimeZones,
+ * v7 is full PhoneNumberUtil parity plus the ShortNumberInfo, TimeZones,
  * Carrier and Geocoder side-libraries: 66
- * ABI symbols. Signatures are still scalar-only (const char* / int). There are
+ * ABI symbols. Signatures are still scalar-only (const char* / int); v7 adds a
+ * trailing `const char* lang` argument to the four carrier/geo calls (an ISO
+ * code — "en" is always available and is the fallback). There are
  * still no opaque handles — a parsed
  * number and an AsYouType state are themselves caller-owned STRINGS that come
  * back from the engine, get passed to accessor calls, and are freed like any
@@ -139,12 +141,12 @@ typedef struct {
     fn_str_str_int tz_at;
     fn_str_str2    tz_all;
     fn_str_void    tz_unknown;
-    /* PhoneNumberToCarrierMapper */
-    fn_str_str2    carrier_name;
-    fn_str_str2    carrier_name_for_valid;
-    /* PhoneNumberOfflineGeocoder */
-    fn_str_str2    geo_description;
-    fn_str_str2    geo_description_for_valid;
+    /* PhoneNumberToCarrierMapper (v7: trailing lang arg) */
+    fn_str_str3    carrier_name;
+    fn_str_str3    carrier_name_for_valid;
+    /* PhoneNumberOfflineGeocoder (v7: trailing lang arg) */
+    fn_str_str3    geo_description;
+    fn_str_str3    geo_description_for_valid;
 } Engine;
 
 static Engine ENGINE;                 /* process-wide; loaded once */
@@ -751,35 +753,43 @@ static int l_tz_unknown(lua_State* L) {
     return 1;
 }
 
-/* ---- PhoneNumberToCarrierMapper (English carrier names) ---- */
+/* ---- PhoneNumberToCarrierMapper (localized carrier names) ---- */
+/* v7: a trailing `lang` ISO code crosses the ABI. It is optional here and
+ * defaults to "en" (always available, and the fallback for any language not
+ * compiled into the engine), so a two-argument call from Lua keeps working. */
 
 static int l_carrier_name(lua_State* L) {
     engine_load(L, NULL);
     push_owned(L, ENGINE.carrier_name(luaL_checkstring(L, 1),
-                                      luaL_checkstring(L, 2)));
+                                      luaL_checkstring(L, 2),
+                                      luaL_optstring(L, 3, "en")));
     return 1;
 }
 
 static int l_carrier_name_for_valid(lua_State* L) {
     engine_load(L, NULL);
     push_owned(L, ENGINE.carrier_name_for_valid(luaL_checkstring(L, 1),
-                                                luaL_checkstring(L, 2)));
+                                                luaL_checkstring(L, 2),
+                                                luaL_optstring(L, 3, "en")));
     return 1;
 }
 
-/* ---- PhoneNumberOfflineGeocoder (English geographic descriptions) ---- */
+/* ---- PhoneNumberOfflineGeocoder (localized geographic descriptions) ---- */
+/* v7: same trailing `lang` ISO code, optional, defaulting to "en". */
 
 static int l_geo_description(lua_State* L) {
     engine_load(L, NULL);
     push_owned(L, ENGINE.geo_description(luaL_checkstring(L, 1),
-                                         luaL_checkstring(L, 2)));
+                                         luaL_checkstring(L, 2),
+                                         luaL_optstring(L, 3, "en")));
     return 1;
 }
 
 static int l_geo_description_for_valid(lua_State* L) {
     engine_load(L, NULL);
     push_owned(L, ENGINE.geo_description_for_valid(luaL_checkstring(L, 1),
-                                                   luaL_checkstring(L, 2)));
+                                                   luaL_checkstring(L, 2),
+                                                   luaL_optstring(L, 3, "en")));
     return 1;
 }
 

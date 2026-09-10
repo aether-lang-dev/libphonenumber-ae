@@ -37,7 +37,7 @@ formatInternational('US', '2015550123')    // "+1 (201) 555-0123"
 
 numberType('US', '2015550123')             // NumberType.FIXED_LINE
 regions()                                   // ["AC", "AD", ...]
-abiVersion()                                // 6
+abiVersion()                                // 7
 
 // short / emergency numbers (ShortNumberInfo)
 isEmergencyNumber('US', '911')             // true
@@ -50,13 +50,15 @@ timeZonesForNumber('US', '2015550123')     // ["America/New_York"]
 timeZonesForNumber('GB', '2070313000')     // ["Europe/London"]
 unknownTimeZone()                          // "Etc/Unknown"
 
-// carrier names (PhoneNumberToCarrierMapper)
-carrierNameForNumber('GB', '7106000000')   // "O2"
-carrierNameForValidNumber('GB', '7106000000') // "O2" (only if valid)
+// carrier names (PhoneNumberToCarrierMapper) — lang defaults to 'en'
+carrierNameForNumber('GB', '7106000000')          // "O2"
+carrierNameForNumber('GB', '7106000000', 'de')    // localized to German
+carrierNameForValidNumber('GB', '7106000000')     // "O2" (only if valid)
 
-// geographic descriptions (PhoneNumberOfflineGeocoder)
-geoDescriptionForNumber('US', '6502530000')   // "Mountain View, CA"
-geoDescriptionForValidNumber('US', '6502530000') // "Mountain View, CA" (only if valid)
+// geographic descriptions (PhoneNumberOfflineGeocoder) — lang defaults to 'en'
+geoDescriptionForNumber('US', '6502530000')       // "Mountain View, CA"
+geoDescriptionForNumber('US', '6502530000', 'de') // localized to German
+geoDescriptionForValidNumber('US', '6502530000')  // "Mountain View, CA" (only if valid)
 ```
 
 `PhoneNumbers` is a Groovy facade over the Java `PhoneNumbers` class, which

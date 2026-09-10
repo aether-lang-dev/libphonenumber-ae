@@ -1,8 +1,10 @@
 // PhoneNumberToCarrierMapper engine gate.
 import bldr
+import bldr (dep)
 import std.os
 aeb(cap) {
     bldr.build() {
+        dep("core/gen.build.ae")
         root = _get("root")
         out = "${root}/target/pn_carrier_probe"
         _m = os.system("mkdir -p \"${root}/target\"")

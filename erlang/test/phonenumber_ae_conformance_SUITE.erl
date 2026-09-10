@@ -138,7 +138,7 @@ t33_matcher_raw_test() ->
     ?assertEqual(<<"201-555-0123">>, Raw).
 
 t34_abi_version_test() ->
-    ?assertEqual(6, phonenumber_ae:abi_version()).
+    ?assertEqual(7, phonenumber_ae:abi_version()).
 
 %%------------------------------------------------------------------
 %% ShortNumberInfo (docs/conformance.md #35–40, v3)

@@ -41,7 +41,7 @@ engine over Google's metadata.
 | 31 | AsYouType: feed `"2015550123"` digit-by-digit, `ayt_result` | `"(201) 555-0123"` |
 | 32 | `matcher_count("call 201-555-0123 or +1 202 555 0199", "US", VALID)` | `2` |
 | 33 | `matcher_raw("call 201-555-0123 now", "US", VALID, 0)` | `"201-555-0123"` |
-| 34 | `abi_version()` | `6` |
+| 34 | `abi_version()` | `7` |
 | 35 | `short_is_emergency("US", "911")` | true |
 | 36 | `short_is_emergency("US", "999")` | false (that's GB) |
 | 37 | `short_is_emergency("GB", "999")` | true |

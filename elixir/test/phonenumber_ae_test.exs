@@ -159,7 +159,7 @@ defmodule PhonenumberAeTest do
   end
 
   test "34 abi version" do
-    assert PhonenumberAe.abi_version() == 6
+    assert PhonenumberAe.abi_version() == 7
   end
 
   # ---- ShortNumberInfo (docs/conformance.md #35–40, v5) ----

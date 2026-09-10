@@ -2,7 +2,7 @@
 
 -- |
 -- Module      : PhoneNumber
--- Description : Validate, parse and format international phone numbers (ABI v6).
+-- Description : Validate, parse and format international phone numbers (ABI v7).
 --
 -- A thin binding over the monorepo's ONE shared native engine —
 -- @core\/native\/libphonenumber_ae.so@, compiled from pure Aether over Google
@@ -11,13 +11,15 @@
 -- described in @core\/embed.ae@. One engine, one set of behaviours, N language
 -- surfaces.
 --
--- == ABI v6
+-- == ABI v7
 --
 -- The ABI is full @PhoneNumberUtil@ parity plus the @ShortNumberInfo@
 -- side-library (short \/ emergency numbers), the @PhoneNumberToTimeZonesMapper@
--- (IANA time zones), the @PhoneNumberToCarrierMapper@ (English carrier
--- names) and the @PhoneNumberOfflineGeocoder@ (English geographic
--- descriptions). A parsed number is a
+-- (IANA time zones), the @PhoneNumberToCarrierMapper@ (localized carrier
+-- names) and the @PhoneNumberOfflineGeocoder@ (localized geographic
+-- descriptions); v7 adds a per-call @lang@ ISO code to the carrier and
+-- geocoder calls (default "en", the always-available fallback). A parsed
+-- number is a
 -- caller-owned string you carry in a 'ParsedNumber' and read fields from on
 -- demand; the 'AsYouTypeFormatter' threads its state through the same
 -- caller-owned-string mechanism, wrapped here behind an 'IORef'; and
@@ -131,13 +133,17 @@ module PhoneNumber
   , timeZoneCount
   , unknownTimeZone
 
-    -- * PhoneNumberToCarrierMapper (English carrier names)
+    -- * PhoneNumberToCarrierMapper (localized carrier names)
   , carrierNameForNumber
+  , carrierNameForNumberInLang
   , carrierNameForValidNumber
+  , carrierNameForValidNumberInLang
 
-    -- * PhoneNumberOfflineGeocoder (English geographic descriptions)
+    -- * PhoneNumberOfflineGeocoder (localized geographic descriptions)
   , geoDescriptionForNumber
+  , geoDescriptionForNumberInLang
   , geoDescriptionForValidNumber
+  , geoDescriptionForValidNumberInLang
 
     -- * Enumerations
   , NumberType (..)
@@ -340,6 +346,11 @@ str1 fn a = N.withUtf8 a $ \x -> N.takeString =<< fn x
 str2 :: (CString -> CString -> IO CString) -> B.ByteString -> B.ByteString -> IO B.ByteString
 str2 fn a b =
   N.withUtf8 a $ \x -> N.withUtf8 b $ \y -> N.takeString =<< fn x y
+
+-- | Marshal a three-string-arg call that returns a string.
+str3 :: (CString -> CString -> CString -> IO CString) -> B.ByteString -> B.ByteString -> B.ByteString -> IO B.ByteString
+str3 fn a b c =
+  N.withUtf8 a $ \x -> N.withUtf8 b $ \y -> N.withUtf8 c $ \z -> N.takeString =<< fn x y z
 
 -- | Marshal a one-string-arg call that returns a 'CInt'.
 int1 :: (CString -> IO CInt) -> B.ByteString -> IO CInt
@@ -751,41 +762,64 @@ unknownTimeZone :: IO B.ByteString
 unknownTimeZone = N.takeString =<< N.aether_pn_embed_tz_unknown
 
 -- ---------------------------------------------------------------------------
--- PhoneNumberToCarrierMapper (English carrier names)
+-- PhoneNumberToCarrierMapper (localized carrier names)
 -- ---------------------------------------------------------------------------
 --
--- Longest-prefix match over the E.164 digits; English names only. @\"\"@ when
--- no carrier is known for the number.
+-- Longest-prefix match over the E.164 digits. @lang@ is an ISO code ("en",
+-- "de", …); "en" is always available and is the fallback for any language not
+-- compiled into the engine. @\"\"@ when no carrier is known for the number.
+--
+-- Haskell has no default arguments, so the language-taking form is a separate
+-- @…InLang@ function; the plain form is the "en" convenience over it, keeping
+-- existing two-argument call sites unchanged.
+
+-- | The carrier name for a number in @lang@, or @\"\"@ if none is known.
+carrierNameForNumberInLang :: B.ByteString -> B.ByteString -> B.ByteString -> IO B.ByteString
+carrierNameForNumberInLang region input lang = str3 N.aether_pn_embed_carrier_name region input lang
 
 -- | The carrier name for a number (English), or @\"\"@ if none is known.
 carrierNameForNumber :: B.ByteString -> B.ByteString -> IO B.ByteString
-carrierNameForNumber region input = str2 N.aether_pn_embed_carrier_name region input
+carrierNameForNumber region input = carrierNameForNumberInLang region input "en"
+
+-- | The carrier name in @lang@ only when the number is valid, else @\"\"@.
+carrierNameForValidNumberInLang :: B.ByteString -> B.ByteString -> B.ByteString -> IO B.ByteString
+carrierNameForValidNumberInLang region input lang = str3 N.aether_pn_embed_carrier_name_for_valid region input lang
 
 -- | The carrier name only when the number is valid, else @\"\"@.
 carrierNameForValidNumber :: B.ByteString -> B.ByteString -> IO B.ByteString
-carrierNameForValidNumber region input = str2 N.aether_pn_embed_carrier_name_for_valid region input
+carrierNameForValidNumber region input = carrierNameForValidNumberInLang region input "en"
 
 -- ---------------------------------------------------------------------------
--- PhoneNumberOfflineGeocoder (English geographic descriptions)
+-- PhoneNumberOfflineGeocoder (localized geographic descriptions)
 -- ---------------------------------------------------------------------------
 --
--- Longest-prefix match over the E.164 digits; English descriptions only.
--- @\"\"@ when no description is known for the number.
+-- Longest-prefix match over the E.164 digits. @lang@ is an ISO code; "en" is
+-- always available and is the fallback. @\"\"@ when no description is known.
+-- As with the carrier calls, the plain form is the "en" convenience over the
+-- @…InLang@ form.
+
+-- | A geographic description for a number in @lang@, or @\"\"@ if none is known.
+geoDescriptionForNumberInLang :: B.ByteString -> B.ByteString -> B.ByteString -> IO B.ByteString
+geoDescriptionForNumberInLang region input lang = str3 N.aether_pn_embed_geo_description region input lang
 
 -- | A geographic description for a number (English), or @\"\"@ if none is known.
 geoDescriptionForNumber :: B.ByteString -> B.ByteString -> IO B.ByteString
-geoDescriptionForNumber region input = str2 N.aether_pn_embed_geo_description region input
+geoDescriptionForNumber region input = geoDescriptionForNumberInLang region input "en"
+
+-- | A geographic description in @lang@ only when the number is valid, else @\"\"@.
+geoDescriptionForValidNumberInLang :: B.ByteString -> B.ByteString -> B.ByteString -> IO B.ByteString
+geoDescriptionForValidNumberInLang region input lang = str3 N.aether_pn_embed_geo_description_for_valid region input lang
 
 -- | A geographic description only when the number is valid, else @\"\"@.
 geoDescriptionForValidNumber :: B.ByteString -> B.ByteString -> IO B.ByteString
-geoDescriptionForValidNumber region input = str2 N.aether_pn_embed_geo_description_for_valid region input
+geoDescriptionForValidNumber region input = geoDescriptionForValidNumberInLang region input "en"
 
 -- ---------------------------------------------------------------------------
 -- Introspection
 -- ---------------------------------------------------------------------------
 
--- | The engine's ABI revision (@6@ for this binding — adds ShortNumberInfo,
--- the TimeZones mapper, the Carrier mapper and the Geocoder).
+-- | The engine's ABI revision (@7@ for this binding — the Carrier and Geocoder
+-- calls take a per-call @lang@ argument).
 abiVersion :: IO Int
 abiVersion = fromIntegral <$> N.aether_pn_embed_abi_version
 
