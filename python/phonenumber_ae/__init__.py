@@ -29,6 +29,7 @@ from ._native import (
     SRC_FROM_NUMBER_WITH_PLUS, SRC_FROM_NUMBER_WITH_IDD,
     SRC_FROM_NUMBER_WITHOUT_PLUS, SRC_FROM_DEFAULT_COUNTRY,
     LENIENCY_POSSIBLE, LENIENCY_VALID,
+    COST_TOLL_FREE, COST_STANDARD_RATE, COST_PREMIUM_RATE, COST_UNKNOWN,
 )
 from ._phonenumber import (
     country_code, example_number, example_number_for_type,
@@ -43,6 +44,9 @@ from ._phonenumber import (
     is_number_match, truncate_too_long, normalize_digits_only,
     convert_alpha_characters, is_alpha_number, abi_version,
     AsYouTypeFormatter, Match, find_numbers,
+    short_is_possible, short_is_valid, is_emergency_number,
+    connects_to_emergency_number, short_is_carrier_specific,
+    short_is_sms_service, short_expected_cost, short_example_number,
 )
 
 __version__ = "0.2.0"
@@ -60,6 +64,10 @@ __all__ = [
     "is_number_match", "truncate_too_long", "normalize_digits_only",
     "convert_alpha_characters", "is_alpha_number", "abi_version",
     "AsYouTypeFormatter", "Match", "find_numbers",
+    "short_is_possible", "short_is_valid", "is_emergency_number",
+    "connects_to_emergency_number", "short_is_carrier_specific",
+    "short_is_sms_service", "short_expected_cost", "short_example_number",
+    "COST_TOLL_FREE", "COST_STANDARD_RATE", "COST_PREMIUM_RATE", "COST_UNKNOWN",
     "E164", "INTERNATIONAL", "NATIONAL", "RFC3966",
     "TYPE_UNKNOWN", "TYPE_FIXED_LINE", "TYPE_MOBILE", "TYPE_TOLL_FREE",
     "TYPE_PREMIUM_RATE", "TYPE_SHARED_COST", "TYPE_VOIP", "TYPE_PERSONAL_NUMBER",

@@ -1,6 +1,6 @@
 defmodule PhonenumberAe do
   @moduledoc """
-  Validate, parse and format international phone numbers (ABI v2).
+  Validate, parse and format international phone numbers (ABI v3).
 
   This is a thin Elixir surface over the monorepo's **canonical BEAM NIF**,
   which lives in `erlang/` and is compiled exactly once. There is no C source
@@ -11,8 +11,8 @@ defmodule PhonenumberAe do
   The engine itself (`core/native/libphonenumber_ae.so`) is pure Aether,
   compiled from Google libphonenumber's own metadata. No phone-number logic
   lives in this file: everything marshals to an `aether_pn_embed_*` call across
-  the C ABI in `core/embed.ae` (docs/abi.md — 50 symbols, full
-  PhoneNumberUtil parity).
+  the C ABI in `core/embed.ae` (docs/abi.md — 58 symbols, full
+  PhoneNumberUtil parity plus ShortNumberInfo).
 
       iex> PhonenumberAe.country_code("US")
       "1"
@@ -77,6 +77,9 @@ defmodule PhonenumberAe do
 
   @typedoc "Matcher leniency."
   @type leniency :: :possible | :valid
+
+  @typedoc "A ShortNumberCost from `short_expected_cost/2`."
+  @type short_number_cost :: :toll_free | :standard_rate | :premium_rate | :unknown
 
   # ---- metadata ----
 
@@ -292,9 +295,58 @@ defmodule PhonenumberAe do
     end
   end
 
+  # ---- short numbers (ShortNumberInfo) ----
+  #
+  # Short numbers are dialled as-is (no country code, no national prefix): the
+  # input is the raw short number plus a region.
+
+  @doc "True if the short number is a possible length for the region."
+  @spec short_is_possible?(iodata(), iodata()) :: boolean()
+  def short_is_possible?(region, input),
+    do: :phonenumber_ae_nif.short_is_possible(region, input) != 0
+
+  @doc "True if the short number is valid (carrier-independent) for the region."
+  @spec short_is_valid?(iodata(), iodata()) :: boolean()
+  def short_is_valid?(region, input),
+    do: :phonenumber_ae_nif.short_is_valid(region, input) != 0
+
+  @doc "True if the short number is an emergency number for the region."
+  @spec is_emergency_number?(iodata(), iodata()) :: boolean()
+  def is_emergency_number?(region, input),
+    do: :phonenumber_ae_nif.short_is_emergency(region, input) != 0
+
+  @doc "True if dialling the number would connect to an emergency service."
+  @spec connects_to_emergency_number?(iodata(), iodata()) :: boolean()
+  def connects_to_emergency_number?(region, input),
+    do: :phonenumber_ae_nif.short_connects_to_emergency(region, input) != 0
+
+  @doc "True if the short number is carrier-specific in the region."
+  @spec short_is_carrier_specific?(iodata(), iodata()) :: boolean()
+  def short_is_carrier_specific?(region, input),
+    do: :phonenumber_ae_nif.short_is_carrier_specific(region, input) != 0
+
+  @doc "True if the short number is for an SMS service in the region."
+  @spec short_is_sms_service?(iodata(), iodata()) :: boolean()
+  def short_is_sms_service?(region, input),
+    do: :phonenumber_ae_nif.short_is_sms_service(region, input) != 0
+
+  @doc "The `t:short_number_cost/0` for the short number (`:toll_free`, …)."
+  @spec short_expected_cost(iodata(), iodata()) :: short_number_cost()
+  def short_expected_cost(region, input),
+    do: cost_atom(:phonenumber_ae_nif.short_expected_cost(region, input))
+
+  @doc "The raw ABI ShortNumberCost code (0 toll_free, …)."
+  @spec short_expected_cost_code(iodata(), iodata()) :: integer()
+  def short_expected_cost_code(region, input),
+    do: :phonenumber_ae_nif.short_expected_cost(region, input)
+
+  @doc ~S'An example short number for the region, or "".'
+  @spec short_example_number(iodata()) :: binary()
+  defdelegate short_example_number(region), to: :phonenumber_ae_nif
+
   # ---- introspection ----
 
-  @doc "The engine's ABI revision (2)."
+  @doc "The engine's ABI revision (3)."
   @spec abi_version() :: non_neg_integer()
   defdelegate abi_version(), to: :phonenumber_ae_nif
 
@@ -355,4 +407,12 @@ defmodule PhonenumberAe do
   # Matcher leniency codes.
   defp leniency_code(:possible), do: 0
   defp leniency_code(:valid), do: 1
+
+  # ShortNumberCost codes -> atoms (0 toll-free, 1 standard, 2 premium, 3 unknown).
+  defp cost_atom(0), do: :toll_free
+  defp cost_atom(1), do: :standard_rate
+  defp cost_atom(2), do: :premium_rate
+  defp cost_atom(3), do: :unknown
+  # A newer engine could return an unseen code; degrade rather than crash.
+  defp cost_atom(_), do: :unknown
 end

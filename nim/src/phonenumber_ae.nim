@@ -9,7 +9,8 @@
 ## `aether_pn_embed_<name>`. Everything below is marshalling: Nim values in, C
 ## scalars and `cstring`s out, and back.
 ##
-## ABI v2 (full `PhoneNumberUtil` parity). The ABI has **no opaque handle**: a
+## ABI v3 (full `PhoneNumberUtil` parity, plus the ShortNumberInfo surface). The
+## ABI has **no opaque handle**: a
 ## parsed number and an AsYouType state are themselves caller-owned *strings* —
 ## you get one back, pass it to accessor calls, and free it like any other
 ## returned string. Every call is independent.
@@ -120,6 +121,12 @@ type
     lenPossible = 0
     lenValid = 1
 
+  ShortNumberCost* = enum ## What `expectedCost` reports for a short number.
+    costTollFree = 0
+    costStandardRate = 1
+    costPremiumRate = 2
+    costUnknown = 3
+
 # Bare integer aliases, for a caller who prefers the wire format to the enum.
 const
   E164* = 0.cint
@@ -161,13 +168,18 @@ const
   LENIENCY_POSSIBLE* = 0.cint
   LENIENCY_VALID* = 1.cint
 
+  COST_TOLL_FREE* = 0.cint
+  COST_STANDARD_RATE* = 1.cint
+  COST_PREMIUM_RATE* = 2.cint
+  COST_UNKNOWN* = 3.cint
+
 # ---------------------------------------------------------------------------
 # The 1:1 symbol table.
 # ---------------------------------------------------------------------------
 #
 # Declared in the order core/embed.ae / docs/abi.md declare them, so the two can
 # be diffed by eye. Every integer is `cint`; every returned string is `cstring`
-# and is caller-owned (see the ownership rule at the top). All 50 symbols.
+# and is caller-owned (see the ownership rule at the top). All 58 symbols.
 
 # ---- lifecycle / metadata ----
 proc pnAbiVersion(): cint {.importc: "aether_pn_embed_abi_version", cdecl.}
@@ -279,6 +291,24 @@ proc pnMatcherEnd(text, region: cstring, leniency, idx: cint): cint
   {.importc: "aether_pn_embed_matcher_end", cdecl.}
 proc pnMatcherRaw(text, region: cstring, leniency, idx: cint): cstring
   {.importc: "aether_pn_embed_matcher_raw", cdecl.}
+
+# ---- ShortNumberInfo (short / emergency numbers) ----
+proc pnShortIsPossible(region, input: cstring): cint
+  {.importc: "aether_pn_embed_short_is_possible", cdecl.}
+proc pnShortIsValid(region, input: cstring): cint
+  {.importc: "aether_pn_embed_short_is_valid", cdecl.}
+proc pnShortIsEmergency(region, input: cstring): cint
+  {.importc: "aether_pn_embed_short_is_emergency", cdecl.}
+proc pnShortConnectsToEmergency(region, input: cstring): cint
+  {.importc: "aether_pn_embed_short_connects_to_emergency", cdecl.}
+proc pnShortIsCarrierSpecific(region, input: cstring): cint
+  {.importc: "aether_pn_embed_short_is_carrier_specific", cdecl.}
+proc pnShortIsSmsService(region, input: cstring): cint
+  {.importc: "aether_pn_embed_short_is_sms_service", cdecl.}
+proc pnShortExpectedCost(region, input: cstring): cint
+  {.importc: "aether_pn_embed_short_expected_cost", cdecl.}
+proc pnShortExampleNumber(region: cstring): cstring
+  {.importc: "aether_pn_embed_short_example_number", cdecl.}
 
 # ---------------------------------------------------------------------------
 # String marshalling — the one place a returned pointer is allowed to live.
@@ -524,7 +554,7 @@ proc isAlphaNumber*(s: string): bool =
   pnIsAlphaNumber(s.cstring) != 0
 
 proc abiVersion*(): int =
-  ## The ABI revision the linked engine reports (v2).
+  ## The ABI revision the linked engine reports (v3 — adds ShortNumberInfo).
   int(pnAbiVersion())
 
 # ---------------------------------------------------------------------------
@@ -580,3 +610,46 @@ proc findNumbers*(text, region: string, leniency: Leniency = lenValid): seq[Matc
       start: int(pnMatcherStart(text.cstring, region.cstring, len, i)),
       `end`: int(pnMatcherEnd(text.cstring, region.cstring, len, i)),
       raw: takeString(pnMatcherRaw(text.cstring, region.cstring, len, i)))
+
+# ---------------------------------------------------------------------------
+# ShortNumberInfo (short / emergency numbers)
+# ---------------------------------------------------------------------------
+#
+# Short numbers are dialled as-is — no country code, no national prefix — so the
+# input is the raw short number plus a region. Pure marshalling, like the rest.
+
+proc shortIsPossible*(region, input: string): bool =
+  ## True if `input` is a possible short number for the region (right length).
+  pnShortIsPossible(region.cstring, input.cstring) != 0
+
+proc shortIsValid*(region, input: string): bool =
+  ## True if `input` matches a short-number pattern for the region.
+  pnShortIsValid(region.cstring, input.cstring) != 0
+
+proc isEmergencyNumber*(region, input: string): bool =
+  ## True if `input` is an emergency number for the region (e.g. US "911").
+  pnShortIsEmergency(region.cstring, input.cstring) != 0
+
+proc connectsToEmergencyNumber*(region, input: string): bool =
+  ## True if dialling `input` connects to an emergency number for the region.
+  pnShortConnectsToEmergency(region.cstring, input.cstring) != 0
+
+proc shortIsCarrierSpecific*(region, input: string): bool =
+  ## True if the short number is specific to a single carrier.
+  pnShortIsCarrierSpecific(region.cstring, input.cstring) != 0
+
+proc shortIsSmsService*(region, input: string): bool =
+  ## True if the short number is usable as an SMS service.
+  pnShortIsSmsService(region.cstring, input.cstring) != 0
+
+proc shortExpectedCost*(region, input: string): ShortNumberCost =
+  ## The expected cost of dialling the short number (a `ShortNumberCost`).
+  ShortNumberCost(pnShortExpectedCost(region.cstring, input.cstring))
+
+proc shortExpectedCostInt*(region, input: string): int =
+  ## The raw ABI cost int (0 toll-free, 1 standard, 2 premium, 3 unknown).
+  int(pnShortExpectedCost(region.cstring, input.cstring))
+
+proc shortExampleNumber*(region: string): string =
+  ## An example short number for the region, or "".
+  takeString(pnShortExampleNumber(region.cstring))

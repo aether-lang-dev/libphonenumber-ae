@@ -17,6 +17,7 @@ aeb(cap) {
         dep("core_tests/.abi.ae")     // C-over-dlopen ABI conformance
         dep("core_tests/.parity.ae")  // Google PhoneNumberUtilTest baseline
         dep("core_tests/.roundtrip.ae") // all-territory invariant sweep
+        dep("core_tests/.short.ae")     // ShortNumberInfo behaviour
 
         // Native-FFI bindings.
         dep("python/.tests.ae")

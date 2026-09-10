@@ -1,4 +1,4 @@
-# The C ABI (`aether_pn_embed_*`) — v2, full PhoneNumberUtil parity
+# The C ABI (`aether_pn_embed_*`) — v3: PhoneNumberUtil + ShortNumberInfo
 
 The one seam every binding speaks to. Defined by
 [`core/embed.ae`](../core/embed.ae) and the string bridge in
@@ -13,7 +13,7 @@ The one seam every binding speaks to. Defined by
    caller-owned *strings*: you get one back, pass it to accessor calls, and free
    it like any other returned string. Every call is independent.
 3. **Signatures are scalar-only** — `const char*` and `int`.
-4. **Append-only.** ABI version is `2` (`aether_pn_embed_abi_version()`).
+4. **Append-only.** ABI version is `3` (`aether_pn_embed_abi_version()`).
 
 `region` is ISO-3166 alpha-2 (case-insensitive). `input` is a raw number a human
 might type (digits + spaces/dashes/parens/dots, optional `+cc`, optional
@@ -33,7 +33,7 @@ extension `ext`/`x`/`;ext=`, optional vanity letters).
 ### Lifecycle / metadata
 | Symbol | Signature |
 |---|---|
-| `abi_version` | `int ()` → 2 |
+| `abi_version` | `int ()` → 3 |
 | `free_string` | `void (char*)` |
 | `country_code` | `char* (region)` |
 | `example_number` | `char* (region)` |
@@ -112,6 +112,23 @@ to the accessors, then free it.
 | `matcher_end` | `int (text, region, leniency, idx)` |
 | `matcher_raw` | `char* (text, region, leniency, idx)` |
 
+### ShortNumberInfo (short / emergency numbers)
+
+Short numbers are dialed as-is (no country code, no national prefix): the input
+is the raw short number plus a region. **ShortNumberCost** (`short_expected_cost`):
+`0` toll-free · `1` standard rate · `2` premium rate · `3` unknown.
+
+| Symbol | Signature |
+|---|---|
+| `short_is_possible` | `int (region, input)` |
+| `short_is_valid` | `int (region, input)` |
+| `short_is_emergency` | `int (region, input)` |
+| `short_connects_to_emergency` | `int (region, input)` |
+| `short_is_carrier_specific` | `int (region, input)` |
+| `short_is_sms_service` | `int (region, input)` |
+| `short_expected_cost` | `int (region, input)` → ShortNumberCost |
+| `short_example_number` | `char* (region)` |
+
 ## Example (C)
 
 ```c
@@ -129,4 +146,4 @@ aether_pn_embed_free_string(intl);
 Full core `PhoneNumberUtil` parity — byte-exact against Google's PRODUCTION
 metadata on every sampled `PhoneNumberUtilTest` case (26/26, see
 [`parity-plan.md`](parity-plan.md)). Side-libraries (geocoder, carrier,
-timezone, short numbers) are out of scope for this branch.
+timezone) are out of scope for this branch; ShortNumberInfo is now included.

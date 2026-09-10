@@ -27,6 +27,7 @@
 // change a signature; add a new symbol. pn_embed_abi_version() reports the rev.
 
 import core.phonenumber
+import core.shortnumber
 import std.string
 import std.list
 
@@ -34,7 +35,36 @@ extern pn_raw_dup(s: string) -> string
 extern pn_raw_free(s: string)
 
 // ABI revision. Bumped to 2 for the full PhoneNumberUtil-parity surface.
-pn_embed_abi_version() -> int { return 2 }
+// ABI 3 adds the ShortNumberInfo surface (pn_embed_short_*).
+pn_embed_abi_version() -> int { return 3 }
+
+// ---- ShortNumberInfo (short / emergency numbers) ----
+// Dialed as-is (no cc, no national prefix): the input is the raw short number
+// plus a region. Cost constants: 0 toll-free, 1 standard, 2 premium, 3 unknown.
+pn_embed_short_is_possible(region: string, input: string) -> int {
+    return shortnumber.is_possible_short_number(region, input)
+}
+pn_embed_short_is_valid(region: string, input: string) -> int {
+    return shortnumber.is_valid_short_number(region, input)
+}
+pn_embed_short_is_emergency(region: string, input: string) -> int {
+    return shortnumber.is_emergency_number(region, input)
+}
+pn_embed_short_connects_to_emergency(region: string, input: string) -> int {
+    return shortnumber.connects_to_emergency_number(region, input)
+}
+pn_embed_short_is_carrier_specific(region: string, input: string) -> int {
+    return shortnumber.is_carrier_specific(region, input)
+}
+pn_embed_short_is_sms_service(region: string, input: string) -> int {
+    return shortnumber.is_sms_service(region, input)
+}
+pn_embed_short_expected_cost(region: string, input: string) -> int {
+    return shortnumber.expected_cost(region, input)
+}
+pn_embed_short_example_number(region: string) -> string {
+    return pn_raw_dup(shortnumber.short_example_number(region))
+}
 
 pn_embed_free_string(s: string) { pn_raw_free(s) }
 

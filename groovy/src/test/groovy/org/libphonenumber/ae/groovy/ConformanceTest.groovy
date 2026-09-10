@@ -6,6 +6,7 @@ import org.libphonenumber.ae.Format
 import org.libphonenumber.ae.Leniency
 import org.libphonenumber.ae.MatchType
 import org.libphonenumber.ae.NumberType
+import org.libphonenumber.ae.ShortNumberCost
 import org.libphonenumber.ae.ValidationResult
 
 import static org.libphonenumber.ae.groovy.PhoneNumbers.abiVersion
@@ -22,6 +23,10 @@ import static org.libphonenumber.ae.groovy.PhoneNumbers.isNumberMatch
 import static org.libphonenumber.ae.groovy.PhoneNumbers.isPossibleNumber
 import static org.libphonenumber.ae.groovy.PhoneNumbers.isPossibleNumberWithReason
 import static org.libphonenumber.ae.groovy.PhoneNumbers.isValidNumber
+import static org.libphonenumber.ae.groovy.PhoneNumbers.isValidShortNumber
+import static org.libphonenumber.ae.groovy.PhoneNumbers.isEmergencyNumber
+import static org.libphonenumber.ae.groovy.PhoneNumbers.shortExpectedCost
+import static org.libphonenumber.ae.groovy.PhoneNumbers.shortExampleNumber
 import static org.libphonenumber.ae.groovy.PhoneNumbers.normalizeDigitsOnly
 import static org.libphonenumber.ae.groovy.PhoneNumbers.numberType
 import static org.libphonenumber.ae.groovy.PhoneNumbers.parse
@@ -32,7 +37,7 @@ import static org.libphonenumber.ae.groovy.PhoneNumbers.regionsForCountryCode
 import static org.libphonenumber.ae.groovy.PhoneNumbers.truncateTooLong
 
 /**
- * The 34-check binding conformance suite (docs/conformance.md, v2), in Groovy.
+ * The 40-check binding conformance suite (docs/conformance.md, v3), in Groovy.
  *
  * Proves the <b>Groovy layer</b> reaches the same engine behaviour the Java and
  * Python suites see. Since that layer sits on the Java binding rather than on
@@ -52,7 +57,7 @@ class ConformanceTest {
     static List<String> failures = []
 
     static void main(String[] args) {
-        // ---- the 34 required checks ----
+        // ---- the 40 required checks ----
         check('01 countryCode US') { assertEquals('1', countryCode('US')) }
         check('02 countryCode GB') { assertEquals('44', countryCode('GB')) }
         check('03 unknown region') { assertEquals('', countryCode('ZZ')) }
@@ -135,7 +140,15 @@ class ConformanceTest {
             def ms = findNumbers('call 201-555-0123 now', 'US', Leniency.VALID)
             assertEquals('201-555-0123', ms[0].raw())
         }
-        check('34 abiVersion') { assertEquals(2, abiVersion()) }
+        check('34 abiVersion') { assertEquals(3, abiVersion()) }
+        check('35 isEmergencyNumber US 911') { assertTrue('911 emergency US', isEmergencyNumber('US', '911')) }
+        check('36 isEmergencyNumber US 999') { assertTrue('999 not emergency US', !isEmergencyNumber('US', '999')) }
+        check('37 isEmergencyNumber GB 999') { assertTrue('999 emergency GB', isEmergencyNumber('GB', '999')) }
+        check('38 isValidShortNumber US 911') { assertTrue('911 valid short US', isValidShortNumber('US', '911')) }
+        check('39 shortExpectedCost US 911 TOLL_FREE') {
+            assertEquals(ShortNumberCost.TOLL_FREE, shortExpectedCost('US', '911'))
+        }
+        check('40 shortExampleNumber US') { assertEquals('112', shortExampleNumber('US')) }
 
         // ---- extras specific to the Groovy layer ----
         check('format default style is NATIONAL') {
@@ -150,10 +163,10 @@ class ConformanceTest {
         // ---- report ----
         println()
         if (failures.isEmpty()) {
-            println("PASS (v2) — $passed checks")
+            println("PASS (v3, ShortNumberInfo) — $passed checks")
             System.exit(0)
         }
-        println("FAIL (v2) — ${failures.size()} of ${passed + failures.size()} checks failed:")
+        println("FAIL (v3) — ${failures.size()} of ${passed + failures.size()} checks failed:")
         failures.each { println("  $it") }
         System.exit(1)
     }

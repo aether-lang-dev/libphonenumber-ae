@@ -1,4 +1,4 @@
-//! The binding conformance suite (docs/conformance.md, v2 — 34 checks).
+//! The binding conformance suite (docs/conformance.md, v3 — 40 checks).
 //!
 //! Proves the Rust binding marshals every value shape across the FFI. It is
 //! NOT a phone-number test suite — the behavioural cases live in the engine's
@@ -222,7 +222,37 @@ fn t33_matcher_raw() {
 
 #[test]
 fn t34_abi_version() {
-    assert_eq!(engine().abi_version(), 2);
+    assert_eq!(engine().abi_version(), 3);
+}
+
+#[test]
+fn t35_short_emergency_us() {
+    assert!(engine().is_emergency_number("US", "911"));
+}
+
+#[test]
+fn t36_short_not_emergency() {
+    assert!(!engine().is_emergency_number("US", "999"));
+}
+
+#[test]
+fn t37_short_emergency_gb() {
+    assert!(engine().is_emergency_number("GB", "999"));
+}
+
+#[test]
+fn t38_short_valid() {
+    assert!(engine().short_is_valid("US", "911"));
+}
+
+#[test]
+fn t39_short_cost() {
+    assert_eq!(engine().short_expected_cost("US", "911"), pn::COST_TOLL_FREE);
+}
+
+#[test]
+fn t40_short_example() {
+    assert_eq!(engine().short_example_number("US"), "112");
 }
 
 // ---- extras exercising the typed idiomatic surface ----
@@ -265,9 +295,17 @@ fn regions_vec_matches_count() {
 }
 
 #[test]
+fn cost_enum_matches_raw() {
+    assert_eq!(
+        engine().short_expected_cost_enum("US", "911"),
+        pn::Cost::TollFree
+    );
+}
+
+#[test]
 fn free_functions_share_one_engine() {
     // The crate-level free functions load one process-wide engine.
-    assert_eq!(pn::abi_version(), 2);
+    assert_eq!(pn::abi_version(), 3);
     assert_eq!(pn::country_code("US"), "1");
     let num = pn::parse("+1 201 555 0123", "US");
     assert_eq!(num.national_number(), "2015550123");

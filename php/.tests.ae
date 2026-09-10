@@ -36,7 +36,7 @@ aeb(cap) {
             println("php: conformance suite reported failures")
             return 1
         }
-        println("php: PASS — v2 34-check conformance")
+        println("php: PASS — v3 40-check conformance (incl. ShortNumberInfo)")
         return 0
     }
 }

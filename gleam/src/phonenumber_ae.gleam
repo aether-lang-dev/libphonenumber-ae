@@ -1,4 +1,4 @@
-//// Validate, parse and format international phone numbers (ABI v2).
+//// Validate, parse and format international phone numbers (ABI v3).
 ////
 //// This is a thin Gleam surface over the monorepo's **canonical BEAM NIF**,
 //// which lives in `erlang/` and is compiled exactly once. There is no C source
@@ -10,8 +10,8 @@
 //// The engine itself (`core/native/libphonenumber_ae.so`) is pure Aether,
 //// compiled from Google libphonenumber's own metadata. No phone-number logic
 //// lives in this file: everything marshals to an `aether_pn_embed_*` call
-//// across the C ABI in `core/embed.ae` (docs/abi.md — 50 symbols, full
-//// PhoneNumberUtil parity).
+//// across the C ABI in `core/embed.ae` (docs/abi.md — 58 symbols, full
+//// PhoneNumberUtil parity plus ShortNumberInfo).
 ////
 //// ```gleam
 //// phonenumber_ae.country_code("US")
@@ -105,6 +105,16 @@ pub type CountryCodeSource {
 pub type Leniency {
   Possible
   Valid
+}
+
+/// A ShortNumberCost, returned by `short_expected_cost`. The constructors are
+/// prefixed `Cost` because `TollFree` is already a `NumberType` constructor in
+/// this module, and Gleam constructor names must be unique per module.
+pub type ShortNumberCost {
+  CostTollFree
+  CostStandardRate
+  CostPremiumRate
+  CostUnknown
 }
 
 /// A parsed phone number. Wraps the caller-owned parsed-number string the ABI
@@ -209,6 +219,18 @@ fn leniency_code(l: Leniency) -> Int {
   case l {
     Possible -> 0
     Valid -> 1
+  }
+}
+
+/// The ABI ShortNumberCost code as a `ShortNumberCost`. Append only, never
+/// renumber; an unseen code degrades to `UnknownCost` rather than crashing.
+fn cost_of_code(code: Int) -> ShortNumberCost {
+  case code {
+    0 -> CostTollFree
+    1 -> CostStandardRate
+    2 -> CostPremiumRate
+    3 -> CostUnknown
+    _ -> CostUnknown
   }
 }
 
@@ -401,6 +423,31 @@ fn matcher_raw_ffi(
 
 @external(erlang, "phonenumber_ae_nif", "abi_version")
 fn abi_version_ffi() -> Int
+
+// ShortNumberInfo
+@external(erlang, "phonenumber_ae_nif", "short_is_possible")
+fn short_is_possible_ffi(region: String, input: String) -> Int
+
+@external(erlang, "phonenumber_ae_nif", "short_is_valid")
+fn short_is_valid_ffi(region: String, input: String) -> Int
+
+@external(erlang, "phonenumber_ae_nif", "short_is_emergency")
+fn short_is_emergency_ffi(region: String, input: String) -> Int
+
+@external(erlang, "phonenumber_ae_nif", "short_connects_to_emergency")
+fn short_connects_to_emergency_ffi(region: String, input: String) -> Int
+
+@external(erlang, "phonenumber_ae_nif", "short_is_carrier_specific")
+fn short_is_carrier_specific_ffi(region: String, input: String) -> Int
+
+@external(erlang, "phonenumber_ae_nif", "short_is_sms_service")
+fn short_is_sms_service_ffi(region: String, input: String) -> Int
+
+@external(erlang, "phonenumber_ae_nif", "short_expected_cost")
+fn short_expected_cost_ffi(region: String, input: String) -> Int
+
+@external(erlang, "phonenumber_ae_nif", "short_example_number")
+fn short_example_number_ffi(region: String) -> String
 
 // ---- metadata ----
 
@@ -713,9 +760,59 @@ pub fn matcher_count(text: String, region: String, leniency: Leniency) -> Int {
   matcher_count_ffi(text, region, leniency_code(leniency))
 }
 
+// ---- ShortNumberInfo (short / emergency numbers) ----
+//
+// Short numbers are dialled as-is (no country code, no national prefix): the
+// input is the raw short number plus a region.
+
+/// True if the short number is a possible length for the region.
+pub fn short_is_possible(region: String, input: String) -> Bool {
+  short_is_possible_ffi(region, input) != 0
+}
+
+/// True if the short number is valid (carrier-independent) for the region.
+pub fn short_is_valid(region: String, input: String) -> Bool {
+  short_is_valid_ffi(region, input) != 0
+}
+
+/// True if the short number is an emergency number for the region.
+pub fn is_emergency_number(region: String, input: String) -> Bool {
+  short_is_emergency_ffi(region, input) != 0
+}
+
+/// True if dialling the number would connect to an emergency service.
+pub fn connects_to_emergency_number(region: String, input: String) -> Bool {
+  short_connects_to_emergency_ffi(region, input) != 0
+}
+
+/// True if the short number is carrier-specific in the region.
+pub fn short_is_carrier_specific(region: String, input: String) -> Bool {
+  short_is_carrier_specific_ffi(region, input) != 0
+}
+
+/// True if the short number is for an SMS service in the region.
+pub fn short_is_sms_service(region: String, input: String) -> Bool {
+  short_is_sms_service_ffi(region, input) != 0
+}
+
+/// The `ShortNumberCost` for the short number (`TollFree`, …).
+pub fn short_expected_cost(region: String, input: String) -> ShortNumberCost {
+  cost_of_code(short_expected_cost_ffi(region, input))
+}
+
+/// The raw ABI ShortNumberCost code (0 toll-free, …).
+pub fn short_expected_cost_code(region: String, input: String) -> Int {
+  short_expected_cost_ffi(region, input)
+}
+
+/// An example short number for the region, or "".
+pub fn short_example_number(region: String) -> String {
+  short_example_number_ffi(region)
+}
+
 // ---- introspection ----
 
-/// The engine's ABI revision (2).
+/// The engine's ABI revision (3).
 pub fn abi_version() -> Int {
   abi_version_ffi()
 }

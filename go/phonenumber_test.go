@@ -1,4 +1,4 @@
-// The 34-check binding conformance suite (docs/conformance.md, v2).
+// The 40-check binding conformance suite (docs/conformance.md, v3).
 //
 // Proves the Go binding marshals every value shape across the FFI. It is NOT a
 // phone-number test suite — the behavioural cases live in the engine's own
@@ -201,7 +201,33 @@ func Test33MatcherRaw(t *testing.T) {
 }
 
 func Test34ABIVersion(t *testing.T) {
-	eqInt(t, "ABIVersion()", ABIVersion(), 2)
+	eqInt(t, "ABIVersion()", ABIVersion(), 3)
+}
+
+func Test35ShortEmergencyUS(t *testing.T) {
+	eqBool(t, `IsEmergencyNumber("US", "911")`, IsEmergencyNumber("US", "911"), true)
+}
+
+func Test36ShortNotEmergency(t *testing.T) {
+	eqBool(t, `IsEmergencyNumber("US", "999")`, IsEmergencyNumber("US", "999"), false)
+}
+
+func Test37ShortEmergencyGB(t *testing.T) {
+	eqBool(t, `IsEmergencyNumber("GB", "999")`, IsEmergencyNumber("GB", "999"), true)
+}
+
+func Test38ShortValid(t *testing.T) {
+	eqBool(t, `ShortIsValid("US", "911")`, ShortIsValid("US", "911"), true)
+}
+
+func Test39ShortCost(t *testing.T) {
+	if got := ShortExpectedCost("US", "911"); got != CostTollFree {
+		t.Errorf(`ShortExpectedCost("US", "911") = %d, want %d (CostTollFree)`, got, CostTollFree)
+	}
+}
+
+func Test40ShortExample(t *testing.T) {
+	eqStr(t, `ShortExampleNumber("US")`, ShortExampleNumber("US"), "112")
 }
 
 // The Format* convenience wrappers must agree with Format(..., style).

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Fiddle bindings for the phonenumber engine (libphonenumber_ae.so), ABI v2.
+# Fiddle bindings for the phonenumber engine (libphonenumber_ae.so), ABI v3.
 #
 # This file is the ONLY place in the Ruby binding that knows about the C ABI.
 # Everything above it (`phone_number.rb`) is idiomatic Ruby over these symbols.
@@ -71,6 +71,12 @@ module PhoneNumberAe
     LENIENCY_POSSIBLE = 0
     LENIENCY_VALID = 1
 
+    # ---- ShortNumberCost (short_expected_cost) ----
+    COST_TOLL_FREE = 0
+    COST_STANDARD_RATE = 1
+    COST_PREMIUM_RATE = 2
+    COST_UNKNOWN = 3
+
     P = Fiddle::TYPE_VOIDP
     I = Fiddle::TYPE_INT
     V = Fiddle::TYPE_VOID
@@ -138,7 +144,16 @@ module PhoneNumberAe
       "aether_pn_embed_matcher_count" => [[P, P, I], I],
       "aether_pn_embed_matcher_start" => [[P, P, I, I], I],
       "aether_pn_embed_matcher_end" => [[P, P, I, I], I],
-      "aether_pn_embed_matcher_raw" => [[P, P, I, I], P]
+      "aether_pn_embed_matcher_raw" => [[P, P, I, I], P],
+      # ShortNumberInfo
+      "aether_pn_embed_short_is_possible" => [[P, P], I],
+      "aether_pn_embed_short_is_valid" => [[P, P], I],
+      "aether_pn_embed_short_is_emergency" => [[P, P], I],
+      "aether_pn_embed_short_connects_to_emergency" => [[P, P], I],
+      "aether_pn_embed_short_is_carrier_specific" => [[P, P], I],
+      "aether_pn_embed_short_is_sms_service" => [[P, P], I],
+      "aether_pn_embed_short_expected_cost" => [[P, P], I],
+      "aether_pn_embed_short_example_number" => [[P], P]
     }.freeze
 
     # A loaded engine: the Fiddle::Handle plus a memoized Fiddle::Function per

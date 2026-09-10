@@ -1,14 +1,15 @@
 'use strict';
 /**
- * koffi bindings for the phonenumber engine (libphonenumber_ae.so), ABI v2.
+ * koffi bindings for the phonenumber engine (libphonenumber_ae.so), ABI v3.
  *
  * This module is the ONLY place in the JavaScript binding that knows about the
  * C ABI. Everything above it (`phonenumber.js`) is idiomatic JavaScript over
  * these symbols. No phone-number logic lives here or anywhere else in this
  * package — the engine is `core/phonenumber.ae`, shared by every binding.
  *
- * v2 is the full PhoneNumberUtil parity ABI (50 symbols). Every signature is
- * still scalar-only (`const char *` and `int`), and every returned `char*` is
+ * v3 adds the ShortNumberInfo side-library (8 symbols) on top of the full
+ * PhoneNumberUtil parity ABI (now 58 symbols). Every signature is still
+ * scalar-only (`const char *` and `int`), and every returned `char*` is
  * caller-owned. There are still no opaque handles: a parsed number and an
  * AsYouType state are themselves caller-owned *strings* you hand back to the
  * accessor calls and free like any other returned string.
@@ -73,6 +74,12 @@ const SRC_FROM_DEFAULT_COUNTRY = 20;
 // ---- matcher leniency ----
 const LENIENCY_POSSIBLE = 0;
 const LENIENCY_VALID = 1;
+
+// ---- ShortNumberCost (short_expected_cost) ----
+const COST_TOLL_FREE = 0;
+const COST_STANDARD_RATE = 1;
+const COST_PREMIUM_RATE = 2;
+const COST_UNKNOWN = 3;
 
 let cached = null;
 
@@ -194,6 +201,16 @@ function declare(lib) {
     matcherStart: f('int aether_pn_embed_matcher_start(const char *text, const char *region, int leniency, int idx)'),
     matcherEnd: f('int aether_pn_embed_matcher_end(const char *text, const char *region, int leniency, int idx)'),
     matcherRaw: f('void *aether_pn_embed_matcher_raw(const char *text, const char *region, int leniency, int idx)'),
+
+    // ---- ShortNumberInfo (short / emergency numbers) ----
+    shortIsPossible: f('int aether_pn_embed_short_is_possible(const char *region, const char *input)'),
+    shortIsValid: f('int aether_pn_embed_short_is_valid(const char *region, const char *input)'),
+    shortIsEmergency: f('int aether_pn_embed_short_is_emergency(const char *region, const char *input)'),
+    shortConnectsToEmergency: f('int aether_pn_embed_short_connects_to_emergency(const char *region, const char *input)'),
+    shortIsCarrierSpecific: f('int aether_pn_embed_short_is_carrier_specific(const char *region, const char *input)'),
+    shortIsSmsService: f('int aether_pn_embed_short_is_sms_service(const char *region, const char *input)'),
+    shortExpectedCost: f('int aether_pn_embed_short_expected_cost(const char *region, const char *input)'),
+    shortExampleNumber: f('void *aether_pn_embed_short_example_number(const char *region)'),
   };
 }
 
@@ -230,4 +247,5 @@ module.exports = {
   SRC_FROM_NUMBER_WITH_PLUS, SRC_FROM_NUMBER_WITH_IDD,
   SRC_FROM_NUMBER_WITHOUT_PLUS, SRC_FROM_DEFAULT_COUNTRY,
   LENIENCY_POSSIBLE, LENIENCY_VALID,
+  COST_TOLL_FREE, COST_STANDARD_RATE, COST_PREMIUM_RATE, COST_UNKNOWN,
 };

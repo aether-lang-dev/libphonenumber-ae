@@ -6,9 +6,10 @@ This crate is **marshalling only**. The library itself — the metadata table,
 `isPossible`/`isValid`, number-type classification, the formatter, the
 AsYouType formatter, the matcher — is the pure-Aether engine in
 `core/phonenumber.ae`, compiled from Google libphonenumber's own metadata,
-shared by every language binding in this monorepo and reached through the v2
-`aether_pn_embed_*` C ABI (`core/embed.ae`). Cross-language behaviour is
-therefore identical by construction, not by test.
+shared by every language binding in this monorepo and reached through the v3
+`aether_pn_embed_*` C ABI (`core/embed.ae`, full `PhoneNumberUtil` parity plus
+`ShortNumberInfo`). Cross-language behaviour is therefore identical by
+construction, not by test.
 
 `src/native.rs` is the **canonical 1:1 symbol table** for that ABI: all 50
 exported symbols, in the order `core/embed.ae` declares them, with the exact C
@@ -75,6 +76,20 @@ assert_eq!(matches[0].raw, "201-555-0123");
 // each Match also carries `start` and `end` offsets in the source text
 ```
 
+### Short and emergency numbers
+
+Short numbers are dialled as-is — no country code, no national prefix.
+
+```rust
+use phonenumber_ae as pn;
+
+assert!(pn::is_emergency_number("US", "911"));
+assert!(pn::is_emergency_number("GB", "999"));
+assert!(pn::short_is_valid("US", "911"));
+assert_eq!(pn::short_expected_cost("US", "911"), pn::COST_TOLL_FREE);
+assert_eq!(pn::short_example_number("US"), "112");
+```
+
 To load a specific `.so`, use the [`PhoneNumbers`] type — the same surface over
 an engine you loaded yourself:
 
@@ -98,7 +113,8 @@ assert_eq!(num.national_number(), "1212345678");
 | Formatting | `format`, `format_national`/`_international`/`_e164`/`_rfc3966`, `format_out_of_country` |
 | Helpers | `is_number_match`(`_enum`), `truncate_too_long`, `normalize_digits_only`, `convert_alpha_characters`, `is_alpha_number` |
 | Stateful | `AsYouTypeFormatter` (`as_you_type_formatter`), `find_numbers` → `Vec<Match>` |
-| Metadata | `abi_version` (→ `2`) |
+| Short numbers | `short_is_possible`, `short_is_valid`, `is_emergency_number`, `connects_to_emergency_number`, `short_is_carrier_specific`, `short_is_sms_service`, `short_expected_cost`(`_enum`), `short_example_number` |
+| Metadata | `abi_version` (→ `3`) |
 
 Every metadata/free-function surface is available both crate-level (over one
 process-wide engine) and as a method on `PhoneNumbers`.
@@ -115,6 +131,8 @@ Other constant groups, each with a raw `i32` const and a typed enum:
 * `MATCH_*` / `MatchType` — the `is_number_match` outcome.
 * `SRC_*` / `CountryCodeSource` — the parsed number's `source`.
 * `LENIENCY_*` / `Leniency` — the `find_numbers` strictness.
+* `COST_*` / `Cost` — the `short_expected_cost` outcome (`0` toll-free, `1`
+  standard rate, `2` premium rate, `3` unknown).
 
 `region` is an ISO-3166 alpha-2 code (case-insensitive). `input` is a raw phone
 number as a human might type it — digits with optional spaces, dashes,
@@ -133,7 +151,7 @@ or, with the engine built for you:
 aeb rust/.tests.ae
 ```
 
-The suite is the 34-check v2 conformance contract in `docs/conformance.md`,
+The suite is the 40-check v3 conformance contract in `docs/conformance.md`,
 plus a few extras covering the typed idiomatic surface.
 
 ## Notes for maintainers

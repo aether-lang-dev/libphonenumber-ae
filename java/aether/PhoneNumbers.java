@@ -6,8 +6,8 @@ import java.util.List;
 
 /**
  * Validate, parse and format international phone numbers — the idiomatic Java
- * entry point over the shared Aether engine (ABI v2, full
- * {@code PhoneNumberUtil} parity).
+ * entry point over the shared Aether engine (ABI v3, full
+ * {@code PhoneNumberUtil} parity plus {@code ShortNumberInfo}).
  *
  * <pre>{@code
  * ParsedNumber n = PhoneNumbers.parse("+1 650 253 0000", "US");
@@ -279,9 +279,55 @@ public final class PhoneNumbers {
         return Matcher.find(text, region, leniency);
     }
 
+    // ---- short numbers ----------------------------------------------------
+    //
+    // Short numbers (emergency, directory, premium SMS, …) are dialled as-is:
+    // no country code and no national prefix. These delegate to
+    // {@link ShortNumberInfo}, which also stands on its own.
+
+    /** True if the input is a possible short number for the region. See {@link ShortNumberInfo}. */
+    public static boolean isPossibleShortNumber(String region, String input) {
+        return ShortNumberInfo.isPossibleShortNumber(region, input);
+    }
+
+    /** True if the input is a valid short number for the region. */
+    public static boolean isValidShortNumber(String region, String input) {
+        return ShortNumberInfo.isValidShortNumber(region, input);
+    }
+
+    /** True if the input is an emergency number for the region. */
+    public static boolean isEmergencyNumber(String region, String input) {
+        return ShortNumberInfo.isEmergencyNumber(region, input);
+    }
+
+    /** True if dialling the input in the region connects to an emergency service. */
+    public static boolean connectsToEmergencyNumber(String region, String input) {
+        return ShortNumberInfo.connectsToEmergencyNumber(region, input);
+    }
+
+    /** True if the short number is carrier-specific for the region. */
+    public static boolean isCarrierSpecific(String region, String input) {
+        return ShortNumberInfo.isCarrierSpecific(region, input);
+    }
+
+    /** True if the short number is an SMS service for the region. */
+    public static boolean isSmsService(String region, String input) {
+        return ShortNumberInfo.isSmsService(region, input);
+    }
+
+    /** The expected cost of the short number, as a {@link ShortNumberCost}. */
+    public static ShortNumberCost shortExpectedCost(String region, String input) {
+        return ShortNumberInfo.expectedCost(region, input);
+    }
+
+    /** An example short number for the region, or {@code ""}. */
+    public static String shortExampleNumber(String region) {
+        return ShortNumberInfo.exampleNumber(region);
+    }
+
     // ---- version ----------------------------------------------------------
 
-    /** The ABI revision the loaded engine reports ({@code 2} for this build). */
+    /** The ABI revision the loaded engine reports ({@code 3} for this build). */
     public static int abiVersion() {
         Native a = api();
         try {

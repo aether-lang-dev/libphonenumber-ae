@@ -60,7 +60,7 @@ PhonenumberAe.number_type("US", "2015550123")          # => :fixed_line
 PhonenumberAe.format("US", "2015550123", :national)    # => "(201) 555-0123"
 PhonenumberAe.format_e164("US", "2015550123")          # => "+12015550123"
 PhonenumberAe.regions()                                # => ["AC", "AD", ...]
-PhonenumberAe.abi_version()                            # => 2
+PhonenumberAe.abi_version()                            # => 3
 ```
 
 ### Parsing
@@ -102,7 +102,20 @@ PhonenumberAe.find_numbers("call 201-555-0123 or +1 202 555 0199", "US")
 # pass a leniency atom (:possible | :valid) as the 3rd arg, default :valid.
 ```
 
-### The surface (v2 — full PhoneNumberUtil parity)
+### Short numbers (emergency, SMS shortcodes)
+
+Short numbers are dialled as-is — no country code, no national prefix — so the
+input is the raw short number plus a region:
+
+```elixir
+PhonenumberAe.is_emergency_number?("US", "911")   # => true
+PhonenumberAe.is_emergency_number?("US", "999")   # => false  (that's GB)
+PhonenumberAe.short_is_valid?("US", "911")        # => true
+PhonenumberAe.short_expected_cost("US", "911")    # => :toll_free
+PhonenumberAe.short_example_number("US")          # => "112"
+```
+
+### The surface (v3 — full PhoneNumberUtil parity + ShortNumberInfo)
 
 - **Metadata**: `country_code/1`, `example_number/1`,
   `example_number_for_type/2`, `invalid_example_number/1`, `possible_lengths/1`,
@@ -123,10 +136,17 @@ PhonenumberAe.find_numbers("call 201-555-0123 or +1 202 555 0199", "US")
   `normalize_digits_only/1`, `convert_alpha_characters/1`, `is_alpha_number?/1`.
 - **As-you-type**: `PhonenumberAe.AsYouTypeFormatter`.
 - **Find numbers**: `find_numbers/3` (list of `PhonenumberAe.Match`).
-- `abi_version/0` (returns `2`).
+- **Short numbers**: `short_is_possible?/2`, `short_is_valid?/2`,
+  `is_emergency_number?/2`, `connects_to_emergency_number?/2`,
+  `short_is_carrier_specific?/2`, `short_is_sms_service?/2`,
+  `short_expected_cost/2` (a ShortNumberCost atom — `:toll_free` |
+  `:standard_rate` | `:premium_rate` | `:unknown`; `short_expected_cost_code/2`
+  for the raw int), `short_example_number/1`.
+- `abi_version/0` (returns `3`).
 
-> **v2 note.** The format-style selectors changed: `:e164` is now `0` (was `2`
-> in v1). Callers that use the style atoms never see the number.
+> **v3 note.** ShortNumberInfo (the `short_*` / `*_emergency_number?` calls
+> above) is new in v3. The v2 format-style selectors are unchanged: `:e164` is
+> `0` (it was `2` in v1). Callers that use the style atoms never see the number.
 
 ### No handles
 
@@ -136,7 +156,7 @@ is a direct FFI crossing.
 
 ## Conformance
 
-`elixir/.tests.ae` runs the 34-check binding conformance suite
-(`docs/conformance.md`, v2) as ExUnit. It samples each *kind* of value crossing
+`elixir/.tests.ae` runs the 40-check binding conformance suite
+(`docs/conformance.md`, v3) as ExUnit. It samples each *kind* of value crossing
 the FFI — it proves the marshalling, not the library. The node SKIPs (green)
 when Elixir/Mix or the shared NIF is absent.

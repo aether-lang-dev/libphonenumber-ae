@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The 34-check binding conformance suite (docs/conformance.md, v2).
+ * The 40-check binding conformance suite (docs/conformance.md, v3).
  *
  * <p>Proves the Java binding marshals every value shape across the FFI. It is
  * NOT a phone-number test suite — the behavioural cases live in the engine's
@@ -31,7 +31,7 @@ public final class ConformanceTest {
     private static final List<String> failures = new ArrayList<>();
 
     public static void main(String[] args) {
-        // ---- the 34 required checks (docs/conformance.md v2) ----
+        // ---- the 40 required checks (docs/conformance.md v3) ----
         check("01 country_code US", () ->
                 assertEquals("1", PhoneNumbers.countryCode("US")));
         check("02 country_code GB", () ->
@@ -143,7 +143,23 @@ public final class ConformanceTest {
             assertEquals("201-555-0123", ms.get(0).raw());
         });
         check("34 abi_version", () ->
-                assertEquals(2, PhoneNumbers.abiVersion()));
+                assertEquals(3, PhoneNumbers.abiVersion()));
+        check("35 is_emergency_number US 911", () ->
+                assertTrue("911 emergency in US", ShortNumberInfo.isEmergencyNumber("US", "911")));
+        check("36 is_emergency_number US 999", () ->
+                assertTrue("999 not emergency in US", !ShortNumberInfo.isEmergencyNumber("US", "999")));
+        check("37 is_emergency_number GB 999", () ->
+                assertTrue("999 emergency in GB", ShortNumberInfo.isEmergencyNumber("GB", "999")));
+        check("38 short_is_valid US 911", () ->
+                assertTrue("911 valid short in US", ShortNumberInfo.isValidShortNumber("US", "911")));
+        check("39 short_expected_cost US 911 TOLL_FREE", () -> {
+            assertEquals(Native.COST_TOLL_FREE,
+                    ShortNumberInfo.expectedCostCode("US", "911"));
+            assertEquals(ShortNumberCost.TOLL_FREE,
+                    ShortNumberInfo.expectedCost("US", "911"));
+        });
+        check("40 short_example_number US", () ->
+                assertEquals("112", ShortNumberInfo.exampleNumber("US")));
 
         // ---- extras: the convenience / value-object surface ----
         check("format helpers agree with format()", () -> {
@@ -158,14 +174,21 @@ public final class ConformanceTest {
                 assertEquals(NumberType.UNKNOWN, NumberType.of(9999)));
         check("Format.E164 is ABI code 0", () ->
                 assertEquals(0, Format.E164.code()));
+        check("PhoneNumbers delegates the short surface", () -> {
+            assertTrue("PhoneNumbers.isEmergencyNumber", PhoneNumbers.isEmergencyNumber("US", "911"));
+            assertEquals(ShortNumberCost.TOLL_FREE, PhoneNumbers.shortExpectedCost("US", "911"));
+            assertEquals("112", PhoneNumbers.shortExampleNumber("US"));
+        });
+        check("ShortNumberCost.of tolerates an unknown code", () ->
+                assertEquals(ShortNumberCost.UNKNOWN, ShortNumberCost.of(9999)));
 
         // ---- report ----
         System.out.println();
         if (failures.isEmpty()) {
-            System.out.println("PASS (v2) — " + passed + " checks");
+            System.out.println("PASS (v3, ShortNumberInfo) — " + passed + " checks");
             System.exit(0);
         }
-        System.out.println("FAIL (v2) — " + failures.size() + " of "
+        System.out.println("FAIL (v3) — " + failures.size() + " of "
                 + (passed + failures.size()) + " checks failed:");
         for (String f : failures) System.out.println("  " + f);
         System.exit(1);

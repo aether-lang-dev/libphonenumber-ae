@@ -270,3 +270,37 @@ def find_numbers(text, region, leniency=LENIENCY_VALID):
         raw = _s("aether_pn_embed_matcher_raw", _enc(text), _enc(region), int(leniency), i)
         out.append(Match(start, end, raw))
     return out
+
+
+# ---- ShortNumberInfo (short / emergency numbers) ----
+
+def short_is_possible(region, number):
+    return bool(_lib().aether_pn_embed_short_is_possible(_enc(region), _enc(number)))
+
+
+def short_is_valid(region, number):
+    return bool(_lib().aether_pn_embed_short_is_valid(_enc(region), _enc(number)))
+
+
+def is_emergency_number(region, number):
+    return bool(_lib().aether_pn_embed_short_is_emergency(_enc(region), _enc(number)))
+
+
+def connects_to_emergency_number(region, number):
+    return bool(_lib().aether_pn_embed_short_connects_to_emergency(_enc(region), _enc(number)))
+
+
+def short_is_carrier_specific(region, number):
+    return bool(_lib().aether_pn_embed_short_is_carrier_specific(_enc(region), _enc(number)))
+
+
+def short_is_sms_service(region, number):
+    return bool(_lib().aether_pn_embed_short_is_sms_service(_enc(region), _enc(number)))
+
+
+def short_expected_cost(region, number):
+    return _lib().aether_pn_embed_short_expected_cost(_enc(region), _enc(number))
+
+
+def short_example_number(region):
+    return _s("aether_pn_embed_short_example_number", _enc(region))

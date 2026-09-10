@@ -13,8 +13,9 @@
 //! table, `isPossible`/`isValid`, number-type classification, the formatter,
 //! the AsYouType formatter, the matcher — is the pure-Aether
 //! `core/phonenumber.ae`, shared by every language binding in this monorepo and
-//! reached over the v2 `aether_pn_embed_*` C ABI. Everything here is
-//! marshalling; see [`native`] for the 1:1 symbol table.
+//! reached over the v3 `aether_pn_embed_*` C ABI (full `PhoneNumberUtil` parity
+//! plus `ShortNumberInfo`). Everything here is marshalling; see [`native`] for
+//! the 1:1 symbol table.
 //!
 //! The ABI is stateless — there is no handle, only caller-owned strings — so
 //! the free functions [`country_code`], [`parse`], [`format`], etc. load a
@@ -42,6 +43,8 @@ pub use native::{
     SRC_FROM_NUMBER_WITHOUT_PLUS,
     // Leniency
     LENIENCY_POSSIBLE, LENIENCY_VALID,
+    // ShortNumberCost
+    COST_TOLL_FREE, COST_STANDARD_RATE, COST_PREMIUM_RATE, COST_UNKNOWN,
 };
 
 use native::Api;
@@ -219,6 +222,39 @@ impl Leniency {
     }
 }
 
+/// The expected cost of dialling a short number, mirroring libphonenumber's
+/// `ShortNumberInfo.ShortNumberCost` ([`PhoneNumbers::short_expected_cost_enum`]).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Cost {
+    TollFree,
+    StandardRate,
+    PremiumRate,
+    Unknown,
+}
+
+impl Cost {
+    /// Map the ABI's `short_expected_cost` result onto the enum. An
+    /// unrecognized value collapses to [`Cost::Unknown`].
+    pub fn from_raw(raw: i32) -> Cost {
+        match raw {
+            COST_TOLL_FREE => Cost::TollFree,
+            COST_STANDARD_RATE => Cost::StandardRate,
+            COST_PREMIUM_RATE => Cost::PremiumRate,
+            _ => Cost::Unknown,
+        }
+    }
+
+    /// The raw ABI value for this cost.
+    pub fn as_raw(self) -> i32 {
+        match self {
+            Cost::TollFree => COST_TOLL_FREE,
+            Cost::StandardRate => COST_STANDARD_RATE,
+            Cost::PremiumRate => COST_PREMIUM_RATE,
+            Cost::Unknown => COST_UNKNOWN,
+        }
+    }
+}
+
 /// A loaded phonenumber engine.
 ///
 /// The engine holds no mutable state, so a `PhoneNumbers` is just the resolved
@@ -244,7 +280,7 @@ impl PhoneNumbers {
         })
     }
 
-    /// The ABI revision the loaded engine reports (2 for this crate).
+    /// The ABI revision the loaded engine reports (3 for this crate).
     pub fn abi_version(&self) -> i32 {
         unsafe { (self.api.abi_version)() }
     }
@@ -525,6 +561,59 @@ impl PhoneNumbers {
             .collect()
     }
 
+    // ---- ShortNumberInfo (short / emergency numbers) ----
+    //
+    // Short numbers are dialled as-is: no country code, no national prefix.
+    // Each takes the raw short number plus a region.
+
+    /// `true` if the short number is a possible length for the region.
+    pub fn short_is_possible(&self, region: &str, input: &str) -> bool {
+        self.int_2(self.api.short_is_possible, region, input) != 0
+    }
+
+    /// `true` if the short number matches a short-number pattern for the region.
+    pub fn short_is_valid(&self, region: &str, input: &str) -> bool {
+        self.int_2(self.api.short_is_valid, region, input) != 0
+    }
+
+    /// `true` if the number is an emergency number for the region (e.g. `"911"`
+    /// in the US, `"999"` in the GB).
+    pub fn is_emergency_number(&self, region: &str, input: &str) -> bool {
+        self.int_2(self.api.short_is_emergency, region, input) != 0
+    }
+
+    /// `true` if dialling the number connects to an emergency service in the
+    /// region (looser than [`PhoneNumbers::is_emergency_number`]).
+    pub fn connects_to_emergency_number(&self, region: &str, input: &str) -> bool {
+        self.int_2(self.api.short_connects_to_emergency, region, input) != 0
+    }
+
+    /// `true` if the short number is carrier-specific.
+    pub fn short_is_carrier_specific(&self, region: &str, input: &str) -> bool {
+        self.int_2(self.api.short_is_carrier_specific, region, input) != 0
+    }
+
+    /// `true` if the short number is an SMS short code for the region.
+    pub fn short_is_sms_service(&self, region: &str, input: &str) -> bool {
+        self.int_2(self.api.short_is_sms_service, region, input) != 0
+    }
+
+    /// The expected cost of the short number as a raw [`Cost`] `i32` (a `COST_*`
+    /// constant), exactly as the ABI reports it.
+    pub fn short_expected_cost(&self, region: &str, input: &str) -> i32 {
+        self.int_2(self.api.short_expected_cost, region, input)
+    }
+
+    /// The expected cost of the short number as the typed [`Cost`] enum.
+    pub fn short_expected_cost_enum(&self, region: &str, input: &str) -> Cost {
+        Cost::from_raw(self.short_expected_cost(region, input))
+    }
+
+    /// An example short number for the region, or `""`.
+    pub fn short_example_number(&self, region: &str) -> String {
+        self.str_1(self.api.short_example_number, region)
+    }
+
     // ---- marshalling helpers ----
 
     fn str_1(&self, f: unsafe extern "C" fn(*const c_char) -> *mut c_char, a: &str) -> String {
@@ -762,7 +851,7 @@ fn shared() -> &'static PhoneNumbers {
     })
 }
 
-/// The ABI revision the loaded engine reports (2 for this crate).
+/// The ABI revision the loaded engine reports (3 for this crate).
 pub fn abi_version() -> i32 {
     shared().abi_version()
 }
@@ -948,4 +1037,51 @@ pub fn as_you_type_formatter(region: &str) -> AsYouTypeFormatter<'static> {
 /// engine.
 pub fn find_numbers(text: &str, region: &str, leniency: i32) -> Vec<Match> {
     shared().find_numbers(text, region, leniency)
+}
+
+// ---- ShortNumberInfo (short / emergency numbers) ----
+
+/// `true` if the short number is a possible length for the region.
+pub fn short_is_possible(region: &str, input: &str) -> bool {
+    shared().short_is_possible(region, input)
+}
+
+/// `true` if the short number matches a short-number pattern for the region.
+pub fn short_is_valid(region: &str, input: &str) -> bool {
+    shared().short_is_valid(region, input)
+}
+
+/// `true` if the number is an emergency number for the region.
+pub fn is_emergency_number(region: &str, input: &str) -> bool {
+    shared().is_emergency_number(region, input)
+}
+
+/// `true` if dialling the number connects to an emergency service.
+pub fn connects_to_emergency_number(region: &str, input: &str) -> bool {
+    shared().connects_to_emergency_number(region, input)
+}
+
+/// `true` if the short number is carrier-specific.
+pub fn short_is_carrier_specific(region: &str, input: &str) -> bool {
+    shared().short_is_carrier_specific(region, input)
+}
+
+/// `true` if the short number is an SMS short code for the region.
+pub fn short_is_sms_service(region: &str, input: &str) -> bool {
+    shared().short_is_sms_service(region, input)
+}
+
+/// The expected cost of the short number as a raw [`Cost`] `i32` (`COST_*`).
+pub fn short_expected_cost(region: &str, input: &str) -> i32 {
+    shared().short_expected_cost(region, input)
+}
+
+/// The expected cost of the short number as the typed [`Cost`] enum.
+pub fn short_expected_cost_enum(region: &str, input: &str) -> Cost {
+    shared().short_expected_cost_enum(region, input)
+}
+
+/// An example short number for the region, or `""`.
+pub fn short_example_number(region: &str) -> String {
+    shared().short_example_number(region)
 }

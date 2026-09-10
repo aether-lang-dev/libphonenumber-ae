@@ -1,7 +1,7 @@
 <?php
 
 /**
- * The 34-check binding conformance suite (docs/conformance.md, v2).
+ * The 40-check binding conformance suite (docs/conformance.md, v3).
  *
  * Proves the PHP binding marshals every value shape across the FFI. It is NOT a
  * phone-number test suite — the behavioural cases live in the engine's own
@@ -41,6 +41,7 @@ if (is_file(__DIR__ . '/../vendor/autoload.php')) {
 
 use PhoneNumberAe\AsYouTypeFormatter;
 use PhoneNumberAe\PhoneNumber;
+use PhoneNumberAe\ShortNumberInfo;
 
 $passed = 0;
 /** @var list<string> $failures */
@@ -96,7 +97,7 @@ function atLeast(int $got, int $min, string $what): void
     }
 }
 
-echo "=== phonenumber_ae PHP binding conformance (v2) ===\n";
+echo "=== phonenumber_ae PHP binding conformance (v3) ===\n";
 if (!extension_loaded('ffi')) {
     fwrite(STDERR, "php: ext-ffi is not loaded\n");
     exit(2);
@@ -246,7 +247,33 @@ check('33 matcher raw', function (): void {
 });
 
 check('34 abi version', function (): void {
-    eqInt(PhoneNumber::abiVersion(), 2, 'abi version');
+    eqInt(PhoneNumber::abiVersion(), 3, 'abi version');
+});
+
+// ---- ShortNumberInfo (v3) ----
+
+check('35 short is_emergency US 911', function (): void {
+    isTrue(ShortNumberInfo::isEmergencyNumber('US', '911'), 'US 911 is emergency');
+});
+
+check('36 short not emergency US 999', function (): void {
+    isFalse(ShortNumberInfo::isEmergencyNumber('US', '999'), 'US 999 not emergency');
+});
+
+check('37 short is_emergency GB 999', function (): void {
+    isTrue(ShortNumberInfo::isEmergencyNumber('GB', '999'), 'GB 999 is emergency');
+});
+
+check('38 short is_valid US 911', function (): void {
+    isTrue(ShortNumberInfo::isValid('US', '911'), 'US 911 is valid short');
+});
+
+check('39 short expected_cost US 911 is toll-free', function (): void {
+    eqInt(ShortNumberInfo::expectedCost('US', '911'), ShortNumberInfo::COST_TOLL_FREE, 'US 911 cost');
+});
+
+check('40 short example_number US', function (): void {
+    eqStr(ShortNumberInfo::exampleNumber('US'), '112', 'US short example');
 });
 
 // ---- a few extras exercising the idiomatic surface ----

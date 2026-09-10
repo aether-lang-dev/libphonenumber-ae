@@ -3,7 +3,7 @@
 %%% A thin Erlang binding over the monorepo's ONE shared native engine
 %%% (core/native/libphonenumber_ae.so, compiled from Google libphonenumber's
 %%% own metadata as pure Aether). No phone-number logic lives here: every
-%%% function marshals to an `aether_pn_embed_*` call (ABI v2, docs/abi.md)
+%%% function marshals to an `aether_pn_embed_*` call (ABI v3, docs/abi.md)
 %%% through phonenumber_ae_nif.
 %%%
 %%%     <<"1">>          = phonenumber_ae:country_code(<<"US">>),
@@ -50,12 +50,18 @@
          %% matcher / findNumbers
          find_numbers/2, find_numbers/3,
          matcher_count/3, matcher_start/4, matcher_end/4, matcher_raw/4,
+         %% ShortNumberInfo
+         short_is_possible/2, short_is_valid/2,
+         is_emergency_number/2, connects_to_emergency_number/2,
+         short_is_carrier_specific/2, short_is_sms_service/2,
+         short_expected_cost/2, short_expected_cost_code/2,
+         short_example_number/1,
          %% introspection
          abi_version/0]).
 
 -export_type([format_style/0, number_type/0, validation_result/0,
               match_type/0, country_code_source/0, leniency/0,
-              parsed_number/0, ayt_state/0, match/0]).
+              short_number_cost/0, parsed_number/0, ayt_state/0, match/0]).
 
 %% The ABI's format styles. These atoms map onto integer selectors, which are
 %% append-only and must never be renumbered (core/embed.ae). Note the v2
@@ -82,6 +88,9 @@
 
 %% Matcher leniency.
 -type leniency() :: possible | valid.
+
+%% The ShortNumberCost of short_expected_cost/2, as an atom.
+-type short_number_cost() :: toll_free | standard_rate | premium_rate | unknown.
 
 %% A parsed number: the caller-owned parsed-number string the ABI returns. Pass
 %% it to the pn_* accessors. (A binary; the "handle" is just the string.)
@@ -379,10 +388,64 @@ matcher_raw(Text, Region, Leniency, Idx) ->
     phonenumber_ae_nif:matcher_raw(Text, Region, leniency_code(Leniency), Idx).
 
 %%------------------------------------------------------------------
+%% ShortNumberInfo (short / emergency numbers)
+%%------------------------------------------------------------------
+%%
+%% Short numbers are dialled as-is (no country code, no national prefix): the
+%% input is the raw short number plus a region.
+
+%% True if the short number is a possible length for the region.
+-spec short_is_possible(iodata(), iodata()) -> boolean().
+short_is_possible(Region, Input) ->
+    to_bool(phonenumber_ae_nif:short_is_possible(Region, Input)).
+
+%% True if the short number is valid (carrier-independent) for the region.
+-spec short_is_valid(iodata(), iodata()) -> boolean().
+short_is_valid(Region, Input) ->
+    to_bool(phonenumber_ae_nif:short_is_valid(Region, Input)).
+
+%% True if the short number is an emergency number for the region.
+-spec is_emergency_number(iodata(), iodata()) -> boolean().
+is_emergency_number(Region, Input) ->
+    to_bool(phonenumber_ae_nif:short_is_emergency(Region, Input)).
+
+%% True if dialling the number would connect to an emergency service.
+-spec connects_to_emergency_number(iodata(), iodata()) -> boolean().
+connects_to_emergency_number(Region, Input) ->
+    to_bool(phonenumber_ae_nif:short_connects_to_emergency(Region, Input)).
+
+%% True if the short number is carrier-specific in the region.
+-spec short_is_carrier_specific(iodata(), iodata()) -> boolean().
+short_is_carrier_specific(Region, Input) ->
+    to_bool(phonenumber_ae_nif:short_is_carrier_specific(Region, Input)).
+
+%% True if the short number is for an SMS service in the region.
+-spec short_is_sms_service(iodata(), iodata()) -> boolean().
+short_is_sms_service(Region, Input) ->
+    to_bool(phonenumber_ae_nif:short_is_sms_service(Region, Input)).
+
+%% The expected cost of the short number, as a ShortNumberCost atom
+%% (toll_free | standard_rate | premium_rate | unknown).
+-spec short_expected_cost(iodata(), iodata()) -> short_number_cost().
+short_expected_cost(Region, Input) ->
+    cost_atom(phonenumber_ae_nif:short_expected_cost(Region, Input)).
+
+%% The raw ABI ShortNumberCost code (0 toll_free, …). For a caller that wants
+%% the number rather than the atom.
+-spec short_expected_cost_code(iodata(), iodata()) -> integer().
+short_expected_cost_code(Region, Input) ->
+    phonenumber_ae_nif:short_expected_cost(Region, Input).
+
+%% An example short number for the region, or <<>>.
+-spec short_example_number(iodata()) -> binary().
+short_example_number(Region) ->
+    phonenumber_ae_nif:short_example_number(Region).
+
+%%------------------------------------------------------------------
 %% Introspection
 %%------------------------------------------------------------------
 
-%% The engine's ABI revision (2).
+%% The engine's ABI revision (3).
 -spec abi_version() -> non_neg_integer().
 abi_version() -> phonenumber_ae_nif:abi_version().
 
@@ -464,3 +527,12 @@ source_atom(_)  -> unspecified.
 %% Matcher leniency codes.
 leniency_code(possible) -> 0;
 leniency_code(valid)    -> 1.
+
+%% ShortNumberCost codes -> atoms (0 toll-free, 1 standard, 2 premium, 3 unknown).
+cost_atom(0) -> toll_free;
+cost_atom(1) -> standard_rate;
+cost_atom(2) -> premium_rate;
+cost_atom(3) -> unknown;
+%% A newer engine could return a code this build has not seen; degrade rather
+%% than crash. The append-only rule means the number is still meaningful.
+cost_atom(_) -> unknown.

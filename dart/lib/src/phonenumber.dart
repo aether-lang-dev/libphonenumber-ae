@@ -1,4 +1,4 @@
-/// The idiomatic Dart surface over the phonenumber engine (ABI v2).
+/// The idiomatic Dart surface over the phonenumber engine (ABI v3).
 ///
 /// Carries no phone-number logic — every member here marshals to an
 /// `aether_pn_embed_*` call in `native.dart`. Most of the surface is top-level
@@ -133,6 +133,28 @@ enum Leniency {
 
   /// The ABI integer.
   final int code;
+}
+
+/// The expected cost of dialling a short number ([ShortNumberInfo.expectedCost]).
+enum ShortNumberCost {
+  tollFree(n.kCostTollFree),
+  standardRate(n.kCostStandardRate),
+  premiumRate(n.kCostPremiumRate),
+  unknown(n.kCostUnknown);
+
+  const ShortNumberCost(this.code);
+
+  /// The ABI integer.
+  final int code;
+
+  /// Map an ABI integer back to a [ShortNumberCost]; unknown codes fall back to
+  /// [ShortNumberCost.unknown].
+  static ShortNumberCost fromCode(int code) {
+    for (final c in ShortNumberCost.values) {
+      if (c.code == code) return c;
+    }
+    return ShortNumberCost.unknown;
+  }
 }
 
 n.Api get _api => n.Api.open();
@@ -518,4 +540,64 @@ List<PhoneNumberMatch> findNumbers(String text, String region,
         ),
     ];
   });
+}
+
+// ---- ShortNumberInfo (short / emergency numbers) ----
+
+/// Short- and emergency-number queries, mirroring libphonenumber's
+/// `ShortNumberInfo`.
+///
+/// Every member marshals to an `aether_pn_embed_short_*` call. The class is
+/// never instantiated — like the rest of this surface it is stateless.
+abstract final class ShortNumberInfo {
+  /// True if [input] is a possible short number for [region].
+  static bool isPossible(String region, String input) {
+    final api = _api;
+    return _withUtf8x2(region, input, (r, i) => api.shortIsPossible(r, i) != 0);
+  }
+
+  /// True if [input] is a valid short number for [region].
+  static bool isValid(String region, String input) {
+    final api = _api;
+    return _withUtf8x2(region, input, (r, i) => api.shortIsValid(r, i) != 0);
+  }
+
+  /// True if [input] is an emergency number for [region].
+  static bool isEmergencyNumber(String region, String input) {
+    final api = _api;
+    return _withUtf8x2(region, input, (r, i) => api.shortIsEmergency(r, i) != 0);
+  }
+
+  /// True if dialling [input] would connect to an emergency service in [region].
+  static bool connectsToEmergencyNumber(String region, String input) {
+    final api = _api;
+    return _withUtf8x2(
+        region, input, (r, i) => api.shortConnectsToEmergency(r, i) != 0);
+  }
+
+  /// True if the short number is carrier-specific.
+  static bool isCarrierSpecific(String region, String input) {
+    final api = _api;
+    return _withUtf8x2(
+        region, input, (r, i) => api.shortIsCarrierSpecific(r, i) != 0);
+  }
+
+  /// True if the short number is an SMS service.
+  static bool isSmsService(String region, String input) {
+    final api = _api;
+    return _withUtf8x2(region, input, (r, i) => api.shortIsSmsService(r, i) != 0);
+  }
+
+  /// The expected cost of dialling the short number.
+  static ShortNumberCost expectedCost(String region, String input) {
+    final api = _api;
+    return _withUtf8x2(region, input,
+        (r, i) => ShortNumberCost.fromCode(api.shortExpectedCost(r, i)));
+  }
+
+  /// An example short number for [region], or "".
+  static String exampleNumber(String region) {
+    final api = _api;
+    return _withUtf8(region, (r) => api.takeString(api.shortExampleNumber(r)));
+  }
 }

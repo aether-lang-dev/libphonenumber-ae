@@ -1,5 +1,5 @@
 /* lua/src/phonenumber_ae.c — the Lua 5.4 C extension over the phonenumber
- * C ABI (core/embed.ae), ABI v2.
+ * C ABI (core/embed.ae), ABI v3.
  *
  * This file is the ONLY place in the Lua binding that knows about the C ABI.
  * Everything above it (lua/src/phonenumber_ae.lua) is idiomatic Lua over these
@@ -12,8 +12,9 @@
  * LIBPHONENUMBER_AE_LIB resolution order as every other binding applies and one
  * .so serves them all.
  *
- * v2 is full PhoneNumberUtil parity: 50 ABI symbols. Signatures are still
- * scalar-only (const char* / int). There are still no opaque handles — a parsed
+ * v3 is full PhoneNumberUtil parity plus the ShortNumberInfo side-library: 58
+ * ABI symbols. Signatures are still scalar-only (const char* / int). There are
+ * still no opaque handles — a parsed
  * number and an AsYouType state are themselves caller-owned STRINGS that come
  * back from the engine, get passed to accessor calls, and are freed like any
  * other returned string. So there is still no per-object userdata here: the
@@ -122,6 +123,15 @@ typedef struct {
     fn_matcher_int matcher_start;
     fn_matcher_int matcher_end;
     fn_matcher_str matcher_raw;
+    /* ShortNumberInfo */
+    fn_int_str2    short_is_possible;
+    fn_int_str2    short_is_valid;
+    fn_int_str2    short_is_emergency;
+    fn_int_str2    short_connects_to_emergency;
+    fn_int_str2    short_is_carrier_specific;
+    fn_int_str2    short_is_sms_service;
+    fn_int_str2    short_expected_cost;
+    fn_str_str     short_example_number;
 } Engine;
 
 static Engine ENGINE;                 /* process-wide; loaded once */
@@ -197,6 +207,15 @@ static int load_symbols(lua_State* L, void* lib, const char* path) {
     SYM(matcher_start,                  "aether_pn_embed_matcher_start");
     SYM(matcher_end,                    "aether_pn_embed_matcher_end");
     SYM(matcher_raw,                    "aether_pn_embed_matcher_raw");
+    /* ShortNumberInfo */
+    SYM(short_is_possible,              "aether_pn_embed_short_is_possible");
+    SYM(short_is_valid,                 "aether_pn_embed_short_is_valid");
+    SYM(short_is_emergency,             "aether_pn_embed_short_is_emergency");
+    SYM(short_connects_to_emergency,    "aether_pn_embed_short_connects_to_emergency");
+    SYM(short_is_carrier_specific,      "aether_pn_embed_short_is_carrier_specific");
+    SYM(short_is_sms_service,           "aether_pn_embed_short_is_sms_service");
+    SYM(short_expected_cost,            "aether_pn_embed_short_expected_cost");
+    SYM(short_example_number,           "aether_pn_embed_short_example_number");
 #undef SYM
 
     ENGINE.handle = lib;
@@ -614,6 +633,67 @@ static int l_matcher_raw(lua_State* L) {
     return 1;
 }
 
+/* ---- ShortNumberInfo (short / emergency numbers) ---- */
+/* Short numbers are dialled as-is (no cc, no national prefix): the input is the
+ * raw short number plus a region. Pure marshalling, like the rest. */
+
+static int l_short_is_possible(lua_State* L) {
+    engine_load(L, NULL);
+    lua_pushboolean(L, ENGINE.short_is_possible(luaL_checkstring(L, 1),
+                                                luaL_checkstring(L, 2)));
+    return 1;
+}
+
+static int l_short_is_valid(lua_State* L) {
+    engine_load(L, NULL);
+    lua_pushboolean(L, ENGINE.short_is_valid(luaL_checkstring(L, 1),
+                                             luaL_checkstring(L, 2)));
+    return 1;
+}
+
+static int l_short_is_emergency(lua_State* L) {
+    engine_load(L, NULL);
+    lua_pushboolean(L, ENGINE.short_is_emergency(luaL_checkstring(L, 1),
+                                                 luaL_checkstring(L, 2)));
+    return 1;
+}
+
+static int l_short_connects_to_emergency(lua_State* L) {
+    engine_load(L, NULL);
+    lua_pushboolean(L, ENGINE.short_connects_to_emergency(luaL_checkstring(L, 1),
+                                                          luaL_checkstring(L, 2)));
+    return 1;
+}
+
+static int l_short_is_carrier_specific(lua_State* L) {
+    engine_load(L, NULL);
+    lua_pushboolean(L, ENGINE.short_is_carrier_specific(luaL_checkstring(L, 1),
+                                                        luaL_checkstring(L, 2)));
+    return 1;
+}
+
+static int l_short_is_sms_service(lua_State* L) {
+    engine_load(L, NULL);
+    lua_pushboolean(L, ENGINE.short_is_sms_service(luaL_checkstring(L, 1),
+                                                   luaL_checkstring(L, 2)));
+    return 1;
+}
+
+static int l_short_expected_cost(lua_State* L) {
+    engine_load(L, NULL);
+    /* Result is a ShortNumberCost int (0 toll-free .. 3 unknown); the idiomatic
+     * layer maps it to a COST_* name. */
+    lua_pushinteger(L, ENGINE.short_expected_cost(luaL_checkstring(L, 1),
+                                                  luaL_checkstring(L, 2)));
+    return 1;
+}
+
+static int l_short_example_number(lua_State* L) {
+    engine_load(L, NULL);
+    push_owned(L, ENGINE.short_example_number(luaL_checkstring(L, 1)));
+    return 1;
+}
+
 /* ---- module table ---- */
 
 static const luaL_Reg MODULE[] = {
@@ -675,6 +755,15 @@ static const luaL_Reg MODULE[] = {
     {"matcher_start",                 l_matcher_start},
     {"matcher_end",                   l_matcher_end},
     {"matcher_raw",                   l_matcher_raw},
+    /* ShortNumberInfo */
+    {"short_is_possible",             l_short_is_possible},
+    {"short_is_valid",                l_short_is_valid},
+    {"short_is_emergency",            l_short_is_emergency},
+    {"short_connects_to_emergency",   l_short_connects_to_emergency},
+    {"short_is_carrier_specific",     l_short_is_carrier_specific},
+    {"short_is_sms_service",          l_short_is_sms_service},
+    {"short_expected_cost",           l_short_expected_cost},
+    {"short_example_number",          l_short_example_number},
     {NULL, NULL}
 };
 
@@ -729,6 +818,12 @@ int luaopen_phonenumber_ae_native(lua_State* L) {
     /* Matcher leniency. */
     K("LENIENCY_POSSIBLE", 0);
     K("LENIENCY_VALID", 1);
+
+    /* ShortNumberCost (short_expected_cost). */
+    K("COST_TOLL_FREE", 0);
+    K("COST_STANDARD_RATE", 1);
+    K("COST_PREMIUM_RATE", 2);
+    K("COST_UNKNOWN", 3);
 #undef K
 
     return 1;

@@ -111,4 +111,28 @@ def test_33_matcher_raw():
     assert matches[0].raw == "201-555-0123"
 
 def test_34_abi_version():
-    assert pn.abi_version() == 2
+    assert pn.abi_version() == 3
+
+
+def test_35_short_emergency_us():
+    assert pn.is_emergency_number("US", "911") is True
+
+
+def test_36_short_not_emergency():
+    assert pn.is_emergency_number("US", "999") is False
+
+
+def test_37_short_emergency_gb():
+    assert pn.is_emergency_number("GB", "999") is True
+
+
+def test_38_short_valid():
+    assert pn.short_is_valid("US", "911") is True
+
+
+def test_39_short_cost():
+    assert pn.short_expected_cost("US", "911") == pn.COST_TOLL_FREE
+
+
+def test_40_short_example():
+    assert pn.short_example_number("US") == "112" 

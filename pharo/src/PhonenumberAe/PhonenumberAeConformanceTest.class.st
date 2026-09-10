@@ -1,5 +1,5 @@
 "
-The 34-check binding conformance suite (docs/conformance.md, v2), in Pharo.
+The 40-check binding conformance suite (docs/conformance.md, v3), in Pharo.
 
 I prove the Pharo binding marshals every value shape across the FFI. I am NOT a
 phone-number test suite — the behavioural cases live in the engine's own tests
@@ -272,7 +272,50 @@ PhonenumberAeConformanceTest >> test33MatcherRaw [
 { #category : 'tests' }
 PhonenumberAeConformanceTest >> test34AbiVersion [
 
-	self assert: PhonenumberAe abiVersion equals: 2
+	self assert: PhonenumberAe abiVersion equals: 3
+]
+
+{ #category : 'tests - short numbers' }
+PhonenumberAeConformanceTest >> test35ShortEmergencyUs [
+
+	self assert: (PhonenumberAe isEmergencyNumber: '911' region: 'US')
+]
+
+{ #category : 'tests - short numbers' }
+PhonenumberAeConformanceTest >> test36ShortNotEmergency [
+	"999 is emergency in GB, not US."
+
+	self deny: (PhonenumberAe isEmergencyNumber: '999' region: 'US')
+]
+
+{ #category : 'tests - short numbers' }
+PhonenumberAeConformanceTest >> test37ShortEmergencyGb [
+
+	self assert: (PhonenumberAe isEmergencyNumber: '999' region: 'GB')
+]
+
+{ #category : 'tests - short numbers' }
+PhonenumberAeConformanceTest >> test38ShortValid [
+
+	self assert: (PhonenumberAe shortIsValid: '911' region: 'US')
+]
+
+{ #category : 'tests - short numbers' }
+PhonenumberAeConformanceTest >> test39ShortCost [
+	"The int result path, mapped to a Symbol; and the raw code alongside it."
+
+	self
+		assert: (PhonenumberAe shortExpectedCost: '911' region: 'US')
+		equals: #tollFree.
+	self
+		assert: (PhonenumberAe shortExpectedCostCode: '911' region: 'US')
+		equals: 0
+]
+
+{ #category : 'tests - short numbers' }
+PhonenumberAeConformanceTest >> test40ShortExample [
+
+	self assert: (PhonenumberAe shortExampleNumber: 'US') equals: '112'
 ]
 
 { #category : 'tests - extras' }

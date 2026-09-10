@@ -1,4 +1,4 @@
-/// The 1:1 symbol table for the phonenumber C ABI (`core/embed.ae`), v2.
+/// The 1:1 symbol table for the phonenumber C ABI (`core/embed.ae`), v3.
 ///
 /// This library is the ONLY place in the Dart binding that knows about the C
 /// ABI. Everything above it (`phonenumber.dart`) is idiomatic Dart over these
@@ -19,11 +19,12 @@
 ///
 /// ## No opaque handles
 ///
-/// v2 is the full PhoneNumberUtil-parity ABI (50 symbols), but every signature
-/// is still scalar-only (`const char*` and `int`). A parsed number and an
-/// AsYouType state are themselves caller-owned *strings*: you get one back, pass
-/// it to the accessor calls, and free it like any other returned string. There
-/// are still no trampolines, no keepalive, and nothing to close.
+/// v3 adds the ShortNumberInfo side-library (8 symbols) on top of the full
+/// PhoneNumberUtil-parity ABI (now 58 symbols), but every signature is still
+/// scalar-only (`const char*` and `int`). A parsed number and an AsYouType
+/// state are themselves caller-owned *strings*: you get one back, pass it to
+/// the accessor calls, and free it like any other returned string. There are
+/// still no trampolines, no keepalive, and nothing to close.
 library;
 
 import 'dart:ffi' as ffi;
@@ -89,6 +90,13 @@ const int kSrcFromDefaultCountry = 20;
 
 const int kLeniencyPossible = 0;
 const int kLeniencyValid = 1;
+
+// ---- ShortNumberCost (short_expected_cost) ----
+
+const int kCostTollFree = 0;
+const int kCostStandardRate = 1;
+const int kCostPremiumRate = 2;
+const int kCostUnknown = 3;
 
 typedef _Utf8 = ffi.Pointer<pkgffi.Utf8>;
 
@@ -271,7 +279,24 @@ class Api {
         matcherEnd = lib.lookupFunction<_MatcherIntC, _MatcherInt>(
             'aether_pn_embed_matcher_end'),
         matcherRaw = lib.lookupFunction<_MatcherStrC, _MatcherStr>(
-            'aether_pn_embed_matcher_raw');
+            'aether_pn_embed_matcher_raw'),
+        // ---- ShortNumberInfo ----
+        shortIsPossible = lib.lookupFunction<_Int2C, _Int2>(
+            'aether_pn_embed_short_is_possible'),
+        shortIsValid = lib.lookupFunction<_Int2C, _Int2>(
+            'aether_pn_embed_short_is_valid'),
+        shortIsEmergency = lib.lookupFunction<_Int2C, _Int2>(
+            'aether_pn_embed_short_is_emergency'),
+        shortConnectsToEmergency = lib.lookupFunction<_Int2C, _Int2>(
+            'aether_pn_embed_short_connects_to_emergency'),
+        shortIsCarrierSpecific = lib.lookupFunction<_Int2C, _Int2>(
+            'aether_pn_embed_short_is_carrier_specific'),
+        shortIsSmsService = lib.lookupFunction<_Int2C, _Int2>(
+            'aether_pn_embed_short_is_sms_service'),
+        shortExpectedCost = lib.lookupFunction<_Int2C, _Int2>(
+            'aether_pn_embed_short_expected_cost'),
+        shortExampleNumber = lib.lookupFunction<_Str1C, _Str1>(
+            'aether_pn_embed_short_example_number');
 
   final ffi.DynamicLibrary lib;
 
@@ -342,6 +367,16 @@ class Api {
   final _MatcherInt matcherStart;
   final _MatcherInt matcherEnd;
   final _MatcherStr matcherRaw;
+
+  // ShortNumberInfo
+  final _Int2 shortIsPossible;
+  final _Int2 shortIsValid;
+  final _Int2 shortIsEmergency;
+  final _Int2 shortConnectsToEmergency;
+  final _Int2 shortIsCarrierSpecific;
+  final _Int2 shortIsSmsService;
+  final _Int2 shortExpectedCost;
+  final _Str1 shortExampleNumber;
 
   static Api? _cached;
 

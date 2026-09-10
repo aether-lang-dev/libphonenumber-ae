@@ -2,7 +2,7 @@
 
 -- |
 -- Module      : PhoneNumber.Native
--- Description : The 1:1 symbol table for the phonenumber C ABI (v2).
+-- Description : The 1:1 symbol table for the phonenumber C ABI (v3).
 --
 -- This module is the ONLY place in the Haskell binding that knows about the C
 -- ABI. Every symbol the engine exports appears here once, with the exact C
@@ -10,10 +10,11 @@
 -- lives here or anywhere else in this package — the engine is
 -- @core\/phonenumber.ae@, compiled to @libphonenumber_ae.so@.
 --
--- == ABI v2
+-- == ABI v3
 --
--- The ABI is now __full @PhoneNumberUtil@ parity__ — 50 symbols, ABI version
--- @2@. Signatures remain scalar-only (@const char*@ and @int@), so nothing here
+-- The ABI is __full @PhoneNumberUtil@ parity plus the @ShortNumberInfo@
+-- side-library__ — 58 symbols, ABI version @3@ (the 8 @short_*@ symbols are the
+-- v3 addition). Signatures remain scalar-only (@const char*@ and @int@), so nothing here
 -- re-enters the Haskell RTS and every import is still @unsafe@. Two symbols are
 -- __stateful in disguise__: 'aether_pn_embed_parse' returns a caller-owned
 -- parsed-number __string__, and the @ayt_*@ formatter threads its state as a
@@ -99,6 +100,16 @@ module PhoneNumber.Native
   , aether_pn_embed_matcher_start
   , aether_pn_embed_matcher_end
   , aether_pn_embed_matcher_raw
+
+    -- * ShortNumberInfo (short / emergency numbers)
+  , aether_pn_embed_short_is_possible
+  , aether_pn_embed_short_is_valid
+  , aether_pn_embed_short_is_emergency
+  , aether_pn_embed_short_connects_to_emergency
+  , aether_pn_embed_short_is_carrier_specific
+  , aether_pn_embed_short_is_sms_service
+  , aether_pn_embed_short_expected_cost
+  , aether_pn_embed_short_example_number
 
     -- * String marshalling helpers
   , takeString
@@ -281,6 +292,32 @@ foreign import ccall unsafe "aether_pn_embed_matcher_end"
 
 foreign import ccall unsafe "aether_pn_embed_matcher_raw"
   aether_pn_embed_matcher_raw :: CString -> CString -> CInt -> CInt -> IO CString
+
+-- ShortNumberInfo (short / emergency numbers) ------------------------------
+
+foreign import ccall unsafe "aether_pn_embed_short_is_possible"
+  aether_pn_embed_short_is_possible :: CString -> CString -> IO CInt
+
+foreign import ccall unsafe "aether_pn_embed_short_is_valid"
+  aether_pn_embed_short_is_valid :: CString -> CString -> IO CInt
+
+foreign import ccall unsafe "aether_pn_embed_short_is_emergency"
+  aether_pn_embed_short_is_emergency :: CString -> CString -> IO CInt
+
+foreign import ccall unsafe "aether_pn_embed_short_connects_to_emergency"
+  aether_pn_embed_short_connects_to_emergency :: CString -> CString -> IO CInt
+
+foreign import ccall unsafe "aether_pn_embed_short_is_carrier_specific"
+  aether_pn_embed_short_is_carrier_specific :: CString -> CString -> IO CInt
+
+foreign import ccall unsafe "aether_pn_embed_short_is_sms_service"
+  aether_pn_embed_short_is_sms_service :: CString -> CString -> IO CInt
+
+foreign import ccall unsafe "aether_pn_embed_short_expected_cost"
+  aether_pn_embed_short_expected_cost :: CString -> CString -> IO CInt
+
+foreign import ccall unsafe "aether_pn_embed_short_example_number"
+  aether_pn_embed_short_example_number :: CString -> IO CString
 
 -- ---------------------------------------------------------------------------
 -- String marshalling

@@ -32,7 +32,7 @@ aeb(cap) {
             println("clojure: conformance suite reported failures")
             return 1
         }
-        println("clojure: PASS (v2) — 34-check conformance")
+        println("clojure: PASS (v3, ShortNumberInfo) — 40-check conformance")
         return 0
     }
 }

@@ -1,4 +1,4 @@
-// The 34-check binding conformance suite (docs/conformance.md, v2).
+// The 40-check binding conformance suite (docs/conformance.md, v3).
 //
 // Proves the .NET binding marshals every value shape across the P/Invoke
 // boundary — a parsed number and its accessors, an AsYouType formatter, the
@@ -65,11 +65,11 @@ internal static class Conformance
 
     public static int Main()
     {
-        Console.WriteLine("=== phonenumber_ae .NET binding conformance (v2) ===");
+        Console.WriteLine("=== phonenumber_ae .NET binding conformance (v3) ===");
         Console.WriteLine($"engine: {PhoneNumber.NativeLibraryPath ?? "(default probing)"} " +
                           $"(ABI v{PhoneNumber.AbiVersion})");
 
-        // ---- the thirty-four (docs/conformance.md) ----
+        // ---- the forty (docs/conformance.md) ----
 
         Check("01 country_code US == 1", () => Eq(PhoneNumber.CountryCode("US"), "1"));
 
@@ -189,7 +189,26 @@ internal static class Conformance
             Eq(matches[0].Raw, "201-555-0123", "raw");
         });
 
-        Check("34 abi_version == 2", () => Eq(PhoneNumber.AbiVersion, 2, "abi_version"));
+        Check("34 abi_version == 3", () => Eq(PhoneNumber.AbiVersion, 3, "abi_version"));
+
+        Check("35 short is_emergency US 911", () =>
+            IsTrue(PhoneNumber.IsEmergencyNumber("US", "911"), "is_emergency_number"));
+
+        Check("36 short not-emergency US 999", () =>
+            IsFalse(PhoneNumber.IsEmergencyNumber("US", "999"), "is_emergency_number"));
+
+        Check("37 short is_emergency GB 999", () =>
+            IsTrue(PhoneNumber.IsEmergencyNumber("GB", "999"), "is_emergency_number"));
+
+        Check("38 short is_valid US 911", () =>
+            IsTrue(PhoneNumber.ShortIsValid("US", "911"), "short_is_valid"));
+
+        Check("39 short expected_cost US 911 toll-free", () =>
+            Eq((int)PhoneNumber.ShortExpectedCost("US", "911"),
+               (int)ShortNumberCost.TollFree, "short_expected_cost"));
+
+        Check("40 short example_number US == 112", () =>
+            Eq(PhoneNumber.ShortExampleNumber("US"), "112"));
 
         // ---- a few surface extras ----
 

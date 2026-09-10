@@ -52,7 +52,7 @@ PhonenumberAe format: '2015550123' region: 'US' style: #national.
 "-> '(201) 555-0123'"
 PhonenumberAe formatE164: '2015550123' region: 'US'.         "-> '+12015550123'"
 PhonenumberAe regions.                                        "-> an OrderedCollection: 'AC' 'AD' ..."
-PhonenumberAe abiVersion.                                     "-> 2"
+PhonenumberAe abiVersion.                                     "-> 3"
 ```
 
 ### Parsing
@@ -87,7 +87,20 @@ PhonenumberAe findNumbers: 'call 201-555-0123 or +1 202 555 0199' region: 'US'.
 "-> an OrderedCollection of PhonenumberAeMatch; each has start / end / raw."
 ```
 
-### The surface (v2 — full PhoneNumberUtil parity)
+### Short numbers (emergency, SMS shortcodes)
+
+Short numbers are dialled as-is — no country code, no national prefix — so the
+input is the raw short number plus a region:
+
+```smalltalk
+PhonenumberAe isEmergencyNumber: '911' region: 'US'.   "-> true"
+PhonenumberAe isEmergencyNumber: '999' region: 'US'.   "-> false  (that's GB)"
+PhonenumberAe shortIsValid: '911' region: 'US'.        "-> true"
+PhonenumberAe shortExpectedCost: '911' region: 'US'.   "-> #tollFree"
+PhonenumberAe shortExampleNumber: 'US'.                "-> '112'"
+```
+
+### The surface (v3 — full PhoneNumberUtil parity + ShortNumberInfo)
 
 - **Metadata**: `countryCode:`, `exampleNumber:`, `exampleNumberForType:region:`,
   `invalidExampleNumber:`, `possibleLengths:`, `regionCodeForCountryCode:`,
@@ -111,10 +124,18 @@ PhonenumberAe findNumbers: 'call 201-555-0123 or +1 202 555 0199' region: 'US'.
 - **As-you-type**: `asYouTypeFormatterFor:` (→ `PhonenumberAeAsYouTypeFormatter`).
 - **Find numbers**: `findNumbers:region:` / `findNumbers:region:leniency:`
   (→ `PhonenumberAeMatch` with `start` / `end` / `raw`).
-- `abiVersion` (returns `2`).
+- **Short numbers**: `shortIsPossible:region:`, `shortIsValid:region:`,
+  `isEmergencyNumber:region:`, `connectsToEmergencyNumber:region:`,
+  `shortIsCarrierSpecific:region:`, `shortIsSmsService:region:`,
+  `shortExpectedCost:region:` (a ShortNumberCost symbol — `#tollFree` |
+  `#standardRate` | `#premiumRate` | `#unknown`; `shortExpectedCostCode:region:`
+  for the raw int), `shortExampleNumber:`.
+- `abiVersion` (returns `3`).
 
-> **v2 note.** The format-style selectors changed: `#e164` is now `0` (was `2`
-> in v1). Callers that use the style symbols never see the number.
+> **v3 note.** ShortNumberInfo (the `short*` / `*EmergencyNumber:region:` calls
+> above) is new in v3. The v2 format-style selectors are unchanged: `#e164` is
+> `0` (it was `2` in v1). Callers that use the style symbols never see the
+> number.
 
 ## The one ABI trap worth knowing
 
@@ -144,8 +165,8 @@ Matching every other binding in the monorepo (see `PhonenumberAeLibrary`):
 
 `pharo/run-tests.sh` loads the Tonel package into a **throwaway copy** of a
 Pharo image (loading code mutates an image permanently, so the developer's own
-image is never touched) and runs the 34-check binding conformance suite
-(`docs/conformance.md`, v2) headless. `pharo/.tests.ae` drives it, threading the
+image is never touched) and runs the 40-check binding conformance suite
+(`docs/conformance.md`, v3) headless. `pharo/.tests.ae` drives it, threading the
 engine `.so` through `$LIBPHONENUMBER_AE_LIB`.
 
 Exit codes: `0` pass, `1` fail, `77` = no Pharo VM (a clean **SKIP** — nothing

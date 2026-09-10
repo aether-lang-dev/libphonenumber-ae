@@ -37,7 +37,7 @@ aeb(cap) {
             println("java: conformance suite reported failures")
             return 1
         }
-        println("java: PASS (v2) — 34-check conformance")
+        println("java: PASS (v3, ShortNumberInfo) — 40-check conformance")
         return 0
     }
 }

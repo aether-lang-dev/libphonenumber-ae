@@ -19,7 +19,7 @@ aeb(cap) {
             println("ruby: rspec reported failures (is rspec installed? `gem install --user-install rspec`)")
             return 1
         }
-        println("ruby: PASS — v2 34-check conformance (full ABI parity)")
+        println("ruby: PASS — v3 40-check conformance (full ABI parity + ShortNumberInfo)")
         return 0
     }
 }

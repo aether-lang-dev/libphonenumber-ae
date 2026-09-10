@@ -1,4 +1,4 @@
-//! The 34-check binding conformance suite (docs/conformance.md, v2).
+//! The 40-check binding conformance suite (docs/conformance.md, v3).
 //!
 //! Proves the Zig binding marshals every value shape across the FFI. It is NOT
 //! a phone-number test suite — the behavioural cases live in the engine's own
@@ -25,7 +25,7 @@ fn expectStr(want: []const u8, got: anyerror![]u8) !void {
 }
 
 // =========================================================================
-// The thirty-four (docs/conformance.md, v2)
+// The forty (docs/conformance.md, v3)
 // =========================================================================
 
 test "01 country_code US == 1" {
@@ -182,8 +182,32 @@ test "33 matcher_raw" {
     try testing.expectEqualStrings("201-555-0123", matches[0].raw);
 }
 
-test "34 abi_version == 2" {
-    try testing.expectEqual(@as(i32, 2), pn.abiVersion());
+test "34 abi_version == 3" {
+    try testing.expectEqual(@as(i32, 3), pn.abiVersion());
+}
+
+test "35 short is_emergency US 911" {
+    try testing.expect(try pn.isEmergencyNumber(alloc, "US", "911"));
+}
+
+test "36 short not-emergency US 999" {
+    try testing.expect(!try pn.isEmergencyNumber(alloc, "US", "999"));
+}
+
+test "37 short is_emergency GB 999" {
+    try testing.expect(try pn.isEmergencyNumber(alloc, "GB", "999"));
+}
+
+test "38 short is_valid US 911" {
+    try testing.expect(try pn.shortIsValid(alloc, "US", "911"));
+}
+
+test "39 short expected_cost US 911 toll-free" {
+    try testing.expectEqual(pn.ShortNumberCost.toll_free, try pn.shortExpectedCost(alloc, "US", "911"));
+}
+
+test "40 short example_number US == 112" {
+    try expectStr("112", pn.shortExampleNumber(alloc, "US"));
 }
 
 // =========================================================================

@@ -1,0 +1,186 @@
+// core.gen.generate_short — compile ShortNumberMetadata.xml into a pure-Aether
+// table for the ShortNumberInfo side-library.
+//
+// Run offline when the metadata changes (from the repo root):
+//     ae run core/gen/generate_short.ae > core/shortnumber_metadata.ae
+//
+// Reads the pristine, in-tree resources/ShortNumberMetadata.xml (Google's own,
+// Apache-2.0). Per territory it carries the generalDesc pattern, the shortCode
+// pattern + possible-lengths, an example, and the per-cost / per-category
+// national-number patterns (tollFree, premiumRate, standardRate,
+// carrierSpecific, smsServices, emergency). That is everything ShortNumberInfo
+// needs: isValid/isPossibleShortNumber, getExpectedCost, isEmergencyNumber,
+// connectsToEmergencyNumber, isCarrierSpecific, isSmsServiceForRegion.
+//
+// Row layout, 0x1F-separated:
+//   id | general | shortLengths | example | shortCode | tollFree | premiumRate |
+//   standardRate | carrierSpecific | smsServices | emergency
+
+import std.xml
+import std.string
+import std.list
+import std.file
+
+// per-category descriptors, in row order after (general, shortLengths, example).
+fn cats() -> ptr {
+    l = list.new()
+    list.add(l, "shortCode")
+    list.add(l, "tollFree")
+    list.add(l, "premiumRate")
+    list.add(l, "standardRate")
+    list.add(l, "carrierSpecific")
+    list.add(l, "smsServices")
+    list.add(l, "emergency")
+    return l
+}
+
+fn index_of_str(l: ptr, s: string) -> int {
+    n = list.size(l)
+    for (i = 0; i < n; i++) {
+        v, _ = list.get(l, i)
+        if v == s { return i }
+    }
+    return -1
+}
+
+fn squeeze(s: string) -> string {
+    out = ""
+    n = string.length(s)
+    for (i = 0; i < n; i++) {
+        c = string.char_at(s, i)
+        if c == 32 || c == 9 || c == 10 || c == 13 { continue }
+        out = "${out}${string.substring(s, i, i + 1)}"
+    }
+    return out
+}
+
+main() {
+    xmltext, ferr = file.read("resources/ShortNumberMetadata.xml")
+    if ferr != "" {
+        println("// ERROR reading metadata: ${ferr}")
+        return 1
+    }
+    ct = cats()
+    nct = list.size(ct)
+
+    p = xml.parser(xmltext)
+
+    println("// core.shortnumber_metadata — GENERATED, do not edit.")
+    println("//")
+    println("// Produced by core/gen/generate_short.ae from")
+    println("// resources/ShortNumberMetadata.xml (Apache-2.0, (c) The Libphonenumber Authors).")
+    println("//")
+    println("// Row (0x1F-separated): id | general | shortLengths | example |")
+    println("//   shortCode | tollFree | premiumRate | standardRate | carrierSpecific |")
+    println("//   smsServices | emergency. Per-category fields are national-number regexes.")
+    println("")
+    println("import std.list")
+    println("")
+    println("exports(rows, SEP)")
+    println("")
+    println("SEP() -> string { return \"\\x1f\" }")
+    println("")
+    println("rows() -> ptr {")
+    println("    l = list.new()")
+
+    in_territory = 0
+    cur_id = ""
+    cur_general = ""
+    cur_lengths = ""
+    cur_example = ""
+    in_general = 0
+    cur_cat = -1
+    cat_pat = list.new()
+    pending = ""
+
+    ev = xml.next(p)
+    while ev != xml.EVENT_EOF && ev != xml.EVENT_ERROR {
+        if ev == xml.EVENT_START {
+            nm = xml.name(p)
+            if nm == "territory" {
+                in_territory = 1
+                cur_id = xml.attr(p, "id")
+                cur_general = ""
+                cur_lengths = ""
+                cur_example = ""
+                in_general = 0
+                cur_cat = -1
+                list.free(cat_pat)
+                cat_pat = list.new()
+                for (t = 0; t < nct; t++) { list.add(cat_pat, "") }
+            } else if in_territory == 1 {
+                if nm == "generalDesc" { in_general = 1 }
+                else {
+                    ci = index_of_str(ct, nm)
+                    if ci >= 0 { cur_cat = ci }
+                }
+                if nm == "nationalNumberPattern" {
+                    if in_general == 1 { pending = "general-nnp" }
+                    else if cur_cat >= 0 { pending = "cat-nnp" }
+                }
+                if nm == "possibleLengths" && cur_cat == index_of_str(ct, "shortCode") && cur_lengths == "" {
+                    cur_lengths = xml.attr(p, "national")
+                }
+                if nm == "exampleNumber" && cur_cat == index_of_str(ct, "shortCode") && cur_example == "" {
+                    pending = "example-text"
+                }
+            }
+        } else if ev == xml.EVENT_TEXT {
+            if pending == "general-nnp" { cur_general = squeeze(xml.text(p)); pending = "" }
+            else if pending == "cat-nnp" {
+                if cur_cat >= 0 {
+                    prev, _ = list.get(cat_pat, cur_cat)
+                    if prev == "" { list.set(cat_pat, cur_cat, squeeze(xml.text(p))) }
+                }
+                pending = ""
+            }
+            else if pending == "example-text" { cur_example = squeeze(xml.text(p)); pending = "" }
+        } else if ev == xml.EVENT_END {
+            nm = xml.name(p)
+            if nm == "generalDesc" { in_general = 0 }
+            else if index_of_str(ct, nm) >= 0 { cur_cat = -1 }
+            if nm == "territory" {
+                if cur_id != "" {
+                    row = join_row(cur_id, cur_general, cur_lengths, cur_example, cat_pat, nct)
+                    println("    list.add(l, \"${esc(row)}\")")
+                }
+                in_territory = 0
+            }
+        }
+        ev = xml.next(p)
+    }
+
+    println("    return l")
+    println("}")
+    xml.free(p)
+    list.free(ct)
+    list.free(cat_pat)
+    return 0
+}
+
+fn join_row(id: string, general: string, lengths: string, example: string, cat_pat: ptr, nct: int) -> string {
+    sep = string.from_char(31)
+    // shortCode is cat 0 -> place it as its own field after example, then the rest.
+    sc, _ = list.get(cat_pat, 0)
+    row = "${id}${sep}${general}${sep}${lengths}${sep}${example}${sep}${sc}"
+    for (t = 1; t < nct; t++) {
+        v, _ = list.get(cat_pat, t)
+        row = "${row}${sep}${v}"
+    }
+    return row
+}
+
+fn esc(s: string) -> string {
+    bs = string.from_char(92)
+    q = string.from_char(34)
+    out = ""
+    n = string.length(s)
+    for (i = 0; i < n; i++) {
+        c = string.char_at(s, i)
+        if c == 34 { out = string.concat(out, string.concat(bs, q)) }
+        else if c == 92 { out = string.concat(out, string.concat(bs, bs)) }
+        else if c == 31 { out = string.concat(out, string.concat(bs, "x1f")) }
+        else { out = string.concat(out, string.substring(s, i, i + 1)) }
+    }
+    return out
+}

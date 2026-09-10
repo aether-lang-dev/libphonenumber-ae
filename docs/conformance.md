@@ -41,7 +41,13 @@ engine over Google's metadata.
 | 31 | AsYouType: feed `"2015550123"` digit-by-digit, `ayt_result` | `"(201) 555-0123"` |
 | 32 | `matcher_count("call 201-555-0123 or +1 202 555 0199", "US", VALID)` | `2` |
 | 33 | `matcher_raw("call 201-555-0123 now", "US", VALID, 0)` | `"201-555-0123"` |
-| 34 | `abi_version()` | `2` |
+| 34 | `abi_version()` | `3` |
+| 35 | `short_is_emergency("US", "911")` | true |
+| 36 | `short_is_emergency("US", "999")` | false (that's GB) |
+| 37 | `short_is_emergency("GB", "999")` | true |
+| 38 | `short_is_valid("US", "911")` | true |
+| 39 | `short_expected_cost("US", "911")` | toll-free (0) |
+| 40 | `short_example_number("US")` | `"112"` |
 
 A binding that exposes idiomatic wrappers (enums, a PhoneNumber object, an
 AsYouTypeFormatter class, a matcher iterator) still bottoms out at these calls.

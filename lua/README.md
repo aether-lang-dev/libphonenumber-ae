@@ -1,7 +1,7 @@
 # phonenumber_ae (Lua)
 
-Validate, parse and format international phone numbers (ABI v2 — full
-PhoneNumberUtil parity).
+Validate, parse and format international phone numbers (ABI v3 — full
+PhoneNumberUtil parity plus the ShortNumberInfo side-library).
 
 This binding is a **thin Lua 5.4 C extension** over the monorepo's one shared
 native engine — `core/native/libphonenumber_ae.so`, compiled from pure Aether
@@ -113,6 +113,19 @@ for _, m in ipairs(pn.find_numbers("call 201-555-0123 today", "US")) do
 end
 ```
 
+### Short numbers (ShortNumberInfo)
+
+Short numbers are dialled as-is — no country code, no national prefix — so the
+input is the raw short number plus a region:
+
+```lua
+pn.is_emergency_number("US", "911")       -- true
+pn.is_emergency_number("GB", "999")       -- true
+pn.short_is_valid("US", "911")            -- true
+pn.short_expected_cost("US", "911")       -- pn.COST_TOLL_FREE (0)
+pn.short_example_number("US")             -- "112"
+```
+
 The wider surface:
 
 ```lua
@@ -139,6 +152,12 @@ pn.format_in_original(parsed, calling_from)
 pn.is_number_match(a, b)                              -- MATCH_* integer
 pn.truncate_too_long(region, input)
 pn.normalize_digits_only(s) / convert_alpha_characters(s) / is_alpha_number(s)
+-- short numbers (ShortNumberInfo)
+pn.short_is_possible(region, input) / short_is_valid(region, input)
+pn.is_emergency_number(region, input) / connects_to_emergency_number(region, input)
+pn.short_is_carrier_specific(region, input) / short_is_sms_service(region, input)
+pn.short_expected_cost(region, input)                -- COST_* integer
+pn.short_example_number(region)
 -- lifecycle
 pn.abi_version() / engine_path() / load(path)
 ```
@@ -147,7 +166,9 @@ Constant groups (all mirror `docs/abi.md`): **Format** `pn.E164`,
 `pn.INTERNATIONAL`, `pn.NATIONAL`, `pn.RFC3966`; **NumberType** `pn.TYPE_*`
 (`TYPE_UNKNOWN` = -1 through `TYPE_VOICEMAIL` = 9); **ValidationResult**
 `pn.VR_*`; **MatchType** `pn.MATCH_*`; **CountryCodeSource** `pn.SRC_*`;
-**Leniency** `pn.LENIENCY_POSSIBLE` / `pn.LENIENCY_VALID`.
+**Leniency** `pn.LENIENCY_POSSIBLE` / `pn.LENIENCY_VALID`; **ShortNumberCost**
+`pn.COST_TOLL_FREE` / `pn.COST_STANDARD_RATE` / `pn.COST_PREMIUM_RATE` /
+`pn.COST_UNKNOWN`.
 
 > **v2 constant change:** the format style `E164` is now **0** (it was `2` in
 > v1). `INTERNATIONAL` = 1, `NATIONAL` = 2, `RFC3966` = 3. Always use the named
@@ -165,7 +186,7 @@ buffers, valid for the duration of the call.
 
 ## Tests
 
-The 34-check conformance suite (`docs/conformance.md`, v2) lives in
+The 40-check conformance suite (`docs/conformance.md`, v3) lives in
 `test/conformance.lua`, alongside a few surface extras. Lua 5.4 ships no
 de-facto-standard test framework, so it is a **plain assertion runner** — no
 dependency to install, and the exit code is the result.

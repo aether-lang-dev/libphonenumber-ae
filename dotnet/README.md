@@ -6,14 +6,14 @@ This package is a **thin P/Invoke binding** over the monorepo's one shared
 native engine — `core/native/libphonenumber_ae.so`, compiled from pure Aether
 over Google libphonenumber's own metadata. It contains **no phone-number
 logic**: every member marshals to an `aether_pn_embed_*` call. One engine, one
-set of behaviours, N language surfaces. This is the **v2 ABI** (50 symbols, full
-`PhoneNumberUtil` parity).
+set of behaviours, N language surfaces. This is the **v3 ABI** (58 symbols, full
+`PhoneNumberUtil` parity plus the `ShortNumberInfo` side-library).
 
 | File | Role |
 |---|---|
 | `src/Native.cs` | the P/Invoke surface — the **only** place that knows the ABI |
 | `src/PhoneNumber.cs` | the idiomatic C# API over it |
-| `test/Conformance.cs` | the 34-check conformance suite, as a console runner |
+| `test/Conformance.cs` | the 40-check conformance suite, as a console runner |
 
 Targets **net8.0**, with **zero NuGet dependencies** — which is also what lets
 it build and test on a box with no network.
@@ -42,7 +42,7 @@ which candidate actually loaded.
 
 ## Usage
 
-The stateless calls are static; the two stateful shapes the v2 ABI grows — a
+The stateless calls are static; the two stateful shapes the ABI grows — a
 parsed number and an AsYouType formatter — are small objects whose state is the
 caller-owned string the engine handed back.
 
@@ -67,6 +67,13 @@ foreach (var c in "6502530000") shown = ayt.InputDigit(c);    // "(650) 253-0000
 // find numbers in free text
 foreach (var m in PhoneNumber.FindNumbers("call 201-555-0123 today", "US"))
     Console.WriteLine($"{m.Raw} [{m.Start}..{m.End}]");
+
+// short / emergency numbers (dialled as-is: raw short number + region)
+PhoneNumber.IsEmergencyNumber("US", "911");                 // true
+PhoneNumber.IsEmergencyNumber("GB", "999");                 // true
+PhoneNumber.ShortIsValid("US", "911");                      // true
+PhoneNumber.ShortExpectedCost("US", "911");                 // ShortNumberCost.TollFree
+PhoneNumber.ShortExampleNumber("US");                       // "112"
 ```
 
 The surface:
@@ -116,7 +123,17 @@ PhoneNumber.IsAlphaNumber(s)                    // bool
 new AsYouTypeFormatter(region)                  // InputDigit(ch) / Result() / Clear()
 PhoneNumber.FindNumbers(text, region, leniency) // IReadOnlyList<PhoneNumberMatch>
 
-PhoneNumber.AbiVersion                          // 2
+// short numbers (ShortNumberInfo)
+PhoneNumber.ShortIsPossible(region, input)      // bool
+PhoneNumber.ShortIsValid(region, input)         // bool
+PhoneNumber.IsEmergencyNumber(region, input)    // bool
+PhoneNumber.ConnectsToEmergencyNumber(region, input)  // bool
+PhoneNumber.ShortIsCarrierSpecific(region, input)     // bool
+PhoneNumber.ShortIsSmsService(region, input)          // bool
+PhoneNumber.ShortExpectedCost(region, input)    // ShortNumberCost
+PhoneNumber.ShortExampleNumber(region)          // string
+
+PhoneNumber.AbiVersion                          // 3
 ```
 
 ### Constants
@@ -126,7 +143,9 @@ renumbering: **`E164` is now `0`** (it was `2` under the v1 ABI),
 `International` is `1`, `National` is `2`, `Rfc3966` is `3`. The other constant
 groups are enums with the ABI's exact values: `PhoneNumberType`
 (`Unknown` = -1, …), `ValidationResult`, `MatchType`, `CountryCodeSource`
-(`ParsedNumber.Source`) and `Leniency` (`Possible` = 0, `Valid` = 1).
+(`ParsedNumber.Source`), `Leniency` (`Possible` = 0, `Valid` = 1) and
+`ShortNumberCost` (`TollFree` = 0, `StandardRate` = 1, `PremiumRate` = 2,
+`Unknown` = 3).
 
 ## Marshalling notes
 
@@ -156,7 +175,7 @@ a keepalive list, `GetFunctionPointerForDelegate`) do not arise here.
 
 ## Tests
 
-The 34-check conformance suite (`docs/conformance.md`) lives in
+The 40-check conformance suite (`docs/conformance.md`) lives in
 `test/Conformance.cs`, alongside a few surface extras and a 5,000-iteration loop
 over the caller-owned-string contract (now exercising the parse accessors too).
 

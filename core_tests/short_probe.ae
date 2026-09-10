@@ -1,0 +1,40 @@
+// core_tests/short_probe — ShortNumberInfo engine gate (pure Aether).
+//
+// Cases drawn from libphonenumber's ShortNumberInfoTest behaviour: emergency
+// numbers, validity, possible-length, cost. Run: ae run core_tests/short_probe.ae
+
+import std.string
+import core.shortnumber
+
+fn fail(msg: string) { println("FAIL: ${msg}"); exit(1) }
+fn eq_i(label: string, got: int, want: int) {
+    if got != want { fail("${label}: got ${got}, want ${want}") }
+}
+fn eq_s(label: string, got: string, want: string) {
+    if got != want { fail("${label}: got '${got}', want '${want}'") }
+}
+
+main() {
+    // emergency numbers
+    eq_i("US 911 emergency", shortnumber.is_emergency_number("US", "911"), 1)
+    eq_i("US 112 emergency", shortnumber.is_emergency_number("US", "112"), 1)
+    eq_i("US 999 not emergency", shortnumber.is_emergency_number("US", "999"), 0)
+    eq_i("GB 999 emergency", shortnumber.is_emergency_number("GB", "999"), 1)
+    eq_i("GB 112 emergency", shortnumber.is_emergency_number("GB", "112"), 1)
+    eq_i("connects to emergency US 911", shortnumber.connects_to_emergency_number("US", "911"), 1)
+
+    // validity + possible length
+    eq_i("US 911 valid short", shortnumber.is_valid_short_number("US", "911"), 1)
+    eq_i("US 911 possible", shortnumber.is_possible_short_number("US", "911"), 1)
+    eq_i("US 12 not possible (too short)", shortnumber.is_possible_short_number("US", "12"), 0)
+    eq_i("FR 1010 valid", shortnumber.is_valid_short_number("FR", "1010"), 1)
+
+    // cost (US 911 is toll-free)
+    eq_i("US 911 toll-free cost", shortnumber.expected_cost("US", "911"), shortnumber.COST_TOLL_FREE)
+
+    // example
+    eq_s("US short example", shortnumber.short_example_number("US"), "112")
+
+    println("short_probe: PASS — ShortNumberInfo (emergency, valid, possible, cost)")
+    return 0
+}

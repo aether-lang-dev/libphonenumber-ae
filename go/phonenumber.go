@@ -4,8 +4,8 @@
 // (core/native/libphonenumber_ae.so, compiled from pure Aether over Google
 // libphonenumber's own metadata). No phone-number logic lives in this package —
 // every function marshals to an `aether_pn_embed_*` call across the flat C ABI
-// described in docs/abi.md (v2, full PhoneNumberUtil parity). One engine, one
-// set of behaviours, N language surfaces.
+// described in docs/abi.md (v3, full PhoneNumberUtil parity plus
+// ShortNumberInfo). One engine, one set of behaviours, N language surfaces.
 //
 // The ABI is stateless and handle-free: a parsed number and an AsYouType state
 // are themselves caller-owned STRINGS you pass back to accessor calls. Every
@@ -94,6 +94,16 @@ int   aether_pn_embed_matcher_count(const char* text, const char* region, int le
 int   aether_pn_embed_matcher_start(const char* text, const char* region, int leniency, int idx);
 int   aether_pn_embed_matcher_end(const char* text, const char* region, int leniency, int idx);
 char* aether_pn_embed_matcher_raw(const char* text, const char* region, int leniency, int idx);
+
+// ShortNumberInfo (short / emergency numbers)
+int   aether_pn_embed_short_is_possible(const char* region, const char* input);
+int   aether_pn_embed_short_is_valid(const char* region, const char* input);
+int   aether_pn_embed_short_is_emergency(const char* region, const char* input);
+int   aether_pn_embed_short_connects_to_emergency(const char* region, const char* input);
+int   aether_pn_embed_short_is_carrier_specific(const char* region, const char* input);
+int   aether_pn_embed_short_is_sms_service(const char* region, const char* input);
+int   aether_pn_embed_short_expected_cost(const char* region, const char* input);
+char* aether_pn_embed_short_example_number(const char* region);
 */
 import "C"
 
@@ -180,6 +190,18 @@ const (
 	LeniencyPossible Leniency = 0
 	// LeniencyValid accepts only numbers that pass full validation.
 	LeniencyValid Leniency = 1
+)
+
+// Cost is the expected cost of dialling a short number, mirroring
+// libphonenumber's ShortNumberInfo.ShortNumberCost. These are ABI constants —
+// append only, never renumber.
+type Cost int
+
+const (
+	CostTollFree     Cost = 0
+	CostStandardRate Cost = 1
+	CostPremiumRate  Cost = 2
+	CostUnknown      Cost = 3
 )
 
 // takeString copies an ABI-returned string out and frees it through the ABI.
@@ -565,7 +587,7 @@ func IsAlphaNumber(s string) bool {
 	return C.aether_pn_embed_is_alpha_number(cs) != 0
 }
 
-// ABIVersion is the ABI revision the linked engine reports (currently 2).
+// ABIVersion is the ABI revision the linked engine reports (currently 3).
 func ABIVersion() int { return int(C.aether_pn_embed_abi_version()) }
 
 // ---- AsYouTypeFormatter ----
@@ -633,4 +655,78 @@ func FindNumbers(text, region string, leniency Leniency) []Match {
 		out = append(out, Match{Start: start, End: end, Raw: raw})
 	}
 	return out
+}
+
+// ---- ShortNumberInfo (short / emergency numbers) ----
+
+// Short numbers are dialled as-is: no country code, no national prefix. Each
+// function takes the raw short number plus a region.
+
+// ShortIsPossible reports whether the short number is a possible length for the
+// region.
+func ShortIsPossible(region, input string) bool {
+	cr, ci := cStr(region), cStr(input)
+	defer C.free(unsafe.Pointer(cr))
+	defer C.free(unsafe.Pointer(ci))
+	return C.aether_pn_embed_short_is_possible(cr, ci) != 0
+}
+
+// ShortIsValid reports whether the short number matches a short-number pattern
+// for the region.
+func ShortIsValid(region, input string) bool {
+	cr, ci := cStr(region), cStr(input)
+	defer C.free(unsafe.Pointer(cr))
+	defer C.free(unsafe.Pointer(ci))
+	return C.aether_pn_embed_short_is_valid(cr, ci) != 0
+}
+
+// IsEmergencyNumber reports whether the number is an emergency number for the
+// region (e.g. "911" in the US, "999" in the GB).
+func IsEmergencyNumber(region, input string) bool {
+	cr, ci := cStr(region), cStr(input)
+	defer C.free(unsafe.Pointer(cr))
+	defer C.free(unsafe.Pointer(ci))
+	return C.aether_pn_embed_short_is_emergency(cr, ci) != 0
+}
+
+// ConnectsToEmergencyNumber reports whether dialling the number connects to an
+// emergency service in the region (looser than IsEmergencyNumber).
+func ConnectsToEmergencyNumber(region, input string) bool {
+	cr, ci := cStr(region), cStr(input)
+	defer C.free(unsafe.Pointer(cr))
+	defer C.free(unsafe.Pointer(ci))
+	return C.aether_pn_embed_short_connects_to_emergency(cr, ci) != 0
+}
+
+// ShortIsCarrierSpecific reports whether the short number is carrier-specific.
+func ShortIsCarrierSpecific(region, input string) bool {
+	cr, ci := cStr(region), cStr(input)
+	defer C.free(unsafe.Pointer(cr))
+	defer C.free(unsafe.Pointer(ci))
+	return C.aether_pn_embed_short_is_carrier_specific(cr, ci) != 0
+}
+
+// ShortIsSMSService reports whether the short number is an SMS short code for
+// the region.
+func ShortIsSMSService(region, input string) bool {
+	cr, ci := cStr(region), cStr(input)
+	defer C.free(unsafe.Pointer(cr))
+	defer C.free(unsafe.Pointer(ci))
+	return C.aether_pn_embed_short_is_sms_service(cr, ci) != 0
+}
+
+// ShortExpectedCost returns the expected cost of dialling the short number, as
+// a Cost (CostTollFree / CostStandardRate / CostPremiumRate / CostUnknown).
+func ShortExpectedCost(region, input string) Cost {
+	cr, ci := cStr(region), cStr(input)
+	defer C.free(unsafe.Pointer(cr))
+	defer C.free(unsafe.Pointer(ci))
+	return Cost(C.aether_pn_embed_short_expected_cost(cr, ci))
+}
+
+// ShortExampleNumber returns an example short number for the region, or "".
+func ShortExampleNumber(region string) string {
+	cr := cStr(region)
+	defer C.free(unsafe.Pointer(cr))
+	return takeString(C.aether_pn_embed_short_example_number(cr))
 }

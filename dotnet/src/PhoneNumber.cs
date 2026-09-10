@@ -1,8 +1,8 @@
-// The idiomatic C# surface over the phonenumber engine (ABI v2).
+// The idiomatic C# surface over the phonenumber engine (ABI v3).
 //
 // Carries no phone-number logic — every member here marshals to an
 // aether_pn_embed_* call in Native.cs. The stateless calls hang off the static
-// PhoneNumber class; the two stateful shapes the ABI grows in v2 — a parsed
+// PhoneNumber class; the two stateful shapes the ABI grows — a parsed
 // number and an AsYouType formatter — are wrapped as small objects
 // (ParsedNumber, AsYouTypeFormatter) whose state is the caller-owned string the
 // ABI handed back. Nothing here allocates unmanaged memory beyond the
@@ -337,6 +337,67 @@ public static class PhoneNumber
             list.Add(new PhoneNumberMatch(start, end, raw));
         }
         return list;
+    }
+
+    // ---- short numbers (ShortNumberInfo) ----
+    //
+    // Short numbers are dialled as-is — no country code, no national prefix —
+    // so the input is the raw short number plus a region.
+
+    /// <summary>True if <paramref name="input"/> is a possible short number for the region.</summary>
+    public static bool ShortIsPossible(string region, string input)
+    {
+        Init();
+        return Native.ShortIsPossible(Native.Encode(region), Native.Encode(input)) != 0;
+    }
+
+    /// <summary>True if <paramref name="input"/> matches a short-number pattern for the region.</summary>
+    public static bool ShortIsValid(string region, string input)
+    {
+        Init();
+        return Native.ShortIsValid(Native.Encode(region), Native.Encode(input)) != 0;
+    }
+
+    /// <summary>True if <paramref name="input"/> is an emergency number for the region (e.g. US "911").</summary>
+    public static bool IsEmergencyNumber(string region, string input)
+    {
+        Init();
+        return Native.ShortIsEmergency(Native.Encode(region), Native.Encode(input)) != 0;
+    }
+
+    /// <summary>True if dialling <paramref name="input"/> connects to an emergency number for the region.</summary>
+    public static bool ConnectsToEmergencyNumber(string region, string input)
+    {
+        Init();
+        return Native.ShortConnectsToEmergency(Native.Encode(region), Native.Encode(input)) != 0;
+    }
+
+    /// <summary>True if the short number is specific to a single carrier.</summary>
+    public static bool ShortIsCarrierSpecific(string region, string input)
+    {
+        Init();
+        return Native.ShortIsCarrierSpecific(Native.Encode(region), Native.Encode(input)) != 0;
+    }
+
+    /// <summary>True if the short number is usable as an SMS service.</summary>
+    public static bool ShortIsSmsService(string region, string input)
+    {
+        Init();
+        return Native.ShortIsSmsService(Native.Encode(region), Native.Encode(input)) != 0;
+    }
+
+    /// <summary>The expected cost of dialling the short number, as a <see cref="PhoneNumbers.ShortNumberCost"/>.</summary>
+    public static ShortNumberCost ShortExpectedCost(string region, string input)
+    {
+        Init();
+        return (ShortNumberCost)Native.ShortExpectedCost(Native.Encode(region), Native.Encode(input));
+    }
+
+    /// <summary>An example short number for the region, or "".</summary>
+    public static string ShortExampleNumber(string region)
+    {
+        Init();
+        return Native.TakeString(Native.ShortExampleNumber(Native.Encode(region)));
     }
 }
 

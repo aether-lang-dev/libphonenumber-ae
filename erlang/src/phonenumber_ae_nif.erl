@@ -1,4 +1,4 @@
-%%% phonenumber_ae_nif — the raw NIF surface (ABI v2).
+%%% phonenumber_ae_nif — the raw NIF surface (ABI v3).
 %%%
 %%% This module exists only to load c_src/phonenumber_ae_nif.c and to give each
 %%% native function a stub. Nothing here is meant to be called directly;
@@ -37,6 +37,10 @@
          ayt_new/1, ayt_input/2, ayt_result/1, ayt_clear/1,
          %% matcher
          matcher_count/3, matcher_start/4, matcher_end/4, matcher_raw/4,
+         %% ShortNumberInfo
+         short_is_possible/2, short_is_valid/2, short_is_emergency/2,
+         short_connects_to_emergency/2, short_is_carrier_specific/2,
+         short_is_sms_service/2, short_expected_cost/2, short_example_number/1,
          %% introspection
          abi_version/0]).
 
@@ -237,6 +241,32 @@ matcher_end(_Text, _Region, _Leniency, _Idx) -> not_loaded(?LINE).
 
 -spec matcher_raw(iodata(), iodata(), integer(), integer()) -> binary().
 matcher_raw(_Text, _Region, _Leniency, _Idx) -> not_loaded(?LINE).
+
+%% ---- ShortNumberInfo ----
+
+-spec short_is_possible(iodata(), iodata()) -> integer().
+short_is_possible(_Region, _Input) -> not_loaded(?LINE).
+
+-spec short_is_valid(iodata(), iodata()) -> integer().
+short_is_valid(_Region, _Input) -> not_loaded(?LINE).
+
+-spec short_is_emergency(iodata(), iodata()) -> integer().
+short_is_emergency(_Region, _Input) -> not_loaded(?LINE).
+
+-spec short_connects_to_emergency(iodata(), iodata()) -> integer().
+short_connects_to_emergency(_Region, _Input) -> not_loaded(?LINE).
+
+-spec short_is_carrier_specific(iodata(), iodata()) -> integer().
+short_is_carrier_specific(_Region, _Input) -> not_loaded(?LINE).
+
+-spec short_is_sms_service(iodata(), iodata()) -> integer().
+short_is_sms_service(_Region, _Input) -> not_loaded(?LINE).
+
+-spec short_expected_cost(iodata(), iodata()) -> integer().
+short_expected_cost(_Region, _Input) -> not_loaded(?LINE).
+
+-spec short_example_number(iodata()) -> binary().
+short_example_number(_Region) -> not_loaded(?LINE).
 
 %% ---- introspection ----
 

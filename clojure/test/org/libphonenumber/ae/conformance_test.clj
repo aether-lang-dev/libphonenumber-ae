@@ -1,5 +1,5 @@
 (ns org.libphonenumber.ae.conformance-test
-  "The 34-check binding conformance suite (docs/conformance.md, v2), in Clojure.
+  "The 40-check binding conformance suite (docs/conformance.md, v3), in Clojure.
 
   Proves the **Clojure layer** reaches the same engine behaviour the Java and
   Python suites see. Since that layer sits on the Java binding rather than on
@@ -16,7 +16,7 @@
   (:require [clojure.test :refer [deftest is run-tests]]
             [org.libphonenumber.ae.core :as pn]))
 
-;; ---- the 34 required checks ----------------------------------------------
+;; ---- the 40 required checks ----------------------------------------------
 
 (deftest test-01-country-code-us
   (is (= "1" (pn/country-code "US"))))
@@ -116,7 +116,25 @@
   (is (= "201-555-0123" (:raw (first (pn/find-numbers "call 201-555-0123 now" "US" :valid))))))
 
 (deftest test-34-abi-version
-  (is (= 2 (pn/abi-version))))
+  (is (= 3 (pn/abi-version))))
+
+(deftest test-35-emergency-us-911
+  (is (true? (pn/emergency-number? "US" "911"))))
+
+(deftest test-36-not-emergency-us-999
+  (is (false? (pn/emergency-number? "US" "999"))))
+
+(deftest test-37-emergency-gb-999
+  (is (true? (pn/emergency-number? "GB" "999"))))
+
+(deftest test-38-valid-short-us-911
+  (is (true? (pn/valid-short-number? "US" "911"))))
+
+(deftest test-39-expected-cost-us-911
+  (is (= :toll-free (pn/short-expected-cost "US" "911"))))
+
+(deftest test-40-short-example-us
+  (is (= "112" (pn/short-example-number "US"))))
 
 ;; ---- extras specific to the Clojure layer --------------------------------
 

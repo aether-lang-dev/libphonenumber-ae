@@ -1,4 +1,4 @@
-%%% The binding conformance suite (docs/conformance.md, v2), as EUnit.
+%%% The binding conformance suite (docs/conformance.md, v3), as EUnit.
 %%%
 %%% Proves the Erlang binding marshals every value shape across the FFI. It is
 %%% NOT a phone-number test suite — the behavioural cases live in the engine's
@@ -12,7 +12,7 @@
 -include_lib("eunit/include/eunit.hrl").
 
 %%------------------------------------------------------------------
-%% The 34 checks (docs/conformance.md, v2)
+%% The 40 checks (docs/conformance.md, v3)
 %%------------------------------------------------------------------
 
 t01_country_code_us_test() ->
@@ -138,7 +138,32 @@ t33_matcher_raw_test() ->
     ?assertEqual(<<"201-555-0123">>, Raw).
 
 t34_abi_version_test() ->
-    ?assertEqual(2, phonenumber_ae:abi_version()).
+    ?assertEqual(3, phonenumber_ae:abi_version()).
+
+%%------------------------------------------------------------------
+%% ShortNumberInfo (docs/conformance.md #35–40, v3)
+%%------------------------------------------------------------------
+
+t35_short_emergency_us_test() ->
+    ?assert(phonenumber_ae:is_emergency_number(<<"US">>, <<"911">>)).
+
+t36_short_not_emergency_test() ->
+    ?assertNot(phonenumber_ae:is_emergency_number(<<"US">>, <<"999">>)).
+
+t37_short_emergency_gb_test() ->
+    ?assert(phonenumber_ae:is_emergency_number(<<"GB">>, <<"999">>)).
+
+t38_short_valid_test() ->
+    ?assert(phonenumber_ae:short_is_valid(<<"US">>, <<"911">>)).
+
+t39_short_cost_test() ->
+    ?assertEqual(toll_free,
+                 phonenumber_ae:short_expected_cost(<<"US">>, <<"911">>)),
+    ?assertEqual(0,
+                 phonenumber_ae:short_expected_cost_code(<<"US">>, <<"911">>)).
+
+t40_short_example_test() ->
+    ?assertEqual(<<"112">>, phonenumber_ae:short_example_number(<<"US">>)).
 
 %%------------------------------------------------------------------
 %% Extras — marshalling corners the 34 do not reach

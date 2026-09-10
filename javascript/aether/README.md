@@ -10,8 +10,8 @@ This package is **marshalling only**. The engine itself — Google
 libphonenumber's metadata, parse, `isPossible`/`isValid`, number typing,
 formatting, the as-you-type formatter and the free-text matcher — is the
 pure-Aether engine in `core/phonenumber.ae`, shared by every language binding in
-this monorepo and reached through the full **v2** `aether_pn_embed_*` C ABI
-(`core/embed.ae`, 50 symbols, `docs/abi.md`). Cross-language behaviour is
+this monorepo and reached through the full **v3** `aether_pn_embed_*` C ABI
+(`core/embed.ae`, 58 symbols, `docs/abi.md`). Cross-language behaviour is
 therefore identical by construction, not by test.
 
 ## Install
@@ -62,6 +62,13 @@ matches.length;        // 2
 matches[0].raw;        // '201-555-0123'
 matches[0].start;      // 5
 matches[0].end;        // 17
+
+// Short / emergency numbers (v3 — ShortNumberInfo).
+pn.ShortNumberInfo.isEmergencyNumber('US', '911');   // true
+pn.ShortNumberInfo.isEmergencyNumber('GB', '999');   // true
+pn.ShortNumberInfo.isValid('US', '911');             // true
+pn.ShortNumberInfo.expectedCost('US', '911') === pn.COST_TOLL_FREE;  // true
+pn.ShortNumberInfo.exampleNumber('US');              // '112'
 ```
 
 ### Surface
@@ -86,6 +93,9 @@ matches[0].end;        // 17
   `result()`, `clear()`.
 * **`findNumbers(text, region, leniency)`** — an array of `Match { start, end,
   raw }`.
+* **`ShortNumberInfo`** — short / emergency numbers: `isPossible`, `isValid`,
+  `isEmergencyNumber`, `connectsToEmergencyNumber`, `isCarrierSpecific`,
+  `isSmsService`, `expectedCost` (a `COST_*` int), `exampleNumber(region)`.
 
 ### Constants
 
@@ -110,6 +120,9 @@ CountryCodeSource (`ParsedNumber.source`): `SRC_FROM_NUMBER_WITH_PLUS` (1),
 
 Matcher leniency: `LENIENCY_POSSIBLE` (0), `LENIENCY_VALID` (1).
 
+ShortNumberCost (`ShortNumberInfo.expectedCost`): `COST_TOLL_FREE` (0),
+`COST_STANDARD_RATE` (1), `COST_PREMIUM_RATE` (2), `COST_UNKNOWN` (3).
+
 ## Tests
 
 ```
@@ -122,7 +135,7 @@ or, with the engine built for you:
 aeb javascript/aether/.tests.ae
 ```
 
-The suite is the 34-check v2 conformance contract in `docs/conformance.md`. It
+The suite is the 40-check v3 conformance contract in `docs/conformance.md`. It
 uses `node:test` and `node:assert`, so koffi is the only dependency that has to
 be installed.
 

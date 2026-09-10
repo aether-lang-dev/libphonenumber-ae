@@ -6,8 +6,8 @@ This package is a **thin cgo binding** over the monorepo's one shared native
 engine — `core/native/libphonenumber_ae.so`, compiled from pure Aether over
 Google libphonenumber's own metadata. It contains **no phone-number logic**:
 every function marshals to an `aether_pn_embed_*` call across the flat C ABI in
-[`docs/abi.md`](../docs/abi.md) (**v2**, full `PhoneNumberUtil` parity). One
-engine, one set of behaviours, N language surfaces.
+[`docs/abi.md`](../docs/abi.md) (**v3**, full `PhoneNumberUtil` parity plus
+`ShortNumberInfo`). One engine, one set of behaviours, N language surfaces.
 
 The ABI is **handle-free**. There is no opaque handle: a parsed number and an
 as-you-type state each cross the seam as a caller-owned **string** that you pass
@@ -96,6 +96,18 @@ matches[0].Raw      // "201-555-0123"
 `input` is a number as a human might type it — digits with optional spaces,
 dashes, parentheses, dots, and an optional leading `+countrycode`.
 
+### Short and emergency numbers
+
+Short numbers are dialled as-is — no country code, no national prefix.
+
+```go
+pn.IsEmergencyNumber("US", "911")   // true
+pn.IsEmergencyNumber("GB", "999")   // true
+pn.ShortIsValid("US", "911")        // true
+pn.ShortExpectedCost("US", "911")   // pn.CostTollFree
+pn.ShortExampleNumber("US")         // "112"
+```
+
 ### Functions
 
 ```go
@@ -145,7 +157,17 @@ pn.IsAlphaNumber(s)                bool
 pn.NewAsYouTypeFormatter(region)   *pn.AsYouTypeFormatter
 pn.FindNumbers(text, region, leniency) []pn.Match
 
-pn.ABIVersion()     int            // the engine's ABI revision (2)
+// short / emergency numbers
+pn.ShortIsPossible(region, input)            bool
+pn.ShortIsValid(region, input)               bool
+pn.IsEmergencyNumber(region, input)          bool
+pn.ConnectsToEmergencyNumber(region, input)  bool
+pn.ShortIsCarrierSpecific(region, input)     bool
+pn.ShortIsSMSService(region, input)          bool
+pn.ShortExpectedCost(region, input)          pn.Cost
+pn.ShortExampleNumber(region)                // an example short number, or ""
+
+pn.ABIVersion()     int            // the engine's ABI revision (3)
 ```
 
 ### Constants
@@ -173,6 +195,9 @@ Country-code sources (`Source`, from `ParsedNumber.Source`):
 Matcher leniency (`Leniency`, for `FindNumbers`): `LeniencyPossible` (0),
 `LeniencyValid` (1).
 
+Short-number cost (`Cost`, from `ShortExpectedCost`): `CostTollFree` (0),
+`CostStandardRate` (1), `CostPremiumRate` (2), `CostUnknown` (3).
+
 ## isPossible vs isValid
 
 Two levels of "is this a phone number", matching libphonenumber's own:
@@ -193,7 +218,7 @@ engine is a pure, stateless transform.
 
 ## Tests
 
-The 34-check conformance suite ([`docs/conformance.md`](../docs/conformance.md))
+The 40-check conformance suite ([`docs/conformance.md`](../docs/conformance.md))
 lives in `phonenumber_test.go`. It is not a phone-number test suite — the
 behavioural cases are proven once, in the engine — it samples each *kind* of
 value crossing the FFI, so it proves the marshalling.

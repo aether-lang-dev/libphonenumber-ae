@@ -1,7 +1,7 @@
 <?php
 
 /**
- * The 1:1 symbol table for the phonenumber C ABI (core/embed.ae), v2.
+ * The 1:1 symbol table for the phonenumber C ABI (core/embed.ae), v3.
  *
  * This file is the ONLY place in the PHP binding that knows about the C ABI.
  * Everything above it (PhoneNumber.php) is idiomatic PHP over these symbols.
@@ -22,12 +22,12 @@
  *
  * ## No opaque handles
  *
- * v2 is the full PhoneNumberUtil-parity ABI (50 symbols), but every signature
- * is still scalar-only (`const char*` and `int`). A parsed number and an
- * as-you-type state are themselves caller-owned *strings*: you get one back,
- * pass it to the accessor calls, and free it like any other returned string.
- * There is still no cdef for function-pointer typedefs, no keepalive, and
- * nothing to close.
+ * v3 adds the ShortNumberInfo side-library (8 symbols) on top of the full
+ * PhoneNumberUtil-parity ABI (now 58 symbols), but every signature is still
+ * scalar-only (`const char*` and `int`). A parsed number and an as-you-type
+ * state are themselves caller-owned *strings*: you get one back, pass it to the
+ * accessor calls, and free it like any other returned string. There is still no
+ * cdef for function-pointer typedefs, no keepalive, and nothing to close.
  *
  * @package PhoneNumberAe
  */
@@ -97,6 +97,13 @@ final class Native
 
     public const LENIENCY_POSSIBLE = 0;
     public const LENIENCY_VALID = 1;
+
+    // ---- ShortNumberCost (short_expected_cost) ----
+
+    public const COST_TOLL_FREE = 0;
+    public const COST_STANDARD_RATE = 1;
+    public const COST_PREMIUM_RATE = 2;
+    public const COST_UNKNOWN = 3;
 
     /**
      * The ABI, grouped the way core/embed.ae declares it.
@@ -172,6 +179,16 @@ final class Native
         int    aether_pn_embed_matcher_start(const char* text, const char* region, int leniency, int idx);
         int    aether_pn_embed_matcher_end(const char* text, const char* region, int leniency, int idx);
         char*  aether_pn_embed_matcher_raw(const char* text, const char* region, int leniency, int idx);
+
+        /* ---- ShortNumberInfo (short / emergency numbers) ---- */
+        int    aether_pn_embed_short_is_possible(const char* region, const char* input);
+        int    aether_pn_embed_short_is_valid(const char* region, const char* input);
+        int    aether_pn_embed_short_is_emergency(const char* region, const char* input);
+        int    aether_pn_embed_short_connects_to_emergency(const char* region, const char* input);
+        int    aether_pn_embed_short_is_carrier_specific(const char* region, const char* input);
+        int    aether_pn_embed_short_is_sms_service(const char* region, const char* input);
+        int    aether_pn_embed_short_expected_cost(const char* region, const char* input);
+        char*  aether_pn_embed_short_example_number(const char* region);
         C;
 
     private static ?FFI $ffi = null;

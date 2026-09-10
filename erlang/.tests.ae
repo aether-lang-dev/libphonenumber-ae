@@ -57,7 +57,7 @@ aeb(cap) {
             println("erlang: conformance suite reported failures")
             return 1
         }
-        println("erlang: PASS — 34-check conformance (v2 ABI)")
+        println("erlang: PASS — 40-check conformance (v3 ABI, incl. ShortNumberInfo)")
         return 0
     }
 }

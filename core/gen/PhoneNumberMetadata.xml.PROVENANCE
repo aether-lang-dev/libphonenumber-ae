@@ -41,3 +41,13 @@ NOT consumed: leadingDigits routing between multiple <numberFormat> entries
 metadata (separate XML files), and the alternate-formats and short-number
 metadata. Extending the generator to carry these needs no new fetch — the whole
 XML is already in-tree.
+
+ShortNumberMetadata.xml (ShortNumberInfo side-library)
+-------------------------------------------------------
+core/gen/generate_short.ae reads the in-tree resources/ShortNumberMetadata.xml
+(Google's own, Apache-2.0) and compiles a subset into core/shortnumber_metadata.ae:
+per territory, the generalDesc pattern, the shortCode pattern + possible-lengths,
+an example, and the per-category national-number patterns (tollFree, premiumRate,
+standardRate, carrierSpecific, smsServices, emergency). Enough for isValid/
+isPossibleShortNumber, getExpectedCost, isEmergencyNumber, connectsToEmergencyNumber,
+isCarrierSpecific, isSmsServiceForRegion. Pristine file, read directly, unmodified.

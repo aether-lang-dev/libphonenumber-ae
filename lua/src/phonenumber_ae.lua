@@ -1,4 +1,4 @@
---- Validate, parse and format international phone numbers (ABI v2).
+--- Validate, parse and format international phone numbers (ABI v3).
 ---
 --- The idiomatic Lua surface over the phonenumber engine. Carries no
 --- phone-number logic — every function here marshals to the C extension in
@@ -71,6 +71,12 @@ M.SRC_FROM_DEFAULT_COUNTRY     = native.SRC_FROM_DEFAULT_COUNTRY
 --- Matcher leniency.
 M.LENIENCY_POSSIBLE = native.LENIENCY_POSSIBLE
 M.LENIENCY_VALID    = native.LENIENCY_VALID
+
+--- ShortNumberCost (short_expected_cost).
+M.COST_TOLL_FREE     = native.COST_TOLL_FREE
+M.COST_STANDARD_RATE = native.COST_STANDARD_RATE
+M.COST_PREMIUM_RATE  = native.COST_PREMIUM_RATE
+M.COST_UNKNOWN       = native.COST_UNKNOWN
 
 -- ---- metadata ----
 
@@ -363,6 +369,50 @@ function M.find_numbers(text, region, leniency)
     }
   end
   return out
+end
+
+-- ---- ShortNumberInfo (short / emergency numbers) ----
+-- Short numbers are dialled as-is (no cc, no national prefix): the input is the
+-- raw short number plus a region.
+
+--- True if `input` is a possible short number for the region (right length).
+function M.short_is_possible(region, input)
+  return native.short_is_possible(region, input)
+end
+
+--- True if `input` matches a short-number pattern for the region.
+function M.short_is_valid(region, input)
+  return native.short_is_valid(region, input)
+end
+
+--- True if `input` is an emergency number for the region (e.g. US "911").
+function M.is_emergency_number(region, input)
+  return native.short_is_emergency(region, input)
+end
+
+--- True if dialling `input` connects to an emergency number for the region.
+function M.connects_to_emergency_number(region, input)
+  return native.short_connects_to_emergency(region, input)
+end
+
+--- True if the short number is specific to a single carrier.
+function M.short_is_carrier_specific(region, input)
+  return native.short_is_carrier_specific(region, input)
+end
+
+--- True if the short number is usable as an SMS service.
+function M.short_is_sms_service(region, input)
+  return native.short_is_sms_service(region, input)
+end
+
+--- The expected cost of dialling the short number (a COST_* integer).
+function M.short_expected_cost(region, input)
+  return native.short_expected_cost(region, input)
+end
+
+--- An example short number for the region, or "".
+function M.short_example_number(region)
+  return native.short_example_number(region)
 end
 
 -- ---- lifecycle ----

@@ -1,6 +1,6 @@
 'use strict';
 /**
- * Idiomatic JavaScript surface over the phonenumber engine (ABI v2).
+ * Idiomatic JavaScript surface over the phonenumber engine (ABI v3).
  *
  * Carries no phone-number logic — see the monorepo's one rule. Every function
  * here marshals to an `aether_pn_embed_*` call in `native.js`.
@@ -332,6 +332,55 @@ function findNumbers(text, region, leniency = LENIENCY_VALID) {
   return out;
 }
 
+// ---- ShortNumberInfo (short / emergency numbers) ----
+
+/**
+ * Short / emergency number queries, mirroring libphonenumber's
+ * `ShortNumberInfo`. Every method marshals to an `aether_pn_embed_short_*` ABI
+ * call; the expected-cost result is one of the COST_* ShortNumberCost ints.
+ */
+const ShortNumberInfo = {
+  /** True if the number is a possible short number for the region. */
+  isPossible(region, input) {
+    return _api().shortIsPossible(_str(region), _str(input)) !== 0;
+  },
+
+  /** True if the number is a valid short number for the region. */
+  isValid(region, input) {
+    return _api().shortIsValid(_str(region), _str(input)) !== 0;
+  },
+
+  /** True if the number is an emergency number for the region. */
+  isEmergencyNumber(region, input) {
+    return _api().shortIsEmergency(_str(region), _str(input)) !== 0;
+  },
+
+  /** True if dialling the number would connect to an emergency service. */
+  connectsToEmergencyNumber(region, input) {
+    return _api().shortConnectsToEmergency(_str(region), _str(input)) !== 0;
+  },
+
+  /** True if the short number is carrier-specific. */
+  isCarrierSpecific(region, input) {
+    return _api().shortIsCarrierSpecific(_str(region), _str(input)) !== 0;
+  },
+
+  /** True if the short number is an SMS service. */
+  isSmsService(region, input) {
+    return _api().shortIsSmsService(_str(region), _str(input)) !== 0;
+  },
+
+  /** The expected cost of the short number — a COST_* ShortNumberCost int. */
+  expectedCost(region, input) {
+    return _api().shortExpectedCost(_str(region), _str(input));
+  },
+
+  /** An example short number for the region, or "". */
+  exampleNumber(region) {
+    return _s('shortExampleNumber', _str(region));
+  },
+};
+
 module.exports = {
   // metadata
   countryCode, exampleNumber, exampleNumberForType, invalidExampleNumber,
@@ -350,4 +399,6 @@ module.exports = {
   isAlphaNumber, abiVersion,
   // stateful / matcher
   AsYouTypeFormatter, Match, findNumbers,
+  // short / emergency numbers
+  ShortNumberInfo,
 };

@@ -1,4 +1,4 @@
-//! The 1:1 symbol table for the phonenumber C ABI (`core/embed.ae`), **v2**.
+//! The 1:1 symbol table for the phonenumber C ABI (`core/embed.ae`), **v3**.
 //!
 //! This module is the ONLY place in the Rust binding that knows about the C
 //! ABI, and it is the canonical cross-binding reference: every symbol the
@@ -85,6 +85,13 @@ pub const SRC_FROM_DEFAULT_COUNTRY: c_int = 20;
 
 pub const LENIENCY_POSSIBLE: c_int = 0;
 pub const LENIENCY_VALID: c_int = 1;
+
+// ---- ShortNumberCost (`short_expected_cost` result) ----
+
+pub const COST_TOLL_FREE: c_int = 0;
+pub const COST_STANDARD_RATE: c_int = 1;
+pub const COST_PREMIUM_RATE: c_int = 2;
+pub const COST_UNKNOWN: c_int = 3;
 
 /// The platform's shared-library file name for the engine.
 pub const LIB_NAME: &str = if cfg!(target_os = "macos") {
@@ -195,6 +202,16 @@ pub struct Api {
     pub matcher_end: unsafe extern "C" fn(*const c_char, *const c_char, c_int, c_int) -> c_int,
     pub matcher_raw:
         unsafe extern "C" fn(*const c_char, *const c_char, c_int, c_int) -> *mut c_char,
+
+    // ---- ShortNumberInfo (short / emergency numbers) ----
+    pub short_is_possible: unsafe extern "C" fn(*const c_char, *const c_char) -> c_int,
+    pub short_is_valid: unsafe extern "C" fn(*const c_char, *const c_char) -> c_int,
+    pub short_is_emergency: unsafe extern "C" fn(*const c_char, *const c_char) -> c_int,
+    pub short_connects_to_emergency: unsafe extern "C" fn(*const c_char, *const c_char) -> c_int,
+    pub short_is_carrier_specific: unsafe extern "C" fn(*const c_char, *const c_char) -> c_int,
+    pub short_is_sms_service: unsafe extern "C" fn(*const c_char, *const c_char) -> c_int,
+    pub short_expected_cost: unsafe extern "C" fn(*const c_char, *const c_char) -> c_int,
+    pub short_example_number: unsafe extern "C" fn(*const c_char) -> *mut c_char,
 
     /// Keeps the `dlopen` handle alive. MUST be the last field — every fn
     /// pointer above points into this library's mapping.
@@ -316,6 +333,15 @@ impl Api {
             matcher_start: sym!(lib, "aether_pn_embed_matcher_start"),
             matcher_end: sym!(lib, "aether_pn_embed_matcher_end"),
             matcher_raw: sym!(lib, "aether_pn_embed_matcher_raw"),
+
+            short_is_possible: sym!(lib, "aether_pn_embed_short_is_possible"),
+            short_is_valid: sym!(lib, "aether_pn_embed_short_is_valid"),
+            short_is_emergency: sym!(lib, "aether_pn_embed_short_is_emergency"),
+            short_connects_to_emergency: sym!(lib, "aether_pn_embed_short_connects_to_emergency"),
+            short_is_carrier_specific: sym!(lib, "aether_pn_embed_short_is_carrier_specific"),
+            short_is_sms_service: sym!(lib, "aether_pn_embed_short_is_sms_service"),
+            short_expected_cost: sym!(lib, "aether_pn_embed_short_expected_cost"),
+            short_example_number: sym!(lib, "aether_pn_embed_short_example_number"),
 
             _lib: lib,
         })

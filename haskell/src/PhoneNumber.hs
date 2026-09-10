@@ -2,7 +2,7 @@
 
 -- |
 -- Module      : PhoneNumber
--- Description : Validate, parse and format international phone numbers (ABI v2).
+-- Description : Validate, parse and format international phone numbers (ABI v3).
 --
 -- A thin binding over the monorepo's ONE shared native engine —
 -- @core\/native\/libphonenumber_ae.so@, compiled from pure Aether over Google
@@ -11,9 +11,10 @@
 -- described in @core\/embed.ae@. One engine, one set of behaviours, N language
 -- surfaces.
 --
--- == ABI v2
+-- == ABI v3
 --
--- The ABI is now full @PhoneNumberUtil@ parity. A parsed number is a
+-- The ABI is full @PhoneNumberUtil@ parity plus the @ShortNumberInfo@
+-- side-library (short \/ emergency numbers). A parsed number is a
 -- caller-owned string you carry in a 'ParsedNumber' and read fields from on
 -- demand; the 'AsYouTypeFormatter' threads its state through the same
 -- caller-owned-string mechanism, wrapped here behind an 'IORef'; and
@@ -111,6 +112,17 @@ module PhoneNumber
   , Match (..)
   , findNumbers
 
+    -- * ShortNumberInfo (short / emergency numbers)
+  , shortIsPossible
+  , shortIsValid
+  , isEmergencyNumber
+  , connectsToEmergencyNumber
+  , shortIsCarrierSpecific
+  , shortIsSmsService
+  , shortExpectedCost
+  , shortExpectedCostInt
+  , shortExampleNumber
+
     -- * Enumerations
   , NumberType (..)
   , numberTypeInt
@@ -120,6 +132,8 @@ module PhoneNumber
   , matchTypeFromCInt
   , CountryCodeSource (..)
   , countryCodeSourceFromCInt
+  , ShortNumberCost (..)
+  , shortNumberCostFromCInt
 
     -- * Introspection
   , abiVersion
@@ -274,6 +288,29 @@ data Leniency
 leniencyCInt :: Leniency -> CInt
 leniencyCInt Possible = 0
 leniencyCInt Valid = 1
+
+-- ---------------------------------------------------------------------------
+-- ShortNumberCost (short_expected_cost)
+-- ---------------------------------------------------------------------------
+
+-- | The expected cost of dialling a short number, as reported by
+-- 'shortExpectedCost'. Wire values: @TollFreeCost = 0@, @StandardRateCost = 1@,
+-- @PremiumRateCost = 2@, @UnknownCost = 3@. 'OtherCost' guards a future
+-- addition (the ABI is append-only).
+data ShortNumberCost
+  = TollFreeCost
+  | StandardRateCost
+  | PremiumRateCost
+  | UnknownCost
+  | OtherCost CInt
+  deriving (Eq, Show)
+
+shortNumberCostFromCInt :: CInt -> ShortNumberCost
+shortNumberCostFromCInt 0 = TollFreeCost
+shortNumberCostFromCInt 1 = StandardRateCost
+shortNumberCostFromCInt 2 = PremiumRateCost
+shortNumberCostFromCInt 3 = UnknownCost
+shortNumberCostFromCInt n = OtherCost n
 
 -- ---------------------------------------------------------------------------
 -- Small marshalling helpers (private) — keep the surface below terse.
@@ -618,10 +655,61 @@ findNumbers text region leniency =
       pure (Match (fromIntegral s) (fromIntegral e) raw)
 
 -- ---------------------------------------------------------------------------
+-- ShortNumberInfo (short / emergency numbers)
+-- ---------------------------------------------------------------------------
+--
+-- Short numbers are dialled as-is — no country code, no national prefix — so
+-- the input is the raw short number plus a region. Pure marshalling, like the
+-- rest.
+
+-- | True if @input@ is a possible short number for the region (right length).
+shortIsPossible :: B.ByteString -> B.ByteString -> IO Bool
+shortIsPossible region input = (/= 0) <$> int2 N.aether_pn_embed_short_is_possible region input
+
+-- | True if @input@ matches a short-number pattern for the region.
+shortIsValid :: B.ByteString -> B.ByteString -> IO Bool
+shortIsValid region input = (/= 0) <$> int2 N.aether_pn_embed_short_is_valid region input
+
+-- | True if @input@ is an emergency number for the region (e.g. US @\"911\"@).
+isEmergencyNumber :: B.ByteString -> B.ByteString -> IO Bool
+isEmergencyNumber region input = (/= 0) <$> int2 N.aether_pn_embed_short_is_emergency region input
+
+-- | True if dialling @input@ connects to an emergency number for the region.
+connectsToEmergencyNumber :: B.ByteString -> B.ByteString -> IO Bool
+connectsToEmergencyNumber region input =
+  (/= 0) <$> int2 N.aether_pn_embed_short_connects_to_emergency region input
+
+-- | True if the short number is specific to a single carrier.
+shortIsCarrierSpecific :: B.ByteString -> B.ByteString -> IO Bool
+shortIsCarrierSpecific region input =
+  (/= 0) <$> int2 N.aether_pn_embed_short_is_carrier_specific region input
+
+-- | True if the short number is usable as an SMS service.
+shortIsSmsService :: B.ByteString -> B.ByteString -> IO Bool
+shortIsSmsService region input =
+  (/= 0) <$> int2 N.aether_pn_embed_short_is_sms_service region input
+
+-- | The expected cost of dialling the short number (a 'ShortNumberCost').
+shortExpectedCost :: B.ByteString -> B.ByteString -> IO ShortNumberCost
+shortExpectedCost region input =
+  shortNumberCostFromCInt <$> int2 N.aether_pn_embed_short_expected_cost region input
+
+-- | The raw ABI cost int (@0@ toll-free, @1@ standard, @2@ premium, @3@
+-- unknown), for a caller who wants the wire value rather than the
+-- 'ShortNumberCost'.
+shortExpectedCostInt :: B.ByteString -> B.ByteString -> IO Int
+shortExpectedCostInt region input =
+  fromIntegral <$> int2 N.aether_pn_embed_short_expected_cost region input
+
+-- | An example short number for the region, or @\"\"@.
+shortExampleNumber :: B.ByteString -> IO B.ByteString
+shortExampleNumber = str1 N.aether_pn_embed_short_example_number
+
+-- ---------------------------------------------------------------------------
 -- Introspection
 -- ---------------------------------------------------------------------------
 
--- | The engine's ABI revision (@2@ for this binding).
+-- | The engine's ABI revision (@3@ for this binding — adds ShortNumberInfo).
 abiVersion :: IO Int
 abiVersion = fromIntegral <$> N.aether_pn_embed_abi_version
 

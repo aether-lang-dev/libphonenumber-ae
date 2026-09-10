@@ -8,8 +8,8 @@ over Google libphonenumber's own metadata. It contains **no phone-number
 logic**: every member marshals to an `aether_pn_embed_*` call. One engine, one
 set of behaviours, N language surfaces.
 
-It speaks the full **v2** `aether_pn_embed_*` C ABI (50 symbols, full
-PhoneNumberUtil parity — `docs/abi.md`). Every signature is still scalar-only
+It speaks the full **v3** `aether_pn_embed_*` C ABI (58 symbols, full
+PhoneNumberUtil parity plus ShortNumberInfo — `docs/abi.md`). Every signature is still scalar-only
 (`const char*` and `int`), and there are still no opaque handles: a parsed
 number and an as-you-type state are themselves caller-owned *strings*.
 
@@ -67,6 +67,13 @@ matches.length;        // 2
 matches.first.raw;     // '201-555-0123'
 matches.first.start;   // 5
 matches.first.end;     // 17
+
+// Short / emergency numbers (v3 — ShortNumberInfo).
+pn.ShortNumberInfo.isEmergencyNumber('US', '911');   // true
+pn.ShortNumberInfo.isEmergencyNumber('GB', '999');   // true
+pn.ShortNumberInfo.isValid('US', '911');             // true
+pn.ShortNumberInfo.expectedCost('US', '911');        // ShortNumberCost.tollFree
+pn.ShortNumberInfo.exampleNumber('US');              // '112'
 ```
 
 ### Surface
@@ -91,6 +98,9 @@ matches.first.end;     // 17
   `result()`, `clear()`.
 * **`findNumbers(text, region, {leniency})`** — a `List<PhoneNumberMatch>` with
   `start`, `end`, `raw`.
+* **`ShortNumberInfo`** — short / emergency numbers: `isPossible`, `isValid`,
+  `isEmergencyNumber`, `connectsToEmergencyNumber`, `isCarrierSpecific`,
+  `isSmsService`, `expectedCost` (a `ShortNumberCost`), `exampleNumber(region)`.
 
 ### Enums
 
@@ -115,6 +125,10 @@ ABI integer back to the enum.
 
 `Leniency` (`findNumbers`): `possible` (0), `valid` (1).
 
+`ShortNumberCost` (`ShortNumberInfo.expectedCost`): `tollFree` (0),
+`standardRate` (1), `premiumRate` (2), `unknown` (3).
+`ShortNumberCost.fromCode(int)` maps an ABI integer back to the enum.
+
 ## Memory
 
 Every `char*` the engine returns is caller-owned. `Api.takeString` copies it
@@ -129,7 +143,7 @@ and nothing borrowed to track.
 
 ## Tests
 
-The 34-check v2 conformance suite (`docs/conformance.md`) lives in
+The 40-check v3 conformance suite (`docs/conformance.md`) lives in
 `test/conformance_test.dart`.
 
 ```sh

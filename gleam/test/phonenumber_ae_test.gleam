@@ -1,4 +1,4 @@
-//// The binding conformance suite (docs/conformance.md, v2).
+//// The binding conformance suite (docs/conformance.md, v3).
 ////
 //// Proves the Gleam surface marshals every value shape across the FFI. It is
 //// NOT a phone-number test suite — the behavioural cases live in the engine's
@@ -10,15 +10,15 @@ import gleam/string
 import gleeunit
 import gleeunit/should
 import phonenumber_ae.{
-  E164, Exact, FixedLine, FixedLineOrMobile, FromNumberWithPlus, International,
-  National, NoMatch, Rfc3966, TooShort, Valid,
+  CostTollFree, E164, Exact, FixedLine, FixedLineOrMobile, FromNumberWithPlus,
+  International, National, NoMatch, Rfc3966, TooShort, Valid,
 }
 
 pub fn main() {
   gleeunit.main()
 }
 
-// ---- the 34 checks (docs/conformance.md, v2) ----
+// ---- the 40 checks (docs/conformance.md, v3) ----
 
 pub fn t01_country_code_us_test() {
   phonenumber_ae.country_code("US")
@@ -222,10 +222,45 @@ pub fn t33_matcher_raw_test() {
 
 pub fn t34_abi_version_test() {
   phonenumber_ae.abi_version()
-  |> should.equal(2)
+  |> should.equal(3)
 }
 
-// ---- extras: the marshalling corners the 34 do not reach ----
+// ---- ShortNumberInfo (docs/conformance.md #35–40, v3) ----
+
+pub fn t35_short_emergency_us_test() {
+  phonenumber_ae.is_emergency_number("US", "911")
+  |> should.be_true
+}
+
+pub fn t36_short_not_emergency_test() {
+  phonenumber_ae.is_emergency_number("US", "999")
+  |> should.be_false
+}
+
+pub fn t37_short_emergency_gb_test() {
+  phonenumber_ae.is_emergency_number("GB", "999")
+  |> should.be_true
+}
+
+pub fn t38_short_valid_test() {
+  phonenumber_ae.short_is_valid("US", "911")
+  |> should.be_true
+}
+
+pub fn t39_short_cost_test() {
+  phonenumber_ae.short_expected_cost("US", "911")
+  |> should.equal(CostTollFree)
+
+  phonenumber_ae.short_expected_cost_code("US", "911")
+  |> should.equal(0)
+}
+
+pub fn t40_short_example_test() {
+  phonenumber_ae.short_example_number("US")
+  |> should.equal("112")
+}
+
+// ---- extras: the marshalling corners the 40 do not reach ----
 
 pub fn format_helpers_test() {
   phonenumber_ae.format_national("US", "2015550123")

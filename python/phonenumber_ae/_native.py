@@ -62,6 +62,12 @@ SRC_FROM_DEFAULT_COUNTRY = 20
 LENIENCY_POSSIBLE = 0
 LENIENCY_VALID = 1
 
+# ---- ShortNumberCost (short_expected_cost) ----
+COST_TOLL_FREE = 0
+COST_STANDARD_RATE = 1
+COST_PREMIUM_RATE = 2
+COST_UNKNOWN = 3
+
 _lib = None
 
 
@@ -162,6 +168,15 @@ def _declare(lib):
         "aether_pn_embed_matcher_start": ([S, S, I, I], I),
         "aether_pn_embed_matcher_end": ([S, S, I, I], I),
         "aether_pn_embed_matcher_raw": ([S, S, I, I], P),
+        # ShortNumberInfo
+        "aether_pn_embed_short_is_possible": ([S, S], I),
+        "aether_pn_embed_short_is_valid": ([S, S], I),
+        "aether_pn_embed_short_is_emergency": ([S, S], I),
+        "aether_pn_embed_short_connects_to_emergency": ([S, S], I),
+        "aether_pn_embed_short_is_carrier_specific": ([S, S], I),
+        "aether_pn_embed_short_is_sms_service": ([S, S], I),
+        "aether_pn_embed_short_expected_cost": ([S, S], I),
+        "aether_pn_embed_short_example_number": ([S], P),
     }
     for name, (argtypes, restype) in sigs.items():
         fn = getattr(lib, name)

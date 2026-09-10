@@ -6,10 +6,11 @@ This package is a **thin `importc` binding** over the monorepo's one shared
 native engine — `core/native/libphonenumber_ae.so`, compiled from pure Aether
 over Google libphonenumber's own metadata. It contains **no phone-number
 logic**: every proc marshals to an `aether_pn_embed_*` call across the flat C
-ABI (v2, full `PhoneNumberUtil` parity) described in `core/embed.ae`. One
-engine, one set of behaviours, N language surfaces.
+ABI (v3, full `PhoneNumberUtil` parity plus the ShortNumberInfo surface)
+described in `core/embed.ae`. One engine, one set of behaviours, N language
+surfaces.
 
-The v2 ABI has **no opaque handle**: a parsed number and an AsYouType state are
+The v3 ABI has **no opaque handle**: a parsed number and an AsYouType state are
 themselves caller-owned *strings* — you get one back, pass it to accessor calls,
 and free it like any other returned string.
 
@@ -84,6 +85,19 @@ for m in findNumbers("call 201-555-0123 today", "US", lenValid):
   echo m.raw, " @ ", m.start, "..", m.`end`   # "201-555-0123" @ 5..17
 ```
 
+### Short numbers (ShortNumberInfo)
+
+Short numbers are dialled as-is — no country code, no national prefix — so the
+input is the raw short number plus a region:
+
+```nim
+echo isEmergencyNumber("US", "911")          # true
+echo isEmergencyNumber("GB", "999")          # true
+echo shortIsValid("US", "911")               # true
+echo shortExpectedCost("US", "911")          # costTollFree
+echo shortExampleNumber("US")                # "112"
+```
+
 ### The surface
 
 ```nim
@@ -129,7 +143,17 @@ truncateTooLong(region, input): string
 normalizeDigitsOnly(s): string
 convertAlphaCharacters(s): string
 isAlphaNumber(s): bool
-abiVersion(): int                          # 2
+abiVersion(): int                          # 3
+
+# short numbers (ShortNumberInfo)
+shortIsPossible(region, input): bool
+shortIsValid(region, input): bool
+isEmergencyNumber(region, input): bool
+connectsToEmergencyNumber(region, input): bool
+shortIsCarrierSpecific(region, input): bool
+shortIsSmsService(region, input): bool
+shortExpectedCost(region, input): ShortNumberCost   # costTollFree | …
+shortExampleNumber(region): string
 
 # AsYouTypeFormatter, findNumbers (above)
 ```
@@ -148,6 +172,7 @@ overload also takes the raw `cint` via the `E164` / `INTERNATIONAL` / `NATIONAL`
 - `MatchType` / `MATCH_*`
 - `CountryCodeSource` / `SRC_*`
 - `Leniency` / `LENIENCY_POSSIBLE`, `LENIENCY_VALID`
+- `ShortNumberCost` / `COST_TOLL_FREE`, `COST_STANDARD_RATE`, `COST_PREMIUM_RATE`, `COST_UNKNOWN`
 
 ## Memory
 
@@ -171,7 +196,7 @@ explicitly. Do not "simplify" one of them to `int`.
 
 ## Conformance
 
-The 34-check conformance suite (`docs/conformance.md`, v2) lives in
+The 40-check conformance suite (`docs/conformance.md`, v3) lives in
 `tests/tconformance.nim`, alongside a few surface extras (the format-style
 aliases, the raw-int overload, out-of-range `regionAt`, AsYouType clear, and a
 several-thousand round-trip loop over `takeString`).

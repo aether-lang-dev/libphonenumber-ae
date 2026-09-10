@@ -10,12 +10,13 @@
 //! looks wrong, the bug is in the engine or in this marshalling — it is never a
 //! policy decision made here.
 //!
-//! ## ABI v2
+//! ## ABI v3
 //!
-//! This binding speaks **ABI v2** (`abiVersion()` → 2): the full
-//! `PhoneNumberUtil` surface, 50 exported symbols. The ABI is scalar-only
-//! (`const char*` and `int`) — v2 adds no new mechanism, only more calls. Two
-//! v2 constructs thread a *string* rather than an opaque handle:
+//! This binding speaks **ABI v3** (`abiVersion()` → 3): the full
+//! `PhoneNumberUtil` surface plus the `ShortNumberInfo` side-library, 58
+//! exported symbols. The ABI is scalar-only (`const char*` and `int`) — v3 adds
+//! no new mechanism, only more calls (the 8 `short_*` symbols). Two constructs
+//! thread a *string* rather than an opaque handle:
 //!
 //!   * `parse` returns a caller-owned **parsed-number string**. Pass it to the
 //!     `pn_*` accessors, then free it. `ParsedNumber` wraps that lifecycle.
@@ -61,7 +62,7 @@
 const std = @import("std");
 
 // =========================================================================
-// The C ABI — a 1:1 transcription of core/embed.ae (v2, 50 symbols).
+// The C ABI — a 1:1 transcription of core/embed.ae (v3, 58 symbols).
 //
 // `core/embed.ae` names its exports `pn_embed_<name>`; building with
 // `--emit=lib` mangles them to `aether_pn_embed_<name>`, which is what we
@@ -138,6 +139,16 @@ const c = struct {
     extern "c" fn aether_pn_embed_matcher_start(text: [*c]const u8, region: [*c]const u8, leniency: c_int, idx: c_int) c_int;
     extern "c" fn aether_pn_embed_matcher_end(text: [*c]const u8, region: [*c]const u8, leniency: c_int, idx: c_int) c_int;
     extern "c" fn aether_pn_embed_matcher_raw(text: [*c]const u8, region: [*c]const u8, leniency: c_int, idx: c_int) [*c]u8;
+
+    // ---- ShortNumberInfo (short / emergency numbers) ----
+    extern "c" fn aether_pn_embed_short_is_possible(region: [*c]const u8, input: [*c]const u8) c_int;
+    extern "c" fn aether_pn_embed_short_is_valid(region: [*c]const u8, input: [*c]const u8) c_int;
+    extern "c" fn aether_pn_embed_short_is_emergency(region: [*c]const u8, input: [*c]const u8) c_int;
+    extern "c" fn aether_pn_embed_short_connects_to_emergency(region: [*c]const u8, input: [*c]const u8) c_int;
+    extern "c" fn aether_pn_embed_short_is_carrier_specific(region: [*c]const u8, input: [*c]const u8) c_int;
+    extern "c" fn aether_pn_embed_short_is_sms_service(region: [*c]const u8, input: [*c]const u8) c_int;
+    extern "c" fn aether_pn_embed_short_expected_cost(region: [*c]const u8, input: [*c]const u8) c_int;
+    extern "c" fn aether_pn_embed_short_example_number(region: [*c]const u8) [*c]u8;
 };
 
 // =========================================================================
@@ -213,6 +224,16 @@ pub const Leniency = enum(c_int) {
     valid = 1,
 };
 
+/// The expected cost of dialling a short number (`shortExpectedCost`).
+/// Non-exhaustive for the same append-only reason as `NumberType`.
+pub const ShortNumberCost = enum(c_int) {
+    toll_free = 0,
+    standard_rate = 1,
+    premium_rate = 2,
+    unknown = 3,
+    _,
+};
+
 // Bare integer aliases, for a caller who prefers the wire format to the enum.
 // The `Format` group is the one that moved between v1 and v2 — mind it.
 pub const E164: c_int = 0;
@@ -254,6 +275,11 @@ pub const SRC_FROM_DEFAULT_COUNTRY: c_int = 20;
 pub const LENIENCY_POSSIBLE: c_int = 0;
 pub const LENIENCY_VALID: c_int = 1;
 
+pub const COST_TOLL_FREE: c_int = 0;
+pub const COST_STANDARD_RATE: c_int = 1;
+pub const COST_PREMIUM_RATE: c_int = 2;
+pub const COST_UNKNOWN: c_int = 3;
+
 pub const Error = error{
     /// A Zig string contained an interior NUL and cannot cross a C `char*`.
     InteriorNul,
@@ -262,7 +288,7 @@ pub const Error = error{
 };
 
 /// The ABI revision this engine implements. Check it to fail fast against an
-/// engine older than the features you expect — v2 is what this binding needs.
+/// engine older than the features you expect — v3 is what this binding needs.
 pub fn abiVersion() i32 {
     return @intCast(c.aether_pn_embed_abi_version());
 }
@@ -837,6 +863,84 @@ pub fn findNumbers(allocator: std.mem.Allocator, text: []const u8, region: []con
 pub fn freeMatches(allocator: std.mem.Allocator, list: []Match) void {
     for (list) |m| allocator.free(m.raw);
     allocator.free(list);
+}
+
+// =========================================================================
+// ShortNumberInfo (short / emergency numbers).
+//
+// Short numbers are dialled as-is — no country code, no national prefix — so
+// the input is the raw short number plus a region. Pure marshalling, like the
+// rest: no phone logic lives here.
+// =========================================================================
+
+/// True if `input` is a possible short number for the region (right length).
+pub fn shortIsPossible(allocator: std.mem.Allocator, region: []const u8, input: []const u8) Error!bool {
+    var r = try CStr.init(allocator, region);
+    defer r.deinit();
+    var i = try CStr.init(allocator, input);
+    defer i.deinit();
+    return c.aether_pn_embed_short_is_possible(r.ptr(), i.ptr()) != 0;
+}
+
+/// True if `input` matches a short-number pattern for the region.
+pub fn shortIsValid(allocator: std.mem.Allocator, region: []const u8, input: []const u8) Error!bool {
+    var r = try CStr.init(allocator, region);
+    defer r.deinit();
+    var i = try CStr.init(allocator, input);
+    defer i.deinit();
+    return c.aether_pn_embed_short_is_valid(r.ptr(), i.ptr()) != 0;
+}
+
+/// True if `input` is an emergency number for the region (e.g. US "911").
+pub fn isEmergencyNumber(allocator: std.mem.Allocator, region: []const u8, input: []const u8) Error!bool {
+    var r = try CStr.init(allocator, region);
+    defer r.deinit();
+    var i = try CStr.init(allocator, input);
+    defer i.deinit();
+    return c.aether_pn_embed_short_is_emergency(r.ptr(), i.ptr()) != 0;
+}
+
+/// True if dialling `input` connects to an emergency number for the region.
+pub fn connectsToEmergencyNumber(allocator: std.mem.Allocator, region: []const u8, input: []const u8) Error!bool {
+    var r = try CStr.init(allocator, region);
+    defer r.deinit();
+    var i = try CStr.init(allocator, input);
+    defer i.deinit();
+    return c.aether_pn_embed_short_connects_to_emergency(r.ptr(), i.ptr()) != 0;
+}
+
+/// True if the short number is specific to a single carrier.
+pub fn shortIsCarrierSpecific(allocator: std.mem.Allocator, region: []const u8, input: []const u8) Error!bool {
+    var r = try CStr.init(allocator, region);
+    defer r.deinit();
+    var i = try CStr.init(allocator, input);
+    defer i.deinit();
+    return c.aether_pn_embed_short_is_carrier_specific(r.ptr(), i.ptr()) != 0;
+}
+
+/// True if the short number is usable as an SMS service.
+pub fn shortIsSmsService(allocator: std.mem.Allocator, region: []const u8, input: []const u8) Error!bool {
+    var r = try CStr.init(allocator, region);
+    defer r.deinit();
+    var i = try CStr.init(allocator, input);
+    defer i.deinit();
+    return c.aether_pn_embed_short_is_sms_service(r.ptr(), i.ptr()) != 0;
+}
+
+/// The expected cost of dialling the short number (a `ShortNumberCost`).
+pub fn shortExpectedCost(allocator: std.mem.Allocator, region: []const u8, input: []const u8) Error!ShortNumberCost {
+    var r = try CStr.init(allocator, region);
+    defer r.deinit();
+    var i = try CStr.init(allocator, input);
+    defer i.deinit();
+    return @enumFromInt(c.aether_pn_embed_short_expected_cost(r.ptr(), i.ptr()));
+}
+
+/// An example short number for the region, or "". Caller frees.
+pub fn shortExampleNumber(allocator: std.mem.Allocator, region: []const u8) Error![]u8 {
+    var r = try CStr.init(allocator, region);
+    defer r.deinit();
+    return takeString(allocator, c.aether_pn_embed_short_example_number(r.ptr()));
 }
 
 test {

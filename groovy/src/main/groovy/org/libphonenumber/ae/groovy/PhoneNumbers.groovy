@@ -7,10 +7,13 @@ import org.libphonenumber.ae.MatchType
 import org.libphonenumber.ae.Matcher
 import org.libphonenumber.ae.NumberType
 import org.libphonenumber.ae.ParsedNumber
+import org.libphonenumber.ae.ShortNumberCost
+import org.libphonenumber.ae.ShortNumberInfo
 import org.libphonenumber.ae.ValidationResult
 
 /**
- * Idiomatic Groovy over the Java binding (ABI v2, full PhoneNumberUtil parity).
+ * Idiomatic Groovy over the Java binding (ABI v3, full PhoneNumberUtil parity
+ * plus ShortNumberInfo).
  *
  * There is <b>no second FFI here</b>. The one JVM binding to the shared Aether
  * engine is {@code java/aether/} (FFM / Panama); everything in this file is
@@ -163,6 +166,44 @@ class PhoneNumbers {
 
     static AsYouTypeFormatter asYouType(String region) {
         new AsYouTypeFormatter(region)
+    }
+
+    // ---- short numbers ----
+    //
+    // Short numbers (emergency, directory, premium SMS, …) are dialled as-is:
+    // no country code and no national prefix. These reach the Java
+    // ShortNumberInfo.
+
+    static boolean isPossibleShortNumber(String region, String input) {
+        ShortNumberInfo.isPossibleShortNumber(region, input)
+    }
+
+    static boolean isValidShortNumber(String region, String input) {
+        ShortNumberInfo.isValidShortNumber(region, input)
+    }
+
+    static boolean isEmergencyNumber(String region, String input) {
+        ShortNumberInfo.isEmergencyNumber(region, input)
+    }
+
+    static boolean connectsToEmergencyNumber(String region, String input) {
+        ShortNumberInfo.connectsToEmergencyNumber(region, input)
+    }
+
+    static boolean isCarrierSpecific(String region, String input) {
+        ShortNumberInfo.isCarrierSpecific(region, input)
+    }
+
+    static boolean isSmsService(String region, String input) {
+        ShortNumberInfo.isSmsService(region, input)
+    }
+
+    static ShortNumberCost shortExpectedCost(String region, String input) {
+        ShortNumberInfo.expectedCost(region, input)
+    }
+
+    static String shortExampleNumber(String region) {
+        ShortNumberInfo.exampleNumber(region)
     }
 
     // ---- version ----

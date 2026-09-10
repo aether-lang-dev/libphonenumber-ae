@@ -10,10 +10,13 @@ import org.libphonenumber.ae.Matcher
 import org.libphonenumber.ae.NumberType
 import org.libphonenumber.ae.ParsedNumber
 import org.libphonenumber.ae.PhoneNumbers
+import org.libphonenumber.ae.ShortNumberCost
+import org.libphonenumber.ae.ShortNumberInfo
 import org.libphonenumber.ae.ValidationResult
 
 /**
- * Idiomatic Kotlin over the Java binding (ABI v2, full PhoneNumberUtil parity).
+ * Idiomatic Kotlin over the Java binding (ABI v3, full PhoneNumberUtil parity
+ * plus ShortNumberInfo).
  *
  * There is **no second FFI here**. The one JVM binding to the shared Aether
  * engine is `java/aether/` (FFM / Panama); everything in this file is ordinary
@@ -130,6 +133,35 @@ fun isAlphaNumber(s: String): Boolean = PhoneNumbers.isAlphaNumber(s)
 
 fun findNumbers(text: String, region: String, leniency: Leniency = Leniency.VALID): List<Match> =
     PhoneNumbers.findNumbers(text, region, leniency)
+
+// ---- short numbers ----
+//
+// Short numbers (emergency, directory, premium SMS, …) are dialled as-is: no
+// country code and no national prefix. These reach the Java ShortNumberInfo.
+
+fun isPossibleShortNumber(region: String, input: String): Boolean =
+    ShortNumberInfo.isPossibleShortNumber(region, input)
+
+fun isValidShortNumber(region: String, input: String): Boolean =
+    ShortNumberInfo.isValidShortNumber(region, input)
+
+fun isEmergencyNumber(region: String, input: String): Boolean =
+    ShortNumberInfo.isEmergencyNumber(region, input)
+
+fun connectsToEmergencyNumber(region: String, input: String): Boolean =
+    ShortNumberInfo.connectsToEmergencyNumber(region, input)
+
+fun isCarrierSpecific(region: String, input: String): Boolean =
+    ShortNumberInfo.isCarrierSpecific(region, input)
+
+fun isSmsService(region: String, input: String): Boolean =
+    ShortNumberInfo.isSmsService(region, input)
+
+/** The expected cost of the short number, as a [ShortNumberCost]. */
+fun shortExpectedCost(region: String, input: String): ShortNumberCost =
+    ShortNumberInfo.expectedCost(region, input)
+
+fun shortExampleNumber(region: String): String = ShortNumberInfo.exampleNumber(region)
 
 // ---- version ----
 

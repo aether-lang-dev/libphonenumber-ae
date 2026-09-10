@@ -1,5 +1,6 @@
 (ns org.libphonenumber.ae.core
-  "Idiomatic Clojure over the Java binding (ABI v2, full PhoneNumberUtil parity).
+  "Idiomatic Clojure over the Java binding (ABI v3, full PhoneNumberUtil parity
+  plus ShortNumberInfo).
 
   There is **no second FFI here**. The one JVM binding to the shared Aether
   engine is `java/aether/` (FFM / Panama), and everything in this namespace is
@@ -28,6 +29,8 @@
                                   NumberType
                                   ParsedNumber
                                   PhoneNumbers
+                                  ShortNumberCost
+                                  ShortNumberInfo
                                   ValidationResult)))
 
 (set! *warn-on-reflection* true)
@@ -85,6 +88,12 @@
 (def ^:private kw->leniency
   {:possible Leniency/POSSIBLE
    :valid    Leniency/VALID})
+
+(def ^:private cost->kw
+  {ShortNumberCost/TOLL_FREE     :toll-free
+   ShortNumberCost/STANDARD_RATE :standard-rate
+   ShortNumberCost/PREMIUM_RATE  :premium-rate
+   ShortNumberCost/UNKNOWN       :unknown})
 
 ;; ---- metadata ------------------------------------------------------------
 
@@ -280,9 +289,55 @@
          (PhoneNumbers/findNumbers text region
                                    ^Leniency (get kw->leniency leniency Leniency/VALID)))))
 
+;; ---- short numbers -------------------------------------------------------
+;;
+;; Short numbers (emergency, directory, premium SMS, …) are dialled as-is: no
+;; country code and no national prefix. These reach the Java ShortNumberInfo.
+
+(defn possible-short-number?
+  "True if `input` is a possible short number for `region` (length only)."
+  [^String region ^String input]
+  (ShortNumberInfo/isPossibleShortNumber region input))
+
+(defn valid-short-number?
+  "True if `input` is a valid short number for `region`."
+  [^String region ^String input]
+  (ShortNumberInfo/isValidShortNumber region input))
+
+(defn emergency-number?
+  "True if `input` is an emergency number for `region`."
+  [^String region ^String input]
+  (ShortNumberInfo/isEmergencyNumber region input))
+
+(defn connects-to-emergency-number?
+  "True if dialling `input` in `region` connects to an emergency service."
+  [^String region ^String input]
+  (ShortNumberInfo/connectsToEmergencyNumber region input))
+
+(defn carrier-specific?
+  "True if the short number is carrier-specific for `region`."
+  [^String region ^String input]
+  (ShortNumberInfo/isCarrierSpecific region input))
+
+(defn sms-service?
+  "True if the short number is an SMS service for `region`."
+  [^String region ^String input]
+  (ShortNumberInfo/isSmsService region input))
+
+(defn short-expected-cost
+  "The expected cost of the short number, as a keyword: `:toll-free`,
+  `:standard-rate`, `:premium-rate` or `:unknown`."
+  [^String region ^String input]
+  (get cost->kw (ShortNumberInfo/expectedCost region input) :unknown))
+
+(defn short-example-number
+  "An example short number for `region`, or \"\"."
+  [^String region]
+  (ShortNumberInfo/exampleNumber region))
+
 ;; ---- version -------------------------------------------------------------
 
 (defn abi-version
-  "The ABI revision the loaded engine reports (2 for this build)."
+  "The ABI revision the loaded engine reports (3 for this build)."
   []
   (PhoneNumbers/abiVersion))

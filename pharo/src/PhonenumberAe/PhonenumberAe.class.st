@@ -1,5 +1,5 @@
 "
-I validate, parse and format international phone numbers (ABI v2).
+I validate, parse and format international phone numbers (ABI v3).
 
 ```
 PhonenumberAe countryCode: 'US'.                      ""-> '1'""
@@ -17,8 +17,8 @@ I am **marshalling only**. The engine — the metadata table, isPossible /
 isValid, number typing and formatting — is the pure-Aether
 `core/phonenumber.ae`, compiled from Google libphonenumber's own metadata,
 shared by every language binding in this monorepo and reached through the
-`aether_pn_embed_*` C ABI (`core/embed.ae`, docs/abi.md — 50 symbols, full
-PhoneNumberUtil parity). Naming: `core/embed.ae` declares `pn_embed_<name>`;
+`aether_pn_embed_*` C ABI (`core/embed.ae`, docs/abi.md — 58 symbols, full
+PhoneNumberUtil parity plus ShortNumberInfo). Naming: `core/embed.ae` declares `pn_embed_<name>`;
 `--emit=lib` mangles that to `aether_pn_embed_<name>`, which is what the FFI
 calls below name.
 
@@ -176,6 +176,21 @@ PhonenumberAe class >> countryCodeSourceSymbolFor: anInteger [
 			  [ 10 ] -> [ #fromNumberWithoutPlus ].
 			  [ 20 ] -> [ #fromDefaultCountry ] }
 		  otherwise: [ #unspecified ]
+]
+
+{ #category : 'constants - short cost' }
+PhonenumberAe class >> shortNumberCostSymbolFor: anInteger [
+	"The ABI ShortNumberCost code as a Symbol (0 toll-free, 1 standard,
+	 2 premium, 3 unknown). Append-only, so an unseen code becomes #unknown
+	 rather than an error."
+
+	^ anInteger
+		  caseOf: {
+			  [ 0 ] -> [ #tollFree ].
+			  [ 1 ] -> [ #standardRate ].
+			  [ 2 ] -> [ #premiumRate ].
+			  [ 3 ] -> [ #unknown ] }
+		  otherwise: [ #unknown ]
 ]
 
 { #category : 'private - ffi' }
@@ -507,6 +522,62 @@ PhonenumberAe class >> primMatcherRaw: text region: region leniency: leniency id
 
 	^ self ffiCall: #( void * aether_pn_embed_matcher_raw (
 		    char * text, char * region, int leniency, int idx ) )
+]
+
+{ #category : 'private - ffi short' }
+PhonenumberAe class >> primShortIsPossible: region input: input [
+
+	^ self ffiCall: #( int aether_pn_embed_short_is_possible (
+		    char * region, char * input ) )
+]
+
+{ #category : 'private - ffi short' }
+PhonenumberAe class >> primShortIsValid: region input: input [
+
+	^ self ffiCall: #( int aether_pn_embed_short_is_valid (
+		    char * region, char * input ) )
+]
+
+{ #category : 'private - ffi short' }
+PhonenumberAe class >> primShortIsEmergency: region input: input [
+
+	^ self ffiCall: #( int aether_pn_embed_short_is_emergency (
+		    char * region, char * input ) )
+]
+
+{ #category : 'private - ffi short' }
+PhonenumberAe class >> primShortConnectsToEmergency: region input: input [
+
+	^ self ffiCall: #( int aether_pn_embed_short_connects_to_emergency (
+		    char * region, char * input ) )
+]
+
+{ #category : 'private - ffi short' }
+PhonenumberAe class >> primShortIsCarrierSpecific: region input: input [
+
+	^ self ffiCall: #( int aether_pn_embed_short_is_carrier_specific (
+		    char * region, char * input ) )
+]
+
+{ #category : 'private - ffi short' }
+PhonenumberAe class >> primShortIsSmsService: region input: input [
+
+	^ self ffiCall: #( int aether_pn_embed_short_is_sms_service (
+		    char * region, char * input ) )
+]
+
+{ #category : 'private - ffi short' }
+PhonenumberAe class >> primShortExpectedCost: region input: input [
+
+	^ self ffiCall: #( int aether_pn_embed_short_expected_cost (
+		    char * region, char * input ) )
+]
+
+{ #category : 'private - ffi short' }
+PhonenumberAe class >> primShortExampleNumber: region [
+
+	^ self ffiCall: #( void * aether_pn_embed_short_example_number (
+		    char * region ) )
 ]
 
 { #category : 'private - strings' }
@@ -855,9 +926,89 @@ PhonenumberAe class >> findNumbers: aText region: aRegion leniency: aLeniencySym
 	^ out
 ]
 
+{ #category : 'short numbers' }
+PhonenumberAe class >> shortIsPossible: anInput region: aRegion [
+	"True if the short number is a possible length for the region. Short numbers
+	 are dialled as-is: no country code, no national prefix."
+
+	^ (self
+		   primShortIsPossible: (aRegion ifNil: [ '' ])
+		   input: (anInput ifNil: [ '' ])) ~= 0
+]
+
+{ #category : 'short numbers' }
+PhonenumberAe class >> shortIsValid: anInput region: aRegion [
+	"True if the short number is valid (carrier-independent) for the region."
+
+	^ (self
+		   primShortIsValid: (aRegion ifNil: [ '' ])
+		   input: (anInput ifNil: [ '' ])) ~= 0
+]
+
+{ #category : 'short numbers' }
+PhonenumberAe class >> isEmergencyNumber: anInput region: aRegion [
+	"True if the short number is an emergency number for the region."
+
+	^ (self
+		   primShortIsEmergency: (aRegion ifNil: [ '' ])
+		   input: (anInput ifNil: [ '' ])) ~= 0
+]
+
+{ #category : 'short numbers' }
+PhonenumberAe class >> connectsToEmergencyNumber: anInput region: aRegion [
+	"True if dialling the number would connect to an emergency service."
+
+	^ (self
+		   primShortConnectsToEmergency: (aRegion ifNil: [ '' ])
+		   input: (anInput ifNil: [ '' ])) ~= 0
+]
+
+{ #category : 'short numbers' }
+PhonenumberAe class >> shortIsCarrierSpecific: anInput region: aRegion [
+	"True if the short number is carrier-specific in the region."
+
+	^ (self
+		   primShortIsCarrierSpecific: (aRegion ifNil: [ '' ])
+		   input: (anInput ifNil: [ '' ])) ~= 0
+]
+
+{ #category : 'short numbers' }
+PhonenumberAe class >> shortIsSmsService: anInput region: aRegion [
+	"True if the short number is for an SMS service in the region."
+
+	^ (self
+		   primShortIsSmsService: (aRegion ifNil: [ '' ])
+		   input: (anInput ifNil: [ '' ])) ~= 0
+]
+
+{ #category : 'short numbers' }
+PhonenumberAe class >> shortExpectedCostCode: anInput region: aRegion [
+	"The raw ABI ShortNumberCost code (0 tollFree, …)."
+
+	^ self
+		  primShortExpectedCost: (aRegion ifNil: [ '' ])
+		  input: (anInput ifNil: [ '' ])
+]
+
+{ #category : 'short numbers' }
+PhonenumberAe class >> shortExpectedCost: anInput region: aRegion [
+	"The expected cost as a Symbol (#tollFree #standardRate #premiumRate
+	 #unknown)."
+
+	^ self shortNumberCostSymbolFor:
+		  (self shortExpectedCostCode: anInput region: aRegion)
+]
+
+{ #category : 'short numbers' }
+PhonenumberAe class >> shortExampleNumber: aRegion [
+	"An example short number for the region, or ''."
+
+	^ self takeString: (self primShortExampleNumber: (aRegion ifNil: [ '' ]))
+]
+
 { #category : 'introspection' }
 PhonenumberAe class >> abiVersion [
-	"The engine's ABI revision (2)."
+	"The engine's ABI revision (3)."
 
 	^ self primAbiVersion
 ]

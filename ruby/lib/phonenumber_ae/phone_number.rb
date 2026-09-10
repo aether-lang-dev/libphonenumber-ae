@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Idiomatic Ruby surface over the phonenumber engine (ABI v2).
+# Idiomatic Ruby surface over the phonenumber engine (ABI v3).
 #
 # Carries no phone-number logic — see the monorepo's one rule in LLM.md. Every
 # method here marshals to an `aether_pn_embed_*` call in `native.rb`.
@@ -52,6 +52,12 @@ module PhoneNumberAe
   # ---- matcher leniency ----
   LENIENCY_POSSIBLE = Native::LENIENCY_POSSIBLE
   LENIENCY_VALID = Native::LENIENCY_VALID
+
+  # ---- ShortNumberCost (short_expected_cost) ----
+  COST_TOLL_FREE = Native::COST_TOLL_FREE
+  COST_STANDARD_RATE = Native::COST_STANDARD_RATE
+  COST_PREMIUM_RATE = Native::COST_PREMIUM_RATE
+  COST_UNKNOWN = Native::COST_UNKNOWN
 
   module_function
 
@@ -366,6 +372,70 @@ module PhoneNumberAe
       finish = lib.call("aether_pn_embed_matcher_end", t, r, len, i)
       raw = lib.take_string(lib.call("aether_pn_embed_matcher_raw", t, r, len, i))
       Match.new(start, finish, raw)
+    end
+  end
+
+  # ---- ShortNumberInfo (short / emergency numbers) ----
+
+  # Short numbers are dialled as-is: no country code, no national prefix. Each
+  # call takes the raw short number plus a region. `expected_cost` returns a
+  # ShortNumberCost int (COST_*).
+  module ShortNumber
+    module_function
+
+    # True if the short number is a possible length for the region.
+    def is_possible(region, number)
+      PhoneNumberAe.send(:_lib).call("aether_pn_embed_short_is_possible",
+                                     PhoneNumberAe.send(:_enc, region),
+                                     PhoneNumberAe.send(:_enc, number)) != 0
+    end
+
+    # True if the short number matches a short-number pattern for the region.
+    def is_valid(region, number)
+      PhoneNumberAe.send(:_lib).call("aether_pn_embed_short_is_valid",
+                                     PhoneNumberAe.send(:_enc, region),
+                                     PhoneNumberAe.send(:_enc, number)) != 0
+    end
+
+    # True if the number is an emergency number for the region (e.g. "911" US).
+    def is_emergency_number(region, number)
+      PhoneNumberAe.send(:_lib).call("aether_pn_embed_short_is_emergency",
+                                     PhoneNumberAe.send(:_enc, region),
+                                     PhoneNumberAe.send(:_enc, number)) != 0
+    end
+
+    # True if dialling the number connects to an emergency service.
+    def connects_to_emergency_number(region, number)
+      PhoneNumberAe.send(:_lib).call("aether_pn_embed_short_connects_to_emergency",
+                                     PhoneNumberAe.send(:_enc, region),
+                                     PhoneNumberAe.send(:_enc, number)) != 0
+    end
+
+    # True if the short number is carrier-specific.
+    def is_carrier_specific(region, number)
+      PhoneNumberAe.send(:_lib).call("aether_pn_embed_short_is_carrier_specific",
+                                     PhoneNumberAe.send(:_enc, region),
+                                     PhoneNumberAe.send(:_enc, number)) != 0
+    end
+
+    # True if the short number is an SMS service (short code) for the region.
+    def is_sms_service(region, number)
+      PhoneNumberAe.send(:_lib).call("aether_pn_embed_short_is_sms_service",
+                                     PhoneNumberAe.send(:_enc, region),
+                                     PhoneNumberAe.send(:_enc, number)) != 0
+    end
+
+    # The expected cost of the short number, as a ShortNumberCost int (COST_*).
+    def expected_cost(region, number)
+      PhoneNumberAe.send(:_lib).call("aether_pn_embed_short_expected_cost",
+                                     PhoneNumberAe.send(:_enc, region),
+                                     PhoneNumberAe.send(:_enc, number))
+    end
+
+    # An example short number for the region, or "".
+    def example_number(region)
+      PhoneNumberAe.send(:_s, "aether_pn_embed_short_example_number",
+                         PhoneNumberAe.send(:_enc, region))
     end
   end
 end

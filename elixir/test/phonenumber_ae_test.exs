@@ -1,6 +1,6 @@
 defmodule PhonenumberAeTest do
   @moduledoc """
-  The binding conformance suite (docs/conformance.md, v2).
+  The binding conformance suite (docs/conformance.md, v3).
 
   Proves the Elixir surface marshals every value shape across the FFI. It is
   NOT a phone-number test suite — the behavioural cases live in the engine's
@@ -15,7 +15,7 @@ defmodule PhonenumberAeTest do
 
   alias PhonenumberAe.{AsYouTypeFormatter, ParsedNumber}
 
-  # ---- the 34 checks (docs/conformance.md, v2) ----
+  # ---- the 40 checks (docs/conformance.md, v3) ----
 
   test "01 country_code US" do
     assert PhonenumberAe.country_code("US") == "1"
@@ -159,10 +159,37 @@ defmodule PhonenumberAeTest do
   end
 
   test "34 abi version" do
-    assert PhonenumberAe.abi_version() == 2
+    assert PhonenumberAe.abi_version() == 3
   end
 
-  # ---- extras: the marshalling corners the 34 do not reach ----
+  # ---- ShortNumberInfo (docs/conformance.md #35–40, v3) ----
+
+  test "35 short emergency US" do
+    assert PhonenumberAe.is_emergency_number?("US", "911") == true
+  end
+
+  test "36 short not emergency" do
+    assert PhonenumberAe.is_emergency_number?("US", "999") == false
+  end
+
+  test "37 short emergency GB" do
+    assert PhonenumberAe.is_emergency_number?("GB", "999") == true
+  end
+
+  test "38 short valid" do
+    assert PhonenumberAe.short_is_valid?("US", "911") == true
+  end
+
+  test "39 short cost" do
+    assert PhonenumberAe.short_expected_cost("US", "911") == :toll_free
+    assert PhonenumberAe.short_expected_cost_code("US", "911") == 0
+  end
+
+  test "40 short example" do
+    assert PhonenumberAe.short_example_number("US") == "112"
+  end
+
+  # ---- extras: the marshalling corners the 40 do not reach ----
 
   # The NIF takes iodata, so a caller with a plain charlist should not have to
   # flatten it first.

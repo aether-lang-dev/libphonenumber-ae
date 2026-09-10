@@ -35,7 +35,13 @@ classes.
 
 (pn/number-type "US" "2015550123")           ;; => :fixed-line
 (pn/regions)                                  ;; => ["AC" "AD" ...]
-(pn/abi-version)                              ;; => 1
+(pn/abi-version)                              ;; => 3
+
+;; short / emergency numbers (ShortNumberInfo)
+(pn/emergency-number? "US" "911")            ;; => true
+(pn/valid-short-number? "US" "911")          ;; => true
+(pn/short-expected-cost "US" "911")          ;; => :toll-free
+(pn/short-example-number "US")               ;; => "112"
 ```
 
 The `number-type` result is a keyword and `format-number` takes one

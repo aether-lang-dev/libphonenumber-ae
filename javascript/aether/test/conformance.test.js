@@ -1,6 +1,6 @@
 'use strict';
 /**
- * The 34-check binding conformance suite (docs/conformance.md, v2).
+ * The 40-check binding conformance suite (docs/conformance.md, v3).
  *
  * Proves the JavaScript binding marshals every value shape across the FFI. It
  * is NOT a phone-number test suite — the behavioural cases live in the engine's
@@ -156,7 +156,33 @@ test('33 matcher raw', () => {
 });
 
 test('34 abi version', () => {
-  assert.strictEqual(pn.abiVersion(), 2);
+  assert.strictEqual(pn.abiVersion(), 3);
+});
+
+// ---- ShortNumberInfo (v3) ----
+
+test('35 short is_emergency US 911', () => {
+  assert.strictEqual(pn.ShortNumberInfo.isEmergencyNumber('US', '911'), true);
+});
+
+test('36 short not emergency US 999', () => {
+  assert.strictEqual(pn.ShortNumberInfo.isEmergencyNumber('US', '999'), false);
+});
+
+test('37 short is_emergency GB 999', () => {
+  assert.strictEqual(pn.ShortNumberInfo.isEmergencyNumber('GB', '999'), true);
+});
+
+test('38 short is_valid US 911', () => {
+  assert.strictEqual(pn.ShortNumberInfo.isValid('US', '911'), true);
+});
+
+test('39 short expected_cost US 911 is toll-free', () => {
+  assert.strictEqual(pn.ShortNumberInfo.expectedCost('US', '911'), pn.COST_TOLL_FREE);
+});
+
+test('40 short example_number US', () => {
+  assert.strictEqual(pn.ShortNumberInfo.exampleNumber('US'), '112');
 });
 
 // ---- a few extras exercising the idiomatic surface ----

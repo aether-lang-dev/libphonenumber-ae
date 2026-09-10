@@ -98,9 +98,14 @@ int main(int argc, char **argv) {
     char* (*ayt_result)(const char*)                             = sym("aether_pn_embed_ayt_result");
     int   (*matcher_count)(const char*,const char*,int)          = sym("aether_pn_embed_matcher_count");
     char* (*matcher_raw)(const char*,const char*,int,int)        = sym("aether_pn_embed_matcher_raw");
+    int   (*short_valid)(const char*,const char*)                = sym("aether_pn_embed_short_is_valid");
+    int   (*short_emerg)(const char*,const char*)                = sym("aether_pn_embed_short_is_emergency");
+    int   (*short_possible)(const char*,const char*)             = sym("aether_pn_embed_short_is_possible");
+    int   (*short_cost)(const char*,const char*)                 = sym("aether_pn_embed_short_expected_cost");
+    char* (*short_example)(const char*)                          = sym("aether_pn_embed_short_example_number");
 
     /* ABI version */
-    ck_i("abi_version", abi_version(), 2);
+    ck_i("abi_version", abi_version(), 3);
 
     /* metadata plumbing */
     ck_s("US cc", country_code("US"), "1");
@@ -184,6 +189,16 @@ int main(int argc, char **argv) {
     /* matcher */
     ck_i("matcher count", matcher_count("call 201-555-0123 or +1 202 555 0199", "US", 1), 2);
     ck_s("matcher raw 0", matcher_raw("call 201-555-0123 now", "US", 1, 0), "201-555-0123");
+
+
+    /* ShortNumberInfo */
+    ck_i("US 911 valid short", short_valid("US","911"), 1);
+    ck_i("US 911 emergency", short_emerg("US","911"), 1);
+    ck_i("US 999 not emergency", short_emerg("US","999"), 0);
+    ck_i("GB 999 emergency", short_emerg("GB","999"), 1);
+    ck_i("US 12 not possible short", short_possible("US","12"), 0);
+    ck_i("US 911 toll-free cost", short_cost("US","911"), 0);
+    ck_s("US short example", short_example("US"), "112");
 
     dlclose(H);
     if (failures) { fprintf(stderr, "abi_smoke: %d FAILURE(S)\n", failures); return 1; }

@@ -1,4 +1,4 @@
-// The 1:1 symbol table for the phonenumber C ABI (core/embed.ae) — v2.
+// The 1:1 symbol table for the phonenumber C ABI (core/embed.ae) — v3.
 //
 // This file is the ONLY place in the .NET binding that knows about the C ABI.
 // Everything above it (PhoneNumber.cs) is idiomatic C# over these symbols. No
@@ -131,6 +131,22 @@ public enum Leniency
     Possible = 0,
     /// <summary>Accept only valid numbers.</summary>
     Valid = 1,
+}
+
+/// <summary>
+/// The expected cost of dialling a short number
+/// (<see cref="PhoneNumber.ShortExpectedCost"/>).
+/// </summary>
+public enum ShortNumberCost
+{
+    /// <summary>Toll-free (e.g. an emergency number).</summary>
+    TollFree = 0,
+    /// <summary>Standard rate.</summary>
+    StandardRate = 1,
+    /// <summary>Premium rate.</summary>
+    PremiumRate = 2,
+    /// <summary>The cost is unknown.</summary>
+    Unknown = 3,
 }
 
 /// <summary>
@@ -320,6 +336,32 @@ public static class Native
 
     [DllImport(Lib, EntryPoint = "aether_pn_embed_matcher_raw", CallingConvention = CallingConvention.Cdecl)]
     public static extern IntPtr MatcherRaw(byte[] text, byte[] region, int leniency, int idx);
+
+    // -- ShortNumberInfo (short / emergency numbers) --
+
+    [DllImport(Lib, EntryPoint = "aether_pn_embed_short_is_possible", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int ShortIsPossible(byte[] region, byte[] input);
+
+    [DllImport(Lib, EntryPoint = "aether_pn_embed_short_is_valid", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int ShortIsValid(byte[] region, byte[] input);
+
+    [DllImport(Lib, EntryPoint = "aether_pn_embed_short_is_emergency", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int ShortIsEmergency(byte[] region, byte[] input);
+
+    [DllImport(Lib, EntryPoint = "aether_pn_embed_short_connects_to_emergency", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int ShortConnectsToEmergency(byte[] region, byte[] input);
+
+    [DllImport(Lib, EntryPoint = "aether_pn_embed_short_is_carrier_specific", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int ShortIsCarrierSpecific(byte[] region, byte[] input);
+
+    [DllImport(Lib, EntryPoint = "aether_pn_embed_short_is_sms_service", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int ShortIsSmsService(byte[] region, byte[] input);
+
+    [DllImport(Lib, EntryPoint = "aether_pn_embed_short_expected_cost", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int ShortExpectedCost(byte[] region, byte[] input);
+
+    [DllImport(Lib, EntryPoint = "aether_pn_embed_short_example_number", CallingConvention = CallingConvention.Cdecl)]
+    public static extern IntPtr ShortExampleNumber(byte[] region);
 
     // ---- string marshalling ----
 

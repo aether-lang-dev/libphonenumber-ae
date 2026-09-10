@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 -- |
--- The 34-check binding conformance suite (@docs\/conformance.md@, v2).
+-- The 40-check binding conformance suite (@docs\/conformance.md@, v3).
 --
 -- Proves the Haskell binding marshals every value shape across the FFI. It is
 -- __not__ a phone-number test suite — the behavioural cases live in the
@@ -91,7 +91,7 @@ isFalse what got = unless (not got) $ assertFail (what ++ ": expected False")
 main :: IO ()
 main = do
   hSetEncoding stdout utf8
-  putStrLn "=== phonenumber_ae Haskell binding conformance (v2) ==="
+  putStrLn "=== phonenumber_ae Haskell binding conformance (v3) ==="
   v <- abiVersion
   putStrLn ("engine: ABI v" ++ show v)
 
@@ -109,7 +109,7 @@ main = do
 
 runChecks :: Failures -> IO ()
 runChecks fs = do
-  -- ---- the thirty-four (docs/conformance.md v2) ----
+  -- ---- the forty (docs/conformance.md v3) ----
 
   check fs "01 country_code US == 1" $ do
     out <- countryCode "US"
@@ -267,9 +267,33 @@ runChecks fs = do
       (m0 : _) -> eqStr "match raw" (matchRaw m0) "201-555-0123"
       [] -> assertFail "no matches"
 
-  check fs "34 abi_version == 2" $ do
+  check fs "34 abi_version == 3" $ do
     v <- abiVersion
-    eqInt "abi_version" v 2
+    eqInt "abi_version" v 3
+
+  check fs "35 short is_emergency US 911" $ do
+    ok <- isEmergencyNumber "US" "911"
+    isTrue "is_emergency_number" ok
+
+  check fs "36 short not-emergency US 999" $ do
+    ok <- isEmergencyNumber "US" "999"
+    isFalse "is_emergency_number" ok
+
+  check fs "37 short is_emergency GB 999" $ do
+    ok <- isEmergencyNumber "GB" "999"
+    isTrue "is_emergency_number" ok
+
+  check fs "38 short is_valid US 911" $ do
+    ok <- shortIsValid "US" "911"
+    isTrue "short_is_valid" ok
+
+  check fs "39 short expected_cost US 911 toll-free" $ do
+    c <- shortExpectedCost "US" "911"
+    eqShow "short_expected_cost" c TollFreeCost
+
+  check fs "40 short example_number US == 112" $ do
+    out <- shortExampleNumber "US"
+    eqStr "short_example_number" out "112"
 
   -- ---- a few surface extras ----
 

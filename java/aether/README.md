@@ -24,6 +24,8 @@ identical by construction, not by test.
 import org.libphonenumber.ae.PhoneNumbers;
 import org.libphonenumber.ae.Format;
 import org.libphonenumber.ae.NumberType;
+import org.libphonenumber.ae.ShortNumberInfo;
+import org.libphonenumber.ae.ShortNumberCost;
 
 PhoneNumbers.countryCode("US");                        // "1"
 PhoneNumbers.isValidNumber("US", "+1 201 555 0123");   // true
@@ -35,7 +37,13 @@ PhoneNumbers.formatInternational("US", "2015550123");          // "+1 (201) 555-
 
 PhoneNumbers.numberType("US", "2015550123");           // NumberType.FIXED_LINE
 PhoneNumbers.regions();                                // ["AC", "AD", "AE", ...]
-PhoneNumbers.abiVersion();                             // 1
+PhoneNumbers.abiVersion();                             // 3
+
+// short / emergency numbers (ShortNumberInfo)
+ShortNumberInfo.isEmergencyNumber("US", "911");        // true
+ShortNumberInfo.isValidShortNumber("US", "911");       // true
+ShortNumberInfo.expectedCost("US", "911");             // ShortNumberCost.TOLL_FREE
+ShortNumberInfo.exampleNumber("US");                   // "112"
 ```
 
 All entry points are static and stateless — the ABI has no handle. The engine
@@ -53,6 +61,13 @@ is loaded lazily and cached on first use.
   `VOICEMAIL`, plus `NumberType.of(int)`. `of` falls back to `UNKNOWN` for a
   code this build does not know, so a newer engine adding an (append-only) type
   cannot make the binding throw.
+* `ShortNumberInfo` — static methods for short / emergency numbers:
+  `isPossibleShortNumber`, `isValidShortNumber`, `isEmergencyNumber`,
+  `connectsToEmergencyNumber`, `isCarrierSpecific`, `isSmsService`,
+  `expectedCost` (and `expectedCostCode`), `exampleNumber`. Also delegated from
+  `PhoneNumbers`.
+* `ShortNumberCost` — `TOLL_FREE`, `STANDARD_RATE`, `PREMIUM_RATE`, `UNKNOWN`,
+  plus `ShortNumberCost.of(int)` (falls back to `UNKNOWN`).
 * `Native` — the FFM symbol table. The only class that knows the C ABI.
 
 ## Tests

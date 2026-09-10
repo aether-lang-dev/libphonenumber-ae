@@ -1,4 +1,4 @@
-/* erlang/c_src/phonenumber_ae_nif.c — the canonical BEAM binding (ABI v2).
+/* erlang/c_src/phonenumber_ae_nif.c — the canonical BEAM binding (ABI v3).
  *
  * ONE NIF, shared by all three BEAM languages. Erlang loads it directly;
  * Elixir `defdelegate`s to it; Gleam reaches it with `@external(erlang, ...)`.
@@ -8,7 +8,7 @@
  *
  * NO PHONE-NUMBER LOGIC LIVES HERE. Every function marshals BEAM terms to an
  * `aether_pn_embed_*` call across the flat C ABI described in core/embed.ae
- * (docs/abi.md — 50 symbols, full PhoneNumberUtil parity).
+ * (docs/abi.md — 58 symbols, full PhoneNumberUtil parity plus ShortNumberInfo).
  *
  * ## The ONE ownership rule
  *
@@ -112,6 +112,15 @@ static int   (*pn_matcher_count)(const char *, const char *, int);
 static int   (*pn_matcher_start)(const char *, const char *, int, int);
 static int   (*pn_matcher_end)(const char *, const char *, int, int);
 static char *(*pn_matcher_raw)(const char *, const char *, int, int);
+/* ShortNumberInfo */
+static int   (*pn_short_is_possible)(const char *, const char *);
+static int   (*pn_short_is_valid)(const char *, const char *);
+static int   (*pn_short_is_emergency)(const char *, const char *);
+static int   (*pn_short_connects_to_emergency)(const char *, const char *);
+static int   (*pn_short_is_carrier_specific)(const char *, const char *);
+static int   (*pn_short_is_sms_service)(const char *, const char *);
+static int   (*pn_short_expected_cost)(const char *, const char *);
+static char *(*pn_short_example_number)(const char *);
 
 static void *pn_lib = NULL;
 
@@ -474,6 +483,32 @@ static ERL_NIF_TERM nif_matcher_raw(ErlNifEnv *env, int argc, const ERL_NIF_TERM
     return take_binary(env, out);
 }
 
+/* ---- ShortNumberInfo (short / emergency numbers) ---- */
+
+static ERL_NIF_TERM nif_short_is_possible(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{ (void)argc; return do_ss_int(env, argv, pn_short_is_possible); }
+
+static ERL_NIF_TERM nif_short_is_valid(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{ (void)argc; return do_ss_int(env, argv, pn_short_is_valid); }
+
+static ERL_NIF_TERM nif_short_is_emergency(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{ (void)argc; return do_ss_int(env, argv, pn_short_is_emergency); }
+
+static ERL_NIF_TERM nif_short_connects_to_emergency(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{ (void)argc; return do_ss_int(env, argv, pn_short_connects_to_emergency); }
+
+static ERL_NIF_TERM nif_short_is_carrier_specific(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{ (void)argc; return do_ss_int(env, argv, pn_short_is_carrier_specific); }
+
+static ERL_NIF_TERM nif_short_is_sms_service(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{ (void)argc; return do_ss_int(env, argv, pn_short_is_sms_service); }
+
+static ERL_NIF_TERM nif_short_expected_cost(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{ (void)argc; return do_ss_int(env, argv, pn_short_expected_cost); }
+
+static ERL_NIF_TERM nif_short_example_number(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{ (void)argc; return do_str_str(env, argv, pn_short_example_number); }
+
 /* ---- region enumeration ---- */
 
 static ERL_NIF_TERM nif_region_count(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
@@ -600,6 +635,15 @@ static int resolve_all(char *errbuf, size_t errlen)
     RESOLVE(pn_matcher_start, "aether_pn_embed_matcher_start");
     RESOLVE(pn_matcher_end, "aether_pn_embed_matcher_end");
     RESOLVE(pn_matcher_raw, "aether_pn_embed_matcher_raw");
+    /* ShortNumberInfo */
+    RESOLVE(pn_short_is_possible, "aether_pn_embed_short_is_possible");
+    RESOLVE(pn_short_is_valid, "aether_pn_embed_short_is_valid");
+    RESOLVE(pn_short_is_emergency, "aether_pn_embed_short_is_emergency");
+    RESOLVE(pn_short_connects_to_emergency, "aether_pn_embed_short_connects_to_emergency");
+    RESOLVE(pn_short_is_carrier_specific, "aether_pn_embed_short_is_carrier_specific");
+    RESOLVE(pn_short_is_sms_service, "aether_pn_embed_short_is_sms_service");
+    RESOLVE(pn_short_expected_cost, "aether_pn_embed_short_expected_cost");
+    RESOLVE(pn_short_example_number, "aether_pn_embed_short_example_number");
     return 1;
 }
 
@@ -723,6 +767,15 @@ static ErlNifFunc nif_funcs[] = {
     {"matcher_start",                 4, nif_matcher_start,                 0},
     {"matcher_end",                   4, nif_matcher_end,                   0},
     {"matcher_raw",                   4, nif_matcher_raw,                   0},
+    /* ShortNumberInfo */
+    {"short_is_possible",             2, nif_short_is_possible,             0},
+    {"short_is_valid",                2, nif_short_is_valid,                0},
+    {"short_is_emergency",            2, nif_short_is_emergency,            0},
+    {"short_connects_to_emergency",   2, nif_short_connects_to_emergency,   0},
+    {"short_is_carrier_specific",     2, nif_short_is_carrier_specific,     0},
+    {"short_is_sms_service",          2, nif_short_is_sms_service,          0},
+    {"short_expected_cost",           2, nif_short_expected_cost,           0},
+    {"short_example_number",          1, nif_short_example_number,          0},
     /* introspection */
     {"abi_version",                   0, nif_abi_version,                   0}
 };

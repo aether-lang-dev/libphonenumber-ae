@@ -61,7 +61,7 @@ phonenumber_ae.number_type("US", "2015550123")           // -> FixedLine
 phonenumber_ae.format("US", "2015550123", National)      // -> "(201) 555-0123"
 phonenumber_ae.format_e164("US", "2015550123")           // -> "+12015550123"
 phonenumber_ae.regions()                                 // -> ["AC", "AD", ...]
-phonenumber_ae.abi_version()                             // -> 2
+phonenumber_ae.abi_version()                             // -> 3
 ```
 
 ### Parsing
@@ -99,7 +99,22 @@ phonenumber_ae.find_numbers("call 201-555-0123 or +1 202 555 0199", "US", Valid)
 // -> [Match(start: 5, end: 17, raw: "201-555-0123"), ...]
 ```
 
-### The surface (v2 — full PhoneNumberUtil parity)
+### Short numbers (emergency, SMS shortcodes)
+
+Short numbers are dialled as-is — no country code, no national prefix — so the
+input is the raw short number plus a region:
+
+```gleam
+import phonenumber_ae.{CostTollFree}
+
+phonenumber_ae.is_emergency_number("US", "911")   // -> True
+phonenumber_ae.is_emergency_number("US", "999")   // -> False  (that's GB)
+phonenumber_ae.short_is_valid("US", "911")        // -> True
+phonenumber_ae.short_expected_cost("US", "911")   // -> CostTollFree
+phonenumber_ae.short_example_number("US")         // -> "112"
+```
+
+### The surface (v3 — full PhoneNumberUtil parity + ShortNumberInfo)
 
 - **Metadata**: `country_code/1`, `example_number/1`,
   `example_number_for_type/2`, `invalid_example_number/1`, `possible_lengths/1`,
@@ -125,10 +140,18 @@ phonenumber_ae.find_numbers("call 201-555-0123 or +1 202 555 0199", "US", Valid)
   `normalize_digits_only/1`, `convert_alpha_characters/1`, `is_alpha_number/1`.
 - **As-you-type**: `ayt_new/1`, `ayt_input/2`, `ayt_result/1`, `ayt_clear/1`.
 - **Find numbers**: `find_numbers/3` (a list of `Match`), `matcher_count/3`.
-- `abi_version/0` (returns `2`), `abi_version_string/0`.
+- **Short numbers**: `short_is_possible/2`, `short_is_valid/2`,
+  `is_emergency_number/2`, `connects_to_emergency_number/2`,
+  `short_is_carrier_specific/2`, `short_is_sms_service/2`,
+  `short_expected_cost/2` (a `ShortNumberCost` — `CostTollFree` |
+  `CostStandardRate` | `CostPremiumRate` | `CostUnknown`;
+  `short_expected_cost_code/2` for the raw `Int`), `short_example_number/1`.
+- `abi_version/0` (returns `3`), `abi_version_string/0`.
 
-> **v2 note.** The format-style selectors changed: `E164` is now `0` (was `2`
-> in v1). Callers that use the `FormatStyle` constructors never see the number.
+> **v3 note.** ShortNumberInfo (the `short_*` / `*_emergency_number` calls
+> above) is new in v3. The v2 format-style selectors are unchanged: `E164` is
+> `0` (it was `2` in v1). Callers that use the `FormatStyle` constructors never
+> see the number.
 
 ### No handles
 
@@ -138,6 +161,6 @@ themselves caller-owned strings, wrapped by the opaque `ParsedNumber` and
 
 ## Conformance
 
-`gleam/.tests.ae` runs the 34-check binding conformance suite
-(`docs/conformance.md`, v2) with gleeunit. It samples each *kind* of value
+`gleam/.tests.ae` runs the 40-check binding conformance suite
+(`docs/conformance.md`, v3) with gleeunit. It samples each *kind* of value
 crossing the FFI — it proves the marshalling, not the library.

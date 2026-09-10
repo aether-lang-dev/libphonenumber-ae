@@ -1,4 +1,4 @@
-## The 34-check binding conformance suite (docs/conformance.md, v2), in Nim.
+## The 40-check binding conformance suite (docs/conformance.md, v3), in Nim.
 ##
 ## Proves this binding marshals every value shape across the FFI. It is NOT a
 ## phone-number test suite — the behavioural cases live in the engine's own
@@ -127,8 +127,27 @@ suite "conformance":
     let matches = findNumbers("call 201-555-0123 now", "US", lenValid)
     check matches[0].raw == "201-555-0123"
 
-  test "34 abi_version == 2":
-    check abiVersion() == 2
+  test "34 abi_version == 3":
+    check abiVersion() == 3
+
+  test "35 short is_emergency US 911":
+    check isEmergencyNumber("US", "911") == true
+
+  test "36 short not-emergency US 999":
+    check isEmergencyNumber("US", "999") == false
+
+  test "37 short is_emergency GB 999":
+    check isEmergencyNumber("GB", "999") == true
+
+  test "38 short is_valid US 911":
+    check shortIsValid("US", "911") == true
+
+  test "39 short expected_cost US 911 toll-free":
+    check shortExpectedCost("US", "911") == costTollFree
+    check shortExpectedCostInt("US", "911") == 0
+
+  test "40 short example_number US == 112":
+    check shortExampleNumber("US") == "112"
 
 suite "surface":
 

@@ -9,7 +9,8 @@ every function marshals to an `aether_pn_embed_*` call across the flat C ABI
 described in `core/embed.ae`. One engine, one set of behaviours, N language
 surfaces.
 
-As of **ABI v2** the surface is full `PhoneNumberUtil` parity — 50 symbols. A
+As of **ABI v3** the surface is full `PhoneNumberUtil` parity plus the
+`ShortNumberInfo` side-library (short / emergency numbers) — 58 symbols. A
 parsed number is a caller-owned string you carry in a `ParsedNumber`; the
 `AsYouTypeFormatter` threads its state through the same caller-owned-string
 mechanism; and `findNumbers` walks free text for numbers.
@@ -39,8 +40,8 @@ mechanism; and `findNumbers` walks free text for numbers.
 haskell/
     phonenumber_ae.cabal         build manifest
     src/PhoneNumber.hs           the public API
-    src/PhoneNumber/Native.hs    the 1:1 C ABI symbol table (all 50 symbols)
-    test/Conformance.hs          the 34-check suite, a plain assertion runner
+    src/PhoneNumber/Native.hs    the 1:1 C ABI symbol table (all 58 symbols)
+    test/Conformance.hs          the 40-check suite, a plain assertion runner
     native/                      where .tests.ae stages the engine .so
 ```
 
@@ -175,7 +176,30 @@ clearFormatter        :: AsYouTypeFormatter -> IO ()
 findNumbers :: ByteString -> ByteString -> Leniency -> IO [Match]
 data Match = Match { matchStart :: Int, matchEnd :: Int, matchRaw :: ByteString }
 
+-- ShortNumberInfo (short / emergency numbers)
+shortIsPossible           :: ByteString -> ByteString -> IO Bool
+shortIsValid              :: ByteString -> ByteString -> IO Bool
+isEmergencyNumber         :: ByteString -> ByteString -> IO Bool
+connectsToEmergencyNumber :: ByteString -> ByteString -> IO Bool
+shortIsCarrierSpecific    :: ByteString -> ByteString -> IO Bool
+shortIsSmsService         :: ByteString -> ByteString -> IO Bool
+shortExpectedCost         :: ByteString -> ByteString -> IO ShortNumberCost
+shortExampleNumber        :: ByteString -> IO ByteString
+
 abiVersion :: IO Int
+```
+
+### Short numbers (ShortNumberInfo)
+
+Short numbers are dialled as-is — no country code, no national prefix — so the
+input is the raw short number plus a region:
+
+```haskell
+isEmergencyNumber "US" "911"    -- True
+isEmergencyNumber "GB" "999"    -- True
+shortIsValid "US" "911"         -- True
+shortExpectedCost "US" "911"    -- TollFreeCost
+shortExampleNumber "US"         -- "112"
 ```
 
 ### Constants
@@ -187,7 +211,8 @@ the binding maps `Format` to the ABI int internally.
 
 `NumberType` mirrors the ABI's number-type codes, with `UnknownType` at `-1` and
 an `OtherType CInt` fallthrough. `ValidationResult`, `MatchType`,
-`CountryCodeSource` and `Leniency` are the other constant groups, each with an
+`CountryCodeSource`, `Leniency` and `ShortNumberCost` (`TollFreeCost` / `StandardRateCost`
+/ `PremiumRateCost` / `UnknownCost`) are the other constant groups, each with an
 `Other…` fallthrough where the wire values are non-contiguous.
 
 ### Strings
@@ -225,7 +250,7 @@ non-reentrant C calls.
 
 ## Conformance
 
-The 34-check suite (`docs/conformance.md`) lives in `test/Conformance.hs`,
+The 40-check suite (`docs/conformance.md`) lives in `test/Conformance.hs`,
 alongside a few surface extras (the format-style aliases, out-of-range
 `regionAt`, and a 3000-iteration loop over the caller-owned string contract). It
 is a plain assertion runner with its own exit code — no hspec, no tasty, no

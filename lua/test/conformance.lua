@@ -1,4 +1,4 @@
---- The 34-check binding conformance suite (docs/conformance.md, v2).
+--- The 40-check binding conformance suite (docs/conformance.md, v3).
 ---
 --- Proves the Lua binding marshals every value shape across the FFI. It is NOT
 --- a phone-number test suite — the behavioural cases live in the engine's own
@@ -48,10 +48,10 @@ local function is_false(got, what)
     tostring(got), 2) end
 end
 
-print("=== phonenumber_ae Lua binding conformance (v2) ===")
+print("=== phonenumber_ae Lua binding conformance (v3) ===")
 print(string.format("engine: %s (ABI v%d)", pn.engine_path(), pn.abi_version()))
 
--- ---- the thirty-four ----
+-- ---- the forty ----
 
 test("01 country_code US == 1", function()
   eq(pn.country_code("US"), "1")
@@ -187,8 +187,32 @@ test("33 matcher_raw", function()
   eq(matches[1].raw, "201-555-0123", "match raw")
 end)
 
-test("34 abi_version == 2", function()
-  eq(pn.abi_version(), 2, "abi_version")
+test("34 abi_version == 3", function()
+  eq(pn.abi_version(), 3, "abi_version")
+end)
+
+test("35 short is_emergency US 911", function()
+  is_true(pn.is_emergency_number("US", "911"), "is_emergency_number")
+end)
+
+test("36 short not-emergency US 999", function()
+  is_false(pn.is_emergency_number("US", "999"), "is_emergency_number")
+end)
+
+test("37 short is_emergency GB 999", function()
+  is_true(pn.is_emergency_number("GB", "999"), "is_emergency_number")
+end)
+
+test("38 short is_valid US 911", function()
+  is_true(pn.short_is_valid("US", "911"), "short_is_valid")
+end)
+
+test("39 short expected_cost US 911 toll-free", function()
+  eq(pn.short_expected_cost("US", "911"), pn.COST_TOLL_FREE, "short_expected_cost")
+end)
+
+test("40 short example_number US == 112", function()
+  eq(pn.short_example_number("US"), "112")
 end)
 
 -- ---- a few surface extras ----

@@ -1,4 +1,4 @@
-/// The 34-check binding conformance suite (docs/conformance.md, v2).
+/// The 40-check binding conformance suite (docs/conformance.md, v3).
 ///
 /// Proves the Dart binding marshals every value shape across the FFI. It is NOT
 /// a phone-number test suite — the behavioural cases live in the engine's own
@@ -159,7 +159,34 @@ void main() {
   });
 
   test('34 abi version', () {
-    expect(pn.abiVersion(), equals(2));
+    expect(pn.abiVersion(), equals(3));
+  });
+
+  // ---- ShortNumberInfo (v3) ----
+
+  test('35 short is_emergency US 911', () {
+    expect(pn.ShortNumberInfo.isEmergencyNumber('US', '911'), isTrue);
+  });
+
+  test('36 short not emergency US 999', () {
+    expect(pn.ShortNumberInfo.isEmergencyNumber('US', '999'), isFalse);
+  });
+
+  test('37 short is_emergency GB 999', () {
+    expect(pn.ShortNumberInfo.isEmergencyNumber('GB', '999'), isTrue);
+  });
+
+  test('38 short is_valid US 911', () {
+    expect(pn.ShortNumberInfo.isValid('US', '911'), isTrue);
+  });
+
+  test('39 short expected_cost US 911 is toll-free', () {
+    expect(pn.ShortNumberInfo.expectedCost('US', '911'),
+        equals(pn.ShortNumberCost.tollFree));
+  });
+
+  test('40 short example_number US', () {
+    expect(pn.ShortNumberInfo.exampleNumber('US'), equals('112'));
   });
 
   // ---- a few extras exercising the idiomatic surface ----

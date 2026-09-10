@@ -8,10 +8,11 @@ over Google libphonenumber's own metadata. It contains **no phone-number
 logic**: every method marshals to an `aether_pn_embed_*` call. One engine, one
 set of behaviours, N language surfaces.
 
-It speaks the full **v2** `aether_pn_embed_*` C ABI (50 symbols, full
-PhoneNumberUtil parity — `docs/abi.md`). Every signature is still scalar-only
-(`const char*` and `int`), and there are still no opaque handles: a parsed
-number and an as-you-type state are themselves caller-owned *strings*.
+It speaks the full **v3** `aether_pn_embed_*` C ABI (58 symbols, full
+PhoneNumberUtil parity plus ShortNumberInfo — `docs/abi.md`). Every signature is
+still scalar-only (`const char*` and `int`), and there are still no opaque
+handles: a parsed number and an as-you-type state are themselves caller-owned
+*strings*.
 
 | File | Role |
 |---|---|
@@ -20,7 +21,8 @@ number and an as-you-type state are themselves caller-owned *strings*.
 | `src/ParsedNumber.php` | the value `PhoneNumber::parse()` returns, with field accessors |
 | `src/AsYouTypeFormatter.php` | formats a number as it is typed |
 | `src/PhoneNumberMatch.php` | one match `findNumbers()` returns (`start`, `end`, `raw`) |
-| `tests/conformance.php` | the 34-check v2 conformance suite, as an assertion runner |
+| `src/ShortNumberInfo.php` | short / emergency-number queries (the v3 ABI addition) |
+| `tests/conformance.php` | the 40-check v3 conformance suite, as an assertion runner |
 
 Requires **PHP 8.1+** and **ext-ffi**. No Composer dependencies at all — which
 is also what lets it run on a box with no network.
@@ -70,6 +72,7 @@ Library resolution, in order:
 ```php
 use PhoneNumberAe\AsYouTypeFormatter;
 use PhoneNumberAe\PhoneNumber;
+use PhoneNumberAe\ShortNumberInfo;
 
 // Parse into a ParsedNumber and read its fields on demand.
 $num = PhoneNumber::parse('+1 201 555 0123 ext 42', 'US');
@@ -100,6 +103,13 @@ count($matches);        // 2
 $matches[0]->raw;       // '201-555-0123'
 $matches[0]->start;     // 5
 $matches[0]->end;       // 17
+
+// Short / emergency numbers (v3 — ShortNumberInfo).
+ShortNumberInfo::isEmergencyNumber('US', '911');   // true
+ShortNumberInfo::isEmergencyNumber('GB', '999');   // true
+ShortNumberInfo::isValid('US', '911');             // true
+ShortNumberInfo::expectedCost('US', '911');        // ShortNumberInfo::COST_TOLL_FREE
+ShortNumberInfo::exampleNumber('US');              // '112'
 ```
 
 ### Surface
@@ -125,6 +135,9 @@ $matches[0]->end;       // 17
   `result()`, `clear()`.
 * **`findNumbers(text, region, leniency)`** — a `list<PhoneNumberMatch>` with
   `start`, `end`, `raw`.
+* **`ShortNumberInfo`** — short / emergency numbers: `isPossible`, `isValid`,
+  `isEmergencyNumber`, `connectsToEmergencyNumber`, `isCarrierSpecific`,
+  `isSmsService`, `expectedCost` (a `COST_*` int), `exampleNumber($region)`.
 
 ### Constants
 
@@ -149,6 +162,9 @@ CountryCodeSource (`ParsedNumber::source()`): `SRC_FROM_NUMBER_WITH_PLUS` (1),
 
 Matcher leniency: `LENIENCY_POSSIBLE` (0), `LENIENCY_VALID` (1).
 
+ShortNumberCost (`ShortNumberInfo::expectedCost()`): `COST_TOLL_FREE` (0),
+`COST_STANDARD_RATE` (1), `COST_PREMIUM_RATE` (2), `COST_UNKNOWN` (3).
+
 ## Memory
 
 Every `char*` the engine returns is caller-owned. `Native::takeString` copies
@@ -161,7 +177,7 @@ there is no keepalive list and no borrowed pointers to track.
 
 ## Tests
 
-The 34-check v2 conformance suite (`docs/conformance.md`) lives in
+The 40-check v3 conformance suite (`docs/conformance.md`) lives in
 `tests/conformance.php`, alongside a couple of extras and a 5,000-iteration
 loop over the caller-owned-string contract.
 
@@ -187,8 +203,9 @@ LIBPHONENUMBER_AE_LIB=../target/build/core/lib/libphonenumber_ae.so \
 missing toolchain.
 
 > **Status on this checkout:** PHP is **not installed** on the development box
-> these bindings were written on, so the PHP binding was upgraded to the v2 ABI
-> to mirror the proven JavaScript and Dart bindings exactly but has not been
-> executed here. `aeb php/.tests.ae` reports `php: SKIPPED` and exits 0. The
-> engine ABI it targets is proven by `core_tests/abi_smoke.c` and by the Dart,
-> Python and JavaScript bindings that do run against the same `.so`.
+> these bindings were written on, so the PHP binding was upgraded to the v3 ABI
+> (adding the `ShortNumberInfo` surface) to mirror the proven JavaScript and
+> Dart bindings exactly but has not been executed here. `aeb php/.tests.ae`
+> reports `php: SKIPPED` and exits 0. The engine ABI it targets is proven by
+> `core_tests/abi_smoke.c` and by the Dart, Python and JavaScript bindings that
+> do run against the same `.so`.

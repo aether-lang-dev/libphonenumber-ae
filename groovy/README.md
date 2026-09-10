@@ -37,7 +37,13 @@ formatInternational('US', '2015550123')    // "+1 (201) 555-0123"
 
 numberType('US', '2015550123')             // NumberType.FIXED_LINE
 regions()                                   // ["AC", "AD", ...]
-abiVersion()                                // 1
+abiVersion()                                // 3
+
+// short / emergency numbers (ShortNumberInfo)
+isEmergencyNumber('US', '911')             // true
+isValidShortNumber('US', '911')            // true
+shortExpectedCost('US', '911')             // ShortNumberCost.TOLL_FREE
+shortExampleNumber('US')                   // "112"
 ```
 
 `PhoneNumbers` is a Groovy facade over the Java `PhoneNumbers` class, which

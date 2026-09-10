@@ -15,8 +15,8 @@ import java.util.List;
 
 /**
  * The 1:1 symbol table for the phonenumber C ABI ({@code core/embed.ae}) —
- * <b>ABI v2, full {@code PhoneNumberUtil} parity</b> — bound with the Java 22+
- * Foreign Function &amp; Memory API (JEP 454).
+ * <b>ABI v3, full {@code PhoneNumberUtil} parity plus {@code ShortNumberInfo}</b>
+ * — bound with the Java 22+ Foreign Function &amp; Memory API (JEP 454).
  *
  * <p>This class is the ONLY place in the Java binding that knows about the C
  * ABI. Everything above it ({@link PhoneNumbers} and the value classes) is
@@ -88,6 +88,12 @@ public final class Native {
     public static final int LENIENCY_POSSIBLE = 0;
     public static final int LENIENCY_VALID = 1;
 
+    // ---- ShortNumberCost (short_expected_cost) ----
+    public static final int COST_TOLL_FREE = 0;
+    public static final int COST_STANDARD_RATE = 1;
+    public static final int COST_PREMIUM_RATE = 2;
+    public static final int COST_UNKNOWN = 3;
+
     private static final ValueLayout.OfInt I = ValueLayout.JAVA_INT;
     private static final java.lang.foreign.AddressLayout P = ValueLayout.ADDRESS;
 
@@ -104,7 +110,7 @@ public final class Native {
     public final Linker linker;
     private final SymbolLookup lookup;
 
-    // ---- the ABI symbols, one MethodHandle each (50 total) ----
+    // ---- the ABI symbols, one MethodHandle each (58 total) ----
 
     // lifecycle / metadata
     public final MethodHandle abiVersion;
@@ -169,6 +175,16 @@ public final class Native {
     public final MethodHandle matcherStart;
     public final MethodHandle matcherEnd;
     public final MethodHandle matcherRaw;
+
+    // ShortNumberInfo
+    public final MethodHandle shortIsPossible;
+    public final MethodHandle shortIsValid;
+    public final MethodHandle shortIsEmergency;
+    public final MethodHandle shortConnectsToEmergency;
+    public final MethodHandle shortIsCarrierSpecific;
+    public final MethodHandle shortIsSmsService;
+    public final MethodHandle shortExpectedCost;
+    public final MethodHandle shortExampleNumber;
 
     private static volatile Native cached;
 
@@ -280,6 +296,24 @@ public final class Native {
                 FunctionDescriptor.of(I, P, P, I, I));
         matcherEnd = downcall("aether_pn_embed_matcher_end", FunctionDescriptor.of(I, P, P, I, I));
         matcherRaw = downcall("aether_pn_embed_matcher_raw", FunctionDescriptor.of(P, P, P, I, I));
+
+        // ShortNumberInfo
+        shortIsPossible = downcall("aether_pn_embed_short_is_possible",
+                FunctionDescriptor.of(I, P, P));
+        shortIsValid = downcall("aether_pn_embed_short_is_valid",
+                FunctionDescriptor.of(I, P, P));
+        shortIsEmergency = downcall("aether_pn_embed_short_is_emergency",
+                FunctionDescriptor.of(I, P, P));
+        shortConnectsToEmergency = downcall("aether_pn_embed_short_connects_to_emergency",
+                FunctionDescriptor.of(I, P, P));
+        shortIsCarrierSpecific = downcall("aether_pn_embed_short_is_carrier_specific",
+                FunctionDescriptor.of(I, P, P));
+        shortIsSmsService = downcall("aether_pn_embed_short_is_sms_service",
+                FunctionDescriptor.of(I, P, P));
+        shortExpectedCost = downcall("aether_pn_embed_short_expected_cost",
+                FunctionDescriptor.of(I, P, P));
+        shortExampleNumber = downcall("aether_pn_embed_short_example_number",
+                FunctionDescriptor.of(P, P));
     }
 
     private SymbolLookup openLibrary(String explicitPath) {

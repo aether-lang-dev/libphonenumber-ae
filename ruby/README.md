@@ -1,7 +1,7 @@
 # phonenumber_ae (Ruby)
 
 A thin Ruby binding over the shared, pure-Aether libphonenumber engine — the
-full **v2 ABI** (full `PhoneNumberUtil` parity).
+full **v3 ABI** (full `PhoneNumberUtil` parity plus `ShortNumberInfo`).
 
 ```ruby
 require "phonenumber_ae"
@@ -43,6 +43,16 @@ matches.size          # => 2
 matches[0].raw        # => "201-555-0123"
 matches[0].start      # => byte offset of the match
 matches[0].end        # => byte offset just past it
+```
+
+### Short and emergency numbers
+
+```ruby
+PhoneNumberAe::ShortNumber.is_emergency_number("US", "911")  # => true
+PhoneNumberAe::ShortNumber.is_emergency_number("GB", "999")  # => true
+PhoneNumberAe::ShortNumber.is_valid("US", "911")             # => true
+PhoneNumberAe::ShortNumber.expected_cost("US", "911")        # => PhoneNumberAe::COST_TOLL_FREE
+PhoneNumberAe::ShortNumber.example_number("US")              # => "112"
 ```
 
 This gem is a **thin Fiddle binding** over the monorepo's one shared native
@@ -112,7 +122,22 @@ truncate_too_long(region, input)
 normalize_digits_only(str)
 convert_alpha_characters(str)
 is_alpha_number(str)                             # => true / false
-abi_version                                      # => 2
+abi_version                                      # => 3
+```
+
+Short / emergency numbers live in the `PhoneNumberAe::ShortNumber` module
+(cost values are `COST_TOLL_FREE` / `COST_STANDARD_RATE` / `COST_PREMIUM_RATE`
+/ `COST_UNKNOWN`):
+
+```ruby
+PhoneNumberAe::ShortNumber.is_possible(region, input)                # => true / false
+PhoneNumberAe::ShortNumber.is_valid(region, input)                   # => true / false
+PhoneNumberAe::ShortNumber.is_emergency_number(region, input)        # => true / false
+PhoneNumberAe::ShortNumber.connects_to_emergency_number(region, input) # => true / false
+PhoneNumberAe::ShortNumber.is_carrier_specific(region, input)        # => true / false
+PhoneNumberAe::ShortNumber.is_sms_service(region, input)             # => true / false
+PhoneNumberAe::ShortNumber.expected_cost(region, input)              # => a COST_* int
+PhoneNumberAe::ShortNumber.example_number(region)                    # => "112"
 ```
 
 Classes: `PhoneNumberAe::ParsedNumber`, `PhoneNumberAe::AsYouTypeFormatter`
@@ -144,7 +169,7 @@ freed the same way.
 
 ## Testing
 
-The v2 34-check conformance suite (`docs/conformance.md`) lives in
+The v3 40-check conformance suite (`docs/conformance.md`) lives in
 `spec/conformance_spec.rb`.
 
 ```sh

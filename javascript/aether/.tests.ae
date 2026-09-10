@@ -33,7 +33,7 @@ aeb(cap) {
             println("javascript: node --test reported failures")
             return 1
         }
-        println("javascript: PASS — v2 34-check conformance")
+        println("javascript: PASS — v3 40-check conformance (incl. ShortNumberInfo)")
         return 0
     }
 }

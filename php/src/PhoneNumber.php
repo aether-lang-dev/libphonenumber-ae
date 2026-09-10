@@ -1,7 +1,7 @@
 <?php
 
 /**
- * The idiomatic PHP surface over the phonenumber engine (ABI v2).
+ * The idiomatic PHP surface over the phonenumber engine (ABI v3).
  *
  * Carries no phone-number logic — every method here marshals to an
  * `aether_pn_embed_*` call in {@see Native}.
@@ -80,6 +80,13 @@ final class PhoneNumber
 
     public const LENIENCY_POSSIBLE = Native::LENIENCY_POSSIBLE;
     public const LENIENCY_VALID = Native::LENIENCY_VALID;
+
+    // ---- ShortNumberCost (ShortNumberInfo::expectedCost) ----
+
+    public const COST_TOLL_FREE = Native::COST_TOLL_FREE;
+    public const COST_STANDARD_RATE = Native::COST_STANDARD_RATE;
+    public const COST_PREMIUM_RATE = Native::COST_PREMIUM_RATE;
+    public const COST_UNKNOWN = Native::COST_UNKNOWN;
 
     /** This class is never instantiated — the stateless ABI has no state to hold. */
     private function __construct()

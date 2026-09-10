@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# The binding conformance suite (docs/conformance.md, v2).
+# The binding conformance suite (docs/conformance.md, v3).
 #
 # Proves the Ruby binding marshals every value shape across the FFI. It is NOT
 # a phone-number test suite — the behavioural cases live in the engine's own
@@ -154,6 +154,30 @@ RSpec.describe PhoneNumberAe do
   end
 
   it "34 abi version" do
-    expect(PhoneNumberAe.abi_version).to eq(2)
+    expect(PhoneNumberAe.abi_version).to eq(3)
+  end
+
+  it "35 short is_emergency_number US 911" do
+    expect(PhoneNumberAe::ShortNumber.is_emergency_number("US", "911")).to be(true)
+  end
+
+  it "36 short is_emergency_number US 999 (that's GB)" do
+    expect(PhoneNumberAe::ShortNumber.is_emergency_number("US", "999")).to be(false)
+  end
+
+  it "37 short is_emergency_number GB 999" do
+    expect(PhoneNumberAe::ShortNumber.is_emergency_number("GB", "999")).to be(true)
+  end
+
+  it "38 short is_valid US 911" do
+    expect(PhoneNumberAe::ShortNumber.is_valid("US", "911")).to be(true)
+  end
+
+  it "39 short expected_cost US 911 is toll-free" do
+    expect(PhoneNumberAe::ShortNumber.expected_cost("US", "911")).to eq(PhoneNumberAe::COST_TOLL_FREE)
+  end
+
+  it "40 short example_number US" do
+    expect(PhoneNumberAe::ShortNumber.example_number("US")).to eq("112")
   end
 end

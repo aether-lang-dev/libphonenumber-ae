@@ -1,6 +1,6 @@
 'use strict';
 /**
- * phonenumber_ae — JavaScript binding for the shared phonenumber engine (ABI v2).
+ * phonenumber_ae — JavaScript binding for the shared phonenumber engine (ABI v3).
  *
  * The engine (Google libphonenumber's metadata, parse, isPossible/isValid,
  * number typing, formatting, as-you-type, matcher) is pure Aether in
@@ -71,4 +71,10 @@ module.exports = {
   // ---- matcher leniency ----
   LENIENCY_POSSIBLE: native.LENIENCY_POSSIBLE,
   LENIENCY_VALID: native.LENIENCY_VALID,
+
+  // ---- ShortNumberCost (ShortNumberInfo.expectedCost) ----
+  COST_TOLL_FREE: native.COST_TOLL_FREE,
+  COST_STANDARD_RATE: native.COST_STANDARD_RATE,
+  COST_PREMIUM_RATE: native.COST_PREMIUM_RATE,
+  COST_UNKNOWN: native.COST_UNKNOWN,
 };

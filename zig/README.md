@@ -9,11 +9,12 @@ every function marshals to an `aether_pn_embed_*` call across the flat C ABI
 described in `core/embed.ae`. One engine, one set of behaviours, N language
 surfaces.
 
-Speaks **ABI v2** (`abiVersion()` → 2): the full `PhoneNumberUtil` surface —
+Speaks **ABI v3** (`abiVersion()` → 3): the full `PhoneNumberUtil` surface —
 parse, validation with reasons, all four format styles, an
-AsYouTypeFormatter, and a matcher that finds numbers in free text. The ABI is
+AsYouTypeFormatter, and a matcher that finds numbers in free text — plus the
+`ShortNumberInfo` side-library (short / emergency numbers). The ABI is
 scalar-only (`const char*` and `int`); there is no handle and no callbacks. Two
-v2 constructs thread a *string* rather than an opaque handle: a parsed number
+constructs thread a *string* rather than an opaque handle: a parsed number
 and the AsYouType state are each a caller-owned string you get back and free.
 
 > **Format styles were renumbered in v2.** `e164` is now **`0`** (it was `2`);
@@ -36,7 +37,7 @@ aeb core/.build.ae
 Then:
 
 ```sh
-zig build test        # the 34-check v2 conformance suite
+zig build test        # the 40-check v3 conformance suite
 zig build example     # build and run the demo
 ```
 
@@ -134,6 +135,21 @@ for (matches) |m| {
 }
 ```
 
+### Short numbers (ShortNumberInfo)
+
+Short numbers are dialled as-is — no country code, no national prefix — so the
+input is the raw short number plus a region:
+
+```zig
+try pn.isEmergencyNumber(allocator, "US", "911");   // true
+try pn.isEmergencyNumber(allocator, "GB", "999");   // true
+try pn.shortIsValid(allocator, "US", "911");        // true
+try pn.shortExpectedCost(allocator, "US", "911");   // .toll_free
+
+const ex = try pn.shortExampleNumber(allocator, "US");   // "112"
+defer allocator.free(ex);
+```
+
 ### The surface
 
 ```zig
@@ -191,13 +207,24 @@ asYouTypeFormatter(alloc, region) !AsYouType       // .deinit() when done
 matcherCount(alloc, text, region, Leniency) !usize
 findNumbers(alloc, text, region, Leniency) ![]Match   // caller frees via freeMatches
 freeMatches(alloc, list)
+
+// short numbers (ShortNumberInfo)
+shortIsPossible(alloc, region, input) !bool
+shortIsValid(alloc, region, input) !bool
+isEmergencyNumber(alloc, region, input) !bool
+connectsToEmergencyNumber(alloc, region, input) !bool
+shortIsCarrierSpecific(alloc, region, input) !bool
+shortIsSmsService(alloc, region, input) !bool
+shortExpectedCost(alloc, region, input) !ShortNumberCost   // .toll_free | …
+shortExampleNumber(alloc, region) ![]u8
 ```
 
 The constant groups are exposed as non-exhaustive enums — `Format`,
 `NumberType` (`.unknown` at `-1`), `ValidationResult`, `MatchType`,
-`CountryCodeSource`, `Leniency` — and also as bare `c_int` aliases
-(`E164`/`INTERNATIONAL`/`NATIONAL`/`RFC3966`, `TYPE_*`, `VR_*`, `MATCH_*`,
-`SRC_*`, `LENIENCY_*`) for a caller who prefers the wire value.
+`CountryCodeSource`, `Leniency`, `ShortNumberCost` — and also as bare `c_int`
+aliases (`E164`/`INTERNATIONAL`/`NATIONAL`/`RFC3966`, `TYPE_*`, `VR_*`,
+`MATCH_*`, `SRC_*`, `LENIENCY_*`, `COST_*`) for a caller who prefers the wire
+value.
 
 ## Memory and ownership
 
@@ -208,7 +235,7 @@ through one helper, `takeString`, which copies into your allocator and frees the
 C buffer in a `defer`. There is exactly one `free_string` call site — grep for
 it.
 
-The two v2 stateful wrappers own a string too: a `ParsedNumber` owns its
+The two stateful wrappers own a string too: a `ParsedNumber` owns its
 parsed-number string and an `AsYouType` owns its state string; both have
 `deinit`. `findNumbers` returns a slice of `Match`, each owning its `raw`
 substring — free the lot with `freeMatches`.
@@ -222,7 +249,7 @@ not a silent truncation: Zig slices carry NULs happily and C strings do not.
 
 ## Conformance
 
-The 34-check v2 suite (`docs/conformance.md`) lives in `src/conformance.zig`,
+The 40-check v3 suite (`docs/conformance.md`) lives in `src/conformance.zig`,
 pulled into `zig build test` by a `test` block at the bottom of `src/root.zig`.
 It samples every value shape that crosses the FFI — parse accessors, all four
 format styles, the AsYouTypeFormatter, and the matcher — plus a few Zig-specific

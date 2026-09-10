@@ -71,7 +71,7 @@ fixed_line           = phonenumber_ae:number_type(<<"US">>, <<"2015550123">>),
 <<"(201) 555-0123">> = phonenumber_ae:format(<<"US">>, <<"2015550123">>, national),
 <<"+12015550123">>   = phonenumber_ae:format_e164(<<"US">>, <<"2015550123">>),
 Regions              = phonenumber_ae:regions(),   %% [<<"AC">>, <<"AD">>, ...]
-2                    = phonenumber_ae:abi_version().
+3                    = phonenumber_ae:abi_version().
 ```
 
 All string inputs accept `iodata` (a binary, a string, or an iolist); all
@@ -113,7 +113,20 @@ phonenumber_ae:find_numbers(<<"call 201-555-0123 or +1 202 555 0199">>, <<"US">>
 %% the 3rd arg, default valid.
 ```
 
-### The surface (v2 — full PhoneNumberUtil parity)
+### Short numbers (emergency, SMS shortcodes)
+
+Short numbers are dialled as-is — no country code, no national prefix — so the
+input is the raw short number plus a region:
+
+```erlang
+true       = phonenumber_ae:is_emergency_number(<<"US">>, <<"911">>),
+false      = phonenumber_ae:is_emergency_number(<<"US">>, <<"999">>),   %% that's GB
+true       = phonenumber_ae:short_is_valid(<<"US">>, <<"911">>),
+toll_free  = phonenumber_ae:short_expected_cost(<<"US">>, <<"911">>),
+<<"112">>  = phonenumber_ae:short_example_number(<<"US">>).
+```
+
+### The surface (v3 — full PhoneNumberUtil parity + ShortNumberInfo)
 
 - **Metadata**: `country_code/1`, `example_number/1`,
   `example_number_for_type/2`, `invalid_example_number/1`, `possible_lengths/1`,
@@ -140,11 +153,18 @@ phonenumber_ae:find_numbers(<<"call 201-555-0123 or +1 202 555 0199">>, <<"US">>
 - **Find numbers**: `find_numbers/2,3` (list of `{Start, End, Raw}`), and the
   lower-level `matcher_count/3`, `matcher_start/4`, `matcher_end/4`,
   `matcher_raw/4`.
-- `abi_version/0` (returns `2`).
+- **Short numbers**: `short_is_possible/2`, `short_is_valid/2`,
+  `is_emergency_number/2`, `connects_to_emergency_number/2`,
+  `short_is_carrier_specific/2`, `short_is_sms_service/2`,
+  `short_expected_cost/2` (a ShortNumberCost atom — `toll_free` |
+  `standard_rate` | `premium_rate` | `unknown`; `short_expected_cost_code/2` for
+  the raw int), `short_example_number/1`.
+- `abi_version/0` (returns `3`).
 
-> **v2 note.** The format-style selectors changed: `e164` is now `0` (was `2`
-> in v1). Callers that use the style atoms never see the number; callers that
-> hard-coded the old integer must switch to the atoms.
+> **v3 note.** ShortNumberInfo (the `short_*` / `*_emergency_number` calls
+> above) is new in v3. The format-style selectors from v2 are unchanged: `e164`
+> is `0` (it was `2` in v1). Callers that use the style atoms never see the
+> number; callers that hard-coded the old integer must switch to the atoms.
 
 ### No handle, no callbacks
 
@@ -156,8 +176,8 @@ strings (every `char*` the ABI returns is caller-owned).
 
 ## Conformance
 
-`erlang/.tests.ae` runs the 34-check binding conformance suite
-(`docs/conformance.md`, v2) as EUnit, against the very same compiled module
+`erlang/.tests.ae` runs the 40-check binding conformance suite
+(`docs/conformance.md`, v3) as EUnit, against the very same compiled module
 Elixir and Gleam load. It samples each *kind* of value crossing the FFI — it
 proves the marshalling, not the library. The suite SKIPs (green) when `erl`,
 `erl_nif.h`, or `eunit` is absent.
