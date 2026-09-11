@@ -1,36 +1,29 @@
-// Dart binding tests (dart:ffi). The loader honors LIBPHONENUMBER_AE_LIB, which
-// we point at the shared engine artifact this node deps.
+// Dart binding tests (dart:ffi). Canonical aeb grammar (no shell-out):
+//   prereq             — skip cleanly when dart is absent
+//   dart.test { … }    — `dart pub get` (pub_get_first) then `dart test`,
+//                        offline once the pub cache is warm; env() exports the
+//                        engine .so path the dart:ffi loader reads.
+// Mirrors the selenium binding's proven pattern.
 import bldr
-import std.os
+import dart
+import bldr (dep, dep_artifact)
+import dart (env, pub_get_first, offline, test_path, test_flag)
 
 aeb(cap) {
     bldr.build() {
+        prereq("dart")
         dep("core/.build.ae")
         lib = dep_artifact("core/.build.ae", "shared_lib")
-        root = _get("root")
-
-        // Skip honestly rather than fail the DAG when the toolchain is absent.
-        have = os.system("command -v dart >/dev/null 2>&1")
-        if have != 0 {
-            println("dart: SKIPPED — dart not installed (no Dart SDK on PATH)")
-            return 0
+        dart.test() {
+            env("LIBPHONENUMBER_AE_LIB", lib)
+            pub_get_first("1")
+            offline("1")
+            test_path("test/conformance_test.dart")
+            // failures-only suppresses per-test lines; the SDK's count parser
+            // otherwise mis-reads the '-' in test names ("trunk-prefix",
+            // "as-you-type") as a failed-count marker -> false FAIL despite the
+            // suite passing. (aeb parser bug, filed as an ask.)
+            test_flag("--reporter=failures-only")
         }
-
-        // `dart test` needs the package's dependencies resolved. This is the one
-        // network step; if the pub cache is already warm it is a no-op, and if it
-        // fails we skip rather than report a false failure of the binding.
-        pg = os.system("cd \"${root}/dart\" && dart pub get --no-example >/dev/null 2>&1")
-        if pg != 0 {
-            println("dart: SKIPPED — `dart pub get` failed (no pub cache and no network?)")
-            return 0
-        }
-
-        rc = os.system("cd \"${root}/dart\" && LIBPHONENUMBER_AE_LIB=\"${lib}\" dart test --reporter=expanded")
-        if rc != 0 {
-            println("dart: `dart test` reported failures")
-            return 1
-        }
-        println("dart: PASS — v7 47-check conformance (incl. ShortNumberInfo, TimeZones, Carrier + Geocoder with lang + matcher grouping)")
-        return 0
     }
 }
