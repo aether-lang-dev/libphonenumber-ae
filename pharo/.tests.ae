@@ -1,34 +1,21 @@
-// Pharo binding tests (UnifiedFFI).
-//
-// Unlike the thin-over-Java layers, Pharo is NOT a JVM, so this is a REAL FFI
-// against the flat C ABI. It deps only core/.build.ae, for the .so that
-// LIBPHONENUMBER_AE_LIB points at.
-//
-// pharo/run-tests.sh loads the Tonel sources into a THROWAWAY copy of a Pharo
-// image (loading code mutates an image permanently, so the developer's own is
-// left alone) and runs SUnit headless. Needs a Pharo VM; without one the node
-// SKIPS rather than reporting a false pass.
+// Pharo binding tests. Canonical aeb grammar (no shell-out): pharo.sunit() loads
+// the Tonel sources (via BaselineOfPhonenumberAe) into a throwaway image and runs
+// the SUnit suite; env() exports the engine .so path the FFI binding dlopen's.
 import bldr
-import std.os
+import pharo
+import bldr (dep, dep_artifact)
+import pharo (baseline, tonel_dir, suite, env)
 
 aeb(cap) {
     bldr.build() {
+        prereq("pharo")
         dep("core/.build.ae")
         lib = dep_artifact("core/.build.ae", "shared_lib")
-        root = _get("root")
-
-        rc = os.system("cd \"${root}/pharo\" && LIBPHONENUMBER_AE_LIB=\"${lib}\" ./run-tests.sh")
-        if rc == 77 {
-            // 77 is this monorepo's "toolchain absent" code, chosen because no
-            // compiler or VM uses it for a real failure.
-            println("pharo: SKIPPED — no Pharo VM installed")
-            return 0
+        pharo.sunit() {
+            env("LIBPHONENUMBER_AE_LIB", lib)
+            tonel_dir("src")
+            baseline("PhonenumberAe")
+            suite("PhonenumberAe")
         }
-        if rc != 0 {
-            println("pharo: conformance suite reported failures")
-            return 1
-        }
-        println("pharo: PASS — 47-check conformance (v7 ABI, incl. ShortNumberInfo, timezones, carrier, geocoder + matcher grouping leniency)")
-        return 0
     }
 }
