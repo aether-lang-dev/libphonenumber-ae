@@ -6,15 +6,12 @@
 // a jar entry), so the jar runs with no LIBPHONENUMBER_AE_LIB and no external
 // .so. One .so per jar => the jar is current-OS-only.
 //
-// KNOWN LIMITATION (aeb): java.package_jar() RECOMPILES the sources instead of
-// packaging java/.build.ae's already-compiled classes — so the Java sources are
-// compiled twice (once for the tests + JVM-family, once here), and the jar's
-// bytecode is the-same-as-tested only because both compiles read identical
-// sources/flags, not structurally. Every other JVM build system separates
-// compile (a node) from jar (a downstream step that consumes the classes); the
-// fix belongs in aeb (package_jar should accept a pre-compiled classpath and
-// skip its javac). Filed at ../aeb/asks/. Once landed, this node should dep
-// java/.build.ae and package its classes rather than recompiling.
+// PACKAGES java/.build.ae's already-compiled classes via from_classes() — it does
+// NOT recompile. So the sources are compiled once (by java/.build.ae, which the
+// tests + the kotlin/groovy/clojure layers all run against) and this jar ships
+// exactly THAT bytecode: "tested == shipped" is structural, not coincidental.
+// (from_classes landed in aeb 0.307 — the fix for ../aeb/asks/
+// package-jar-recompiles-instead-of-packaging-a-prior-javac-stage.md.)
 //
 // The engine .so comes from core/.build.ae's shared_lib artifact (dep'd), so the
 // jar always bundles the freshly-built engine. JDK 22+ (FFM/Panama).
@@ -22,12 +19,14 @@ import bldr
 import java
 import std.os
 import bldr (dep, dep_artifact, _get)
-import java (jar_name, native_resource, release)
+import java (jar_name, from_classes, native_resource, release)
 
 aeb(cap) {
     bldr.build() {
         dep("core/.build.ae")
-        lib = dep_artifact("core/.build.ae", "shared_lib")
+        dep("java/.build.ae")
+        lib     = dep_artifact("core/.build.ae", "shared_lib")
+        classes = dep_artifact("java/.build.ae", "jvm_classpath_deps_including_transitive")
         root = _get("root")
         dist = "${root}/target/dist"
         _m = os.system("mkdir -p \"${dist}\"")
@@ -35,6 +34,8 @@ aeb(cap) {
         java.package_jar() {
             jar_name("phonenumber-ae.jar")
             release("22")
+            // Package the compiled+tested classes, not a recompile.
+            from_classes(classes)
             // Bundle the engine .so as /native/libphonenumber_ae.so inside the jar.
             native_resource(lib, "native/libphonenumber_ae.so")
         }
@@ -45,7 +46,7 @@ aeb(cap) {
         built = "${root}/target/jar/java/phonenumber-ae.jar"
         rc = os.system("cp \"${built}\" \"${dist}/phonenumber-ae.jar\"")
         if rc != 0 { println("java dist: failed to copy jar into target/dist"); return 1 }
-        println("java dist: target/dist/phonenumber-ae.jar (fat jar, engine bundled at /native/)")
+        println("java dist: target/dist/phonenumber-ae.jar (fat jar, packages java/.build.ae classes + engine at /native/)")
         return 0
     }
 }
