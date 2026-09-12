@@ -11,6 +11,17 @@
 
 -include_lib("eunit/include/eunit.hrl").
 
+-export([main/1]).
+
+%% main/1 — entry point for the aeb erlang.eunit() builder, which runs
+%% `<module>:main([])`. Runs this module's eunit tests and halts 0 on ok, 1
+%% otherwise, so the node's exit code is the suite result.
+main(_Args) ->
+    case eunit:test(?MODULE, [verbose]) of
+        ok -> halt(0);
+        _  -> halt(1)
+    end.
+
 %%------------------------------------------------------------------
 %% The 47 checks (docs/conformance.md, v6)
 %%------------------------------------------------------------------

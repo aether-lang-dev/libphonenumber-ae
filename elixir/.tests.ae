@@ -1,58 +1,26 @@
-// Elixir binding tests (ExUnit).
-//
-// This node builds NO native code. It deps erlang/.build.ae — the canonical
-// BEAM NIF — and loads that already-compiled artifact. There is no C source
-// and no second .so in elixir/.
-//
-// THE MIX WRINKLE: erl, escript and gleam all honour $ERL_LIBS, so the Erlang
-// and Gleam bindings find the app for free. **Mix does not** — it builds its
-// code path from deps/ and _build/, and an OTP app Mix did not build is
-// invisible to it. So we pass the app directory in $LIBPHONENUMBER_AE_BEAM_APP
-// and test/test_helper.exs does Code.append_path on its ebin/.
+// Elixir binding tests. Canonical aeb grammar (no shell-out): elixir.test() runs
+// `mix test` against the shared BEAM NIF built by erlang/.build.ae; env() exports
+// ERL_LIBS + the nif_ebin + the engine .so path the NIF dlopen's. Mirrors the
+// selenium elixir binding.
 import bldr
-import std.os
+import elixir
+import bldr (dep, dep_artifact)
+import elixir (env)
 
 aeb(cap) {
     bldr.build() {
+        prereq("elixir")
         dep("core/.build.ae")
         dep("erlang/.build.ae")
-        lib = dep_artifact("core/.build.ae", "shared_lib")
-        root = _get("root")
-
-        // Skip honestly rather than fail the DAG when the toolchain is absent.
-        have = os.system("command -v elixir >/dev/null 2>&1 && command -v mix >/dev/null 2>&1")
-        if have != 0 {
-            println("elixir: SKIPPED — elixir not installed (no Elixir/Mix on PATH)")
-            return 0
+        lib  = dep_artifact("core/.build.ae", "shared_lib")
+        libs = dep_artifact("erlang/.build.ae", "erl_libs")
+        app  = dep_artifact("erlang/.build.ae", "erlang_app")
+        elixir.test() {
+            env("ERL_LIBS", libs)
+            // mix does not honour ERL_LIBS for its own path resolution, so the
+            // NIF app dir is passed explicitly (our loader reads it).
+            env("LIBPHONENUMBER_AE_BEAM_APP", app)
+            env("LIBPHONENUMBER_AE_LIB", lib)
         }
-
-        // Elixir needs a runtime too; a mix without a working erl cannot boot.
-        erl = os.system("command -v erl >/dev/null 2>&1")
-        if erl != 0 {
-            println("elixir: SKIPPED — erl not installed (Elixir needs Erlang/OTP)")
-            return 0
-        }
-
-        // erlang/.build.ae skips (rather than fails) when erl_nif.h is missing,
-        // so the app may legitimately not exist. Without the NIF there is
-        // nothing to test, and that is an environment gap, not a binding
-        // failure.
-        app = "${root}/erlang/_build/phonenumber_ae_nif"
-        built = os.system("test -f \"${app}/priv/phonenumber_ae_nif.so\"")
-        if built != 0 {
-            println("elixir: SKIPPED — the shared BEAM NIF is not built (see erlang/.build.ae)")
-            return 0
-        }
-
-        // MIX_ENV=test keeps the build out of the dev profile.
-        // LIBPHONENUMBER_AE_LIB points the NIF's loader at the engine artifact
-        // wherever aeb put it; priv/ holds a staged copy as the fallback.
-        rc = os.system("cd \"${root}/elixir\" && LIBPHONENUMBER_AE_BEAM_APP=\"${app}\" LIBPHONENUMBER_AE_LIB=\"${lib}\" MIX_ENV=test mix test --no-deps-check")
-        if rc != 0 {
-            println("elixir: conformance suite reported failures")
-            return 1
-        }
-        println("elixir: PASS — 47-check conformance (v7 ABI, incl. ShortNumberInfo, timezones, carrier, geocoder + matcher grouping leniency)")
-        return 0
     }
 }
