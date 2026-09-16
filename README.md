@@ -19,7 +19,25 @@ pn.format("US", "2015550123", pn.NATIONAL)    # "(201) 555-0123"
 pn.number_type("US", "2015550123")            # pn.TYPE_FIXED_LINE
 ```
 
-## Quick start
+## Quick start — use a binding (no Aether toolchain)
+
+A binding needs only the engine shared library. Download the prebuilt one for
+your platform from a [release](https://github.com/aether-lang-dev/libphonenumber-ae/releases)
+— **no clone, no aeb, no Aether**:
+
+```sh
+# fetches libphonenumber_ae-<tag>-<os>-<arch>.{so,dylib,dll} for this machine,
+# verifies its checksum, and prints the path
+curl -fsSL https://raw.githubusercontent.com/aether-lang-dev/libphonenumber-ae/main/get-engine.sh | sh
+```
+
+Then point your language's binding at that engine (via `LIBPHONENUMBER_AE_LIB`,
+the OS loader path, or bundled beside your app) and call it — see the
+[binding's own README](#bindings) for the install and usage in that language.
+Runtime-load bindings (Python/Ruby/JS/Java) can instead just install the
+published package with the engine already inside.
+
+## Build from source (contributors, or an unreleased platform)
 
 **1. Install the build tool** ([`aeb`](https://github.com/aether-lang-dev/aeb)),
 which also installs the Aether compiler it needs. One line, into `~/.local`, no
@@ -31,8 +49,8 @@ curl -fsSL https://raw.githubusercontent.com/aether-lang-dev/aeb/main/get.sh \
   | AE_PIN=0.677.0 AEB_REF=v0.312 sh
 ```
 
-**2. Build your language's binding.** Build the shared engine, then the one
-binding you want (each needs only that language's toolchain):
+**2. Build the engine, then your language's binding** (each needs only that
+language's toolchain):
 
 ```sh
 aeb core/.build.ae        # the engine -> libphonenumber_ae.so
@@ -41,13 +59,8 @@ aeb python/.dist.ae       # your binding's distributable -> target/dist/
 
 Swap `python` for `ruby`, `go`, `rust`, `java`, … (see the table). `.dist.ae`
 produces a self-contained package with the engine bundled inside; `.tests.ae`
-runs that binding's conformance suite instead.
-
-**3. Use it in your own project.** Take the artifact from `target/dist/` into
-your codebase and call it like any other library — see the binding's own README
-for the install and usage in that language. The engine travels inside the
-package (or as a sibling `.so`), so your project needs nothing from this repo at
-runtime.
+runs that binding's conformance suite instead. To cross-build and publish the
+engine for every platform, see [`release/`](release/).
 
 ## Bindings
 
