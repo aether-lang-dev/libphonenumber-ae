@@ -1,6 +1,11 @@
-# phonenumber_ae (Python)
+# phonenumber_ae — Python
 
-A thin Python binding over the shared, pure-Aether libphonenumber engine.
+A thin Python binding over the shared, pure-Aether libphonenumber engine. All the
+phone logic lives in the one engine (`core/phonenumber.ae`); this binding is just
+ctypes marshalling over `libphonenumber_ae.so`. See the
+[repo README](../README.md) for the whole picture.
+
+## Use it
 
 ```python
 import phonenumber_ae as pn
@@ -11,31 +16,32 @@ pn.format("US", "2015550123", pn.NATIONAL)    # "(201) 555-0123"
 pn.format("US", "2015550123", pn.E164)        # "+12015550123"
 pn.number_type("US", "2015550123")            # pn.TYPE_FIXED_LINE
 pn.country_code("JP")                         # "81"
+
+# side-libraries
+pn.carrier_name_for_number("GB", "7106000000")  # "O2"
+pn.geo_description_for_number("US", "6502530000")  # "Mountain View, CA"
 ```
 
-The binding carries **no** phone-number logic — validation, number typing and
-formatting all live in the one shared engine (`core/phonenumber.ae`), compiled
-from Google libphonenumber's own metadata. Every language binding in this repo
-is marshalling over the same `libphonenumber_ae.so`.
+## Install it in your project
 
-## Finding the engine
+Build the wheel (from the repo root), then install it — the engine `.so` is
+bundled inside, so nothing else is needed at runtime:
 
-`_native.load()` looks for the shared library in this order:
-
-1. an explicit path you pass to `load(path)`
-2. `$LIBPHONENUMBER_AE_LIB`
-3. `phonenumber_ae/native/` bundled next to the package (what a wheel ships)
-4. the OS loader's search path
-
-## Testing
-
-```
-LIBPHONENUMBER_AE_LIB=/path/to/libphonenumber_ae.so \
-  PYTHONPATH=. PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest test -q
+```sh
+aeb core/.build.ae && aeb python/.dist.ae   # -> target/dist/phonenumber_ae-*.whl
+pip install target/dist/phonenumber_ae-*.whl
 ```
 
-Or via aeb, which builds the engine and points the loader at it:
+The wheel is current-OS-only (it bundles this platform's `.so`). The loader finds
+the engine in this order: an explicit `pn._native.load(path)`,
+`$LIBPHONENUMBER_AE_LIB`, the `phonenumber_ae/native/` dir a wheel ships, then the
+OS loader's search path — so an installed wheel needs no configuration.
 
-```
-aeb python/.tests.ae
+## Develop / test
+
+From the repo, `aeb` builds the engine and runs the suite against the source
+tree:
+
+```sh
+aeb python/.tests.ae      # the 47-check conformance suite
 ```
