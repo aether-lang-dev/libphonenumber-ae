@@ -28,6 +28,9 @@ have curl || die "curl is required."
 
 # Normalized (os, arch) — the same vocabulary aeb's get.sh and release/build.sh
 # use: os in {linux,macos,windows,freebsd}, arch in {x86_64,arm64}.
+# (This uname block is hand-rolled because the toolchain has no user-facing
+# platform command yet — filed as ../aeb/asks/user-facing-platform-word-cli-...md.
+# When `ae platform` lands, replace this with: platform="$(ae platform)".)
 case "$(uname -s 2>/dev/null)" in
   Linux)                _os=linux ;;
   Darwin)               _os=macos ;;
