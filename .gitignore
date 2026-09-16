@@ -52,3 +52,8 @@ core/geocoder_blobs.ae
 # assembled embed variants (produced by core/gen/assemble_embed.sh)
 core/embed.ae
 core/embed_*.ae
+
+# per-binding test/build run artifacts
+**/erl_crash.dump
+**/.bundle/
+ruby/Gemfile.lock

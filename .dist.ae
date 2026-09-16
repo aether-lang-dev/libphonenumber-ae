@@ -18,6 +18,7 @@ aeb(cap) {
 
         // Every binding's distribution artifact, into target/dist/.
         dep("python/.dist.ae")     // wheel
+        dep("javascript/.dist.ae") // npm tarball (.tgz)
         dep("ruby/.dist.ae")       // gem
         dep("rust/.dist.ae")       // .crate
         dep("go/.dist.ae")         // module tarball (+ vendored .so)
