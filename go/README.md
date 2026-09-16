@@ -8,7 +8,7 @@ cgo marshalling over `libphonenumber_ae.so`. See the
 ## Use it
 
 ```go
-import pn "github.com/paul-hammant/libphonenumber-ae/go"
+import pn "github.com/aether-lang-dev/libphonenumber-ae/go"
 
 pn.IsValidNumber("US", "+1 201 555 0123")    // true
 pn.IsPossibleNumber("GB", "1212345678")      // true

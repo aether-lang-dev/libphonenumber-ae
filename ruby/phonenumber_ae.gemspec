@@ -13,7 +13,7 @@ Gem::Specification.new do |spec|
     its own — it only marshals values across the engine's C ABI, so every
     language binding in the monorepo behaves identically.
   DESC
-  spec.homepage = "https://github.com/paul-hammant/libphonenumber-ae"
+  spec.homepage = "https://github.com/aether-lang-dev/libphonenumber-ae"
   spec.license = "Apache-2.0"
   spec.required_ruby_version = ">= 3.0.0"
 

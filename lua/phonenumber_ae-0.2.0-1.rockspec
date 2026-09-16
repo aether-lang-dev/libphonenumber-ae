@@ -11,7 +11,7 @@ package = "phonenumber_ae"
 version = "0.2.0-1"
 
 source = {
-  url = "git+https://github.com/paul-hammant/libphonenumber-ae.git",
+  url = "git+https://github.com/aether-lang-dev/libphonenumber-ae.git",
   dir = "libphonenumber-ae/lua",
 }
 
@@ -25,7 +25,7 @@ description = {
     parity: parse + accessors, AsYouTypeFormatter, findNumbers, and the full
     stateless surface.
   ]],
-  homepage = "https://github.com/paul-hammant/libphonenumber-ae",
+  homepage = "https://github.com/aether-lang-dev/libphonenumber-ae",
   license = "MIT",
 }
 

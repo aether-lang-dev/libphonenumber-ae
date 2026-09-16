@@ -44,7 +44,7 @@
       in C#.
     </Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <RepositoryUrl>https://github.com/paul-hammant/libphonenumber-ae</RepositoryUrl>
+    <RepositoryUrl>https://github.com/aether-lang-dev/libphonenumber-ae</RepositoryUrl>
   </PropertyGroup>
 
 </Project>
