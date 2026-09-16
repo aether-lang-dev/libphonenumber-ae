@@ -7,6 +7,10 @@ cgo marshalling over `libphonenumber_ae.so`. See the
 
 ## Use it
 
+Once the module is in your tree (see *Install* — it is **not** `go get`-able,
+because cgo must link the Aether-built engine `.so`, which `go get` cannot
+produce):
+
 ```go
 import pn "github.com/aether-lang-dev/libphonenumber-ae/go"
 
