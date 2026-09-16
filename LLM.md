@@ -13,7 +13,9 @@ lives on branch **feat/aether-port** as a one-engine-many-thin-bindings monorepo
 (same shape as `../html-sanitizer` and `../servirtium-vcr`): one pure-Aether
 phone-number engine, compiled once to `libphonenumber_ae.so`, with ~20 thin FFI
 bindings over its flat C ABI. Built by **aeb**. The port's front-door doc is
-`README-aether.md` (Google's own `README.md` is left untouched).
+`README.md` (on the `reboot` branch, Google's tree is stripped and this IS the
+repo's README; on `feat/aether-port` it lived alongside Google's as
+`README-aether.md`).
 
 ## Why it exists
 
