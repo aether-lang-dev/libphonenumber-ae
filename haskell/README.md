@@ -47,6 +47,15 @@ The `.cabal` bakes `native` and `../core/native` in as `extra-lib-dirs` and
 `rpath`, so once the engine `.so` is on one of those paths the linked package
 finds it with no further configuration.
 
+You don't need aeb for the engine: download the prebuilt one for your platform
+from a [release](https://github.com/aether-lang-dev/libphonenumber-ae/releases)
+and place it on a lib path, e.g.
+
+```sh
+curl -fsSLO https://raw.githubusercontent.com/aether-lang-dev/libphonenumber-ae/main/get-engine.sh
+sh get-engine.sh latest native   # downloads the engine into ./native/
+```
+
 ## Develop / test
 
 From the repo, `aeb` builds the engine, stages it, and runs the suite against

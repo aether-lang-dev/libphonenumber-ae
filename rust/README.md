@@ -38,6 +38,14 @@ At run time the engine is resolved in this order: an explicit
 dir next to the crate, then the OS loader's search path — so set
 `LIBPHONENUMBER_AE_LIB` or drop the `.so` beside the binary.
 
+You don't need aeb for the engine: download the prebuilt one for your platform
+from a [release](https://github.com/aether-lang-dev/libphonenumber-ae/releases)
+and point at it:
+
+```sh
+export LIBPHONENUMBER_AE_LIB="$(curl -fsSL https://raw.githubusercontent.com/aether-lang-dev/libphonenumber-ae/main/get-engine.sh | sh)"
+```
+
 ## Develop / test
 
 From the repo, `aeb` builds the engine and runs the suite against the source
