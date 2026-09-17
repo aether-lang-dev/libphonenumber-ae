@@ -1,5 +1,5 @@
 // PHP binding tests (ext-ffi). The loader honors LIBPHONENUMBER_AE_LIB, which
-// we point at the shared engine artifact this node deps.
+// we point at the shared core artifact this node deps.
 //
 // The conformance suite is a plain assertion runner (php/tests/conformance.php)
 // rather than a PHPUnit suite, so it needs no `composer install` and runs

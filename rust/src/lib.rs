@@ -9,7 +9,7 @@
 //! assert_eq!(pn::format("US", "6502530000", pn::INTERNATIONAL), "+1 650-253-0000");
 //! ```
 //!
-//! This crate carries **no phone-number logic**. The engine — the metadata
+//! This crate carries **no phone-number logic**. The core — the metadata
 //! table, `isPossible`/`isValid`, number-type classification, the formatter,
 //! the AsYouType formatter, the matcher — is the pure-Aether
 //! `core/phonenumber.ae`, shared by every language binding in this monorepo and
@@ -19,8 +19,8 @@
 //!
 //! The ABI is stateless — there is no handle, only caller-owned strings — so
 //! the free functions [`country_code`], [`parse`], [`format`], etc. load a
-//! process-wide engine on first use and are the simplest way in. The
-//! [`PhoneNumbers`] type is the same surface over an engine you loaded from an
+//! process-wide core on first use and are the simplest way in. The
+//! [`PhoneNumbers`] type is the same surface over an core you loaded from an
 //! explicit path.
 
 use std::ffi::{c_char, c_int};
@@ -263,32 +263,32 @@ impl Cost {
     }
 }
 
-/// A loaded phonenumber engine.
+/// A loaded phonenumber core.
 ///
-/// The engine holds no mutable state, so a `PhoneNumbers` is just the resolved
+/// The core holds no mutable state, so a `PhoneNumbers` is just the resolved
 /// symbol table plus the `dlopen` handle that keeps it mapped. Use
 /// [`PhoneNumbers::new`] for the default resolution order, or
 /// [`PhoneNumbers::with_library`] to load a specific `.so`. Most callers can
 /// skip this type and use the crate-level free functions, which share one
-/// process-wide engine.
+/// process-wide core.
 pub struct PhoneNumbers {
     api: Api,
 }
 
 impl PhoneNumbers {
-    /// Load the engine (see [`native::Api::load`] for the resolution order).
+    /// Load the core (see [`native::Api::load`] for the resolution order).
     pub fn new() -> Result<PhoneNumbers, Error> {
         PhoneNumbers::with_library(None)
     }
 
-    /// As [`PhoneNumbers::new`], but loading the engine from an explicit path.
+    /// As [`PhoneNumbers::new`], but loading the core from an explicit path.
     pub fn with_library(path: Option<&Path>) -> Result<PhoneNumbers, Error> {
         Ok(PhoneNumbers {
             api: Api::load(path)?,
         })
     }
 
-    /// The ABI revision the loaded engine reports (5 for this crate).
+    /// The ABI revision the loaded core reports (5 for this crate).
     pub fn abi_version(&self) -> i32 {
         unsafe { (self.api.abi_version)() }
     }
@@ -624,7 +624,7 @@ impl PhoneNumbers {
 
     // ---- PhoneNumberToTimeZonesMapper (timezone lookup) ----
     //
-    // The engine parses the raw `(region, input)` to E.164 itself, then does a
+    // The core parses the raw `(region, input)` to E.164 itself, then does a
     // longest-prefix match over its digits. The unknown-zone sentinel is
     // `"Etc/Unknown"`.
 
@@ -660,7 +660,7 @@ impl PhoneNumbers {
     ///
     /// `lang` is an optional ISO language code (`"en"`, `"de"`, `"fr"`, …);
     /// pass `None` (or omit via `.into()`) for the default `"en"`, which is
-    /// always available and the fallback for any language the engine lacks.
+    /// always available and the fallback for any language the core lacks.
     pub fn carrier_name_for_number<'a>(
         &self,
         region: &str,
@@ -774,7 +774,7 @@ impl PhoneNumbers {
     }
 }
 
-// The engine has no global mutable state; loading it twice just maps it twice.
+// The core has no global mutable state; loading it twice just maps it twice.
 // A shared `PhoneNumbers` is safe to call from many threads.
 unsafe impl Send for PhoneNumbers {}
 unsafe impl Sync for PhoneNumbers {}
@@ -782,7 +782,7 @@ unsafe impl Sync for PhoneNumbers {}
 /// A parsed phone number.
 ///
 /// Wraps the caller-owned parsed-number string the ABI's `parse` returns and
-/// borrows the engine it came from; its fields are read on demand through the
+/// borrows the core it came from; its fields are read on demand through the
 /// `pn_*` accessors. Check [`ParsedNumber::error`] to detect a parse failure.
 pub struct ParsedNumber<'a> {
     api: &'a Api,
@@ -896,7 +896,7 @@ impl ParsedNumber<'_> {
 /// Formats a number in the style of the region as it is typed, digit by digit.
 ///
 /// The ABI threads the formatter's state as a caller-owned string; this type
-/// owns that string and borrows the engine. Feed characters with
+/// owns that string and borrows the core. Feed characters with
 /// [`AsYouTypeFormatter::input_digit`] and read the running result it returns
 /// (or [`AsYouTypeFormatter::result`]); [`AsYouTypeFormatter::clear`] resets it.
 pub struct AsYouTypeFormatter<'a> {
@@ -956,17 +956,17 @@ pub struct Match {
     pub raw: String,
 }
 
-// ---- the process-wide default engine, behind the free functions ----
+// ---- the process-wide default core, behind the free functions ----
 
 fn shared() -> &'static PhoneNumbers {
     static ENGINE: OnceLock<PhoneNumbers> = OnceLock::new();
     ENGINE.get_or_init(|| {
         PhoneNumbers::new()
-            .expect("could not load the phonenumber engine (set LIBPHONENUMBER_AE_LIB)")
+            .expect("could not load the phonenumber core (set LIBPHONENUMBER_AE_LIB)")
     })
 }
 
-/// The ABI revision the loaded engine reports (5 for this crate).
+/// The ABI revision the loaded core reports (5 for this crate).
 pub fn abi_version() -> i32 {
     shared().abi_version()
 }
@@ -1143,13 +1143,13 @@ pub fn is_alpha_number(s: &str) -> bool {
     shared().is_alpha_number(s)
 }
 
-/// A fresh [`AsYouTypeFormatter`] for `region`, over the shared engine.
+/// A fresh [`AsYouTypeFormatter`] for `region`, over the shared core.
 pub fn as_you_type_formatter(region: &str) -> AsYouTypeFormatter<'static> {
     shared().as_you_type_formatter(region)
 }
 
 /// Find phone numbers in free text at the given [`Leniency`], over the shared
-/// engine.
+/// core.
 pub fn find_numbers(text: &str, region: &str, leniency: i32) -> Vec<Match> {
     shared().find_numbers(text, region, leniency)
 }

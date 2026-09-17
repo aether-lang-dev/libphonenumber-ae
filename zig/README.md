@@ -1,7 +1,7 @@
 # phonenumber_ae — Zig
 
-A thin Zig binding over the shared, pure-Aether libphonenumber engine. All the
-phone logic lives in the one engine (`core/phonenumber.ae`); this binding is just
+A thin Zig binding over the shared, pure-Aether libphonenumber core. All the
+phone logic lives in the one core (`core/phonenumber.ae`); this binding is just
 FFI marshalling over `libphonenumber_ae.so` (ABI v7, 66 exports). See the
 [repo README](../README.md) for the whole picture. Requires Zig 0.16.0 or newer.
 
@@ -31,7 +31,7 @@ defer allocator.free(geo);
 
 ## Install it in your project
 
-Build the tarball (from the repo root), then unpack it — the engine `.so` is
+Build the tarball (from the repo root), then unpack it — the core `.so` is
 vendored at `native/` inside, so nothing else is needed at build or run time:
 
 ```sh
@@ -44,7 +44,7 @@ Reference it as a dependency in your `build.zig.zon`, then in `build.zig`:
 ```zig
 const dep = b.dependency("phonenumber_ae", .{});
 exe.root_module.addImport("phonenumber_ae", dep.module("phonenumber_ae"));
-// A Zig module carries source, not link flags — link the vendored engine:
+// A Zig module carries source, not link flags — link the vendored core:
 exe.linkLibC();
 exe.addLibraryPath(.{ .cwd_relative = "native" });
 exe.addRPath(.{ .cwd_relative = "native" });
@@ -56,7 +56,7 @@ tarball is current-OS-only (it vendors this platform's `.so`).
 
 ## Develop / test
 
-From the repo, `aeb` builds the engine, stages it, and runs the suite:
+From the repo, `aeb` builds the core, stages it, and runs the suite:
 
 ```sh
 aeb zig/.tests.ae      # the 47-check conformance suite

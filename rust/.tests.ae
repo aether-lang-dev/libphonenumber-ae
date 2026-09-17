@@ -1,6 +1,6 @@
 // Rust binding tests (libloading). Canonical aeb grammar (no shell-out):
 //   prereq                 — skip cleanly when rust is absent
-//   env                    — engine .so path the libloading loader reads
+//   env                    — core .so path the libloading loader reads
 //   rust.cargo_test_existing { extra("--offline") }
 //                          — `cargo test` over the vendored Cargo.lock;
 //                            --offline keeps it network-free. Mirrors the

@@ -9,9 +9,9 @@ and `../html-sanitizer/LLM.md` (the sibling this repo's layout copies).
 
 This repository is a fork of Google's **libphonenumber**. Its `master` branch is
 upstream Google (Java/C++/JS + the metadata under `resources/`). The Aether port
-lives on branch **feat/aether-port** as a one-engine-many-thin-bindings monorepo
+lives on branch **feat/aether-port** as a one-core-many-thin-bindings monorepo
 (same shape as `../html-sanitizer` and `../servirtium-vcr`): one pure-Aether
-phone-number engine, compiled once to `libphonenumber_ae.so`, with ~20 thin FFI
+phone-number core, compiled once to `libphonenumber_ae.so`, with ~20 thin FFI
 bindings over its flat C ABI. Built by **aeb**. The port's front-door doc is
 `README.md` (on the `reboot` branch, Google's tree is stripped and this IS the
 repo's README; on `feat/aether-port` it lived alongside Google's as
@@ -22,12 +22,12 @@ repo's README; on `feat/aether-port` it lived alongside Google's as
 Paul and Nic wanted a set of language bindings whose common factor is one Aether
 `.so/.dylib/.dll`, faithfully using Google's own metadata
 (`resources/PhoneNumberMetadata.xml`) — NOT Google's per-language reimplemented
-engines. Seeded from the earlier phone work in
+cores. Seeded from the earlier phone work in
 `../datastar-aether/harness/components/phone/` (which did only isPossibleNumber
 for ~10 curated countries). End consumer: the datastar-aether credit-card
 checkout demo.
 
-## The pipeline (offline generate → engine → ABI → bindings)
+## The pipeline (offline generate → core → ABI → bindings)
 
 ```
 resources/PhoneNumberMetadata.xml   Google's metadata (already in-tree; upstream)
@@ -37,7 +37,7 @@ resources/PhoneNumberMetadata.xml   Google's metadata (already in-tree; upstream
 core/metadata.ae     GENERATED, 254 territories. Rows are US-separated (0x1F)
                      fields; the formats field packs all display formats
                      0x1E-separated. Per-type fields are national-number regexes.
-core/phonenumber.ae  the engine: is_possible_number, is_valid_number (per-type
+core/phonenumber.ae  the core: is_possible_number, is_valid_number (per-type
                      regex, std.regex/PCRE2), number_type, format_*.
 core/embed.ae        the flat aether_pn_embed_* C ABI (scalar-only).
 core/_embed_support.c  ONE C helper: pn_raw_dup/pn_raw_free (caller-owned
@@ -87,15 +87,15 @@ One row per territory, fields separated by **0x1F**, in this order:
 | mobile | tollFree | premiumRate | sharedCost | voip | personalNumber | pager |
 uan | voicemail`. `fmtPatterns`/`fmtTemplates` each hold ALL formats, **0x1E**-
 separated and positionally aligned. Per-type fields are national-number regexes
-(the engine anchors them `^(?:...)$` for a full match) or "" if the territory
+(the core anchors them `^(?:...)$` for a full match) or "" if the territory
 omits that type. Field indices live as `F_*` consts in `core/phonenumber.ae`.
 
 ## Build / test
 
 ```
-./bootstrap.sh              install ae+aeb, build engine + every present binding
-aeb core/.build.ae          just the engine -> target/build/core/lib/libphonenumber_ae.so
-aeb core_tests/.tests.ae    engine behaviour (pure Aether)
+./bootstrap.sh              install ae+aeb, build core + every present binding
+aeb core/.build.ae          just the core -> target/build/core/lib/libphonenumber_ae.so
+aeb core_tests/.tests.ae    core behaviour (pure Aether)
 aeb core_tests/.abi.ae      C ABI over dlopen (the gate the bindings trust)
 aeb <lang>/.tests.ae        one binding
 aeb .presubmit.ae           everything
@@ -114,6 +114,6 @@ data or leadingDigits routing is the natural next step and needs no new input.
 ## Upstream siblings
 
 `../aether` (the language), `../aeb` (the build runner), `../html-sanitizer` and
-`../servirtium-vcr` (the one-engine-many-bindings layout this copies),
+`../servirtium-vcr` (the one-core-many-bindings layout this copies),
 `../datastar-aether` (the seed and the eventual consumer — its
 `harness/components/phone/` was the ~10-country starting point).

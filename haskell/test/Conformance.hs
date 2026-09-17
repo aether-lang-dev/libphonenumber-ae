@@ -6,7 +6,7 @@
 --
 -- Proves the Haskell binding marshals every value shape across the FFI. It is
 -- __not__ a phone-number test suite — the behavioural cases live in the
--- engine's own tests and run once, in Aether.
+-- core's own tests and run once, in Aether.
 --
 -- == Why a plain runner and not hspec\/tasty
 --
@@ -94,7 +94,7 @@ main = do
   hSetEncoding stdout utf8
   putStrLn "=== phonenumber_ae Haskell binding conformance (v7) ==="
   v <- abiVersion
-  putStrLn ("engine: ABI v" ++ show v)
+  putStrLn ("core: ABI v" ++ show v)
 
   fs <- newIORef []
   runChecks fs

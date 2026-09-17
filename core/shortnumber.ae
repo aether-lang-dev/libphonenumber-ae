@@ -88,11 +88,11 @@ fn digits(s: string) -> string {
     return out
 }
 
-// full regex match, anchored (shared shape with the core engine).
+// full regex match, anchored (shared shape with the core).
 fn full_match(pat: string, s: string) -> int {
     if string.length(pat) == 0 { return 0 }
     // std.regex compiled inline; import kept local to avoid a hard dep on the
-    // core engine module.
+    // core module.
     return regex_full(pat, s)
 }
 

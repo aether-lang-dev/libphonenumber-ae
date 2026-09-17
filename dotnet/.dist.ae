@@ -1,5 +1,5 @@
 // The .NET binding's DISTRIBUTION artifact: a NuGet package (.nupkg) produced
-// by `dotnet pack`, bundling the engine .so as a runtime/native asset.
+// by `dotnet pack`, bundling the core .so as a runtime/native asset.
 //
 // UNLIKE the tar-of-sources bindings, the idiomatic .NET artifact is a real
 // .nupkg the SDK builds — which means it needs the .NET SDK. There is no honest
@@ -37,17 +37,17 @@ aeb(cap) {
         dist = "${root}/target/dist"
         _m = os.system("mkdir -p \"${dist}\"")
 
-        // Stage the engine as a native asset next to the csproj so a pack that
+        // Stage the core as a native asset next to the csproj so a pack that
         // bundles it under runtimes/<rid>/native/ finds it, then pack straight
         // into target/dist/.
         stage = "${root}/dotnet/src/native"
         _s = os.system("mkdir -p \"${stage}\"")
         cpl = os.system("cp \"${lib}\" \"${stage}/libphonenumber_ae.so\"")
-        if cpl != 0 { println("dotnet dist: failed to stage the engine .so"); return 1 }
+        if cpl != 0 { println("dotnet dist: failed to stage the core .so"); return 1 }
 
         rc = os.system("cd \"${root}/dotnet\" && DOTNET_NOLOGO=1 DOTNET_CLI_TELEMETRY_OPTOUT=1 dotnet pack src/PhoneNumber.csproj -c Release --nologo -o \"${dist}\"")
         if rc != 0 { println("dotnet dist: dotnet pack failed"); return 1 }
-        println("dotnet dist: target/dist/*.nupkg (NuGet package, engine bundled as native asset)")
+        println("dotnet dist: target/dist/*.nupkg (NuGet package, core bundled as native asset)")
         return 0
     }
 }

@@ -30,7 +30,7 @@
  * ## Dirty schedulers
  *
  * Every call here is a small table lookup / pattern match / short scan in the
- * engine, well under the ~1ms a normal NIF may occupy a scheduler. None is
+ * core, well under the ~1ms a normal NIF may occupy a scheduler. None is
  * flagged dirty.
  */
 #include <erl_nif.h>
@@ -164,7 +164,7 @@ static char *term_to_cstr(ErlNifEnv *env, ERL_NIF_TERM term)
 }
 
 /* Turn an ABI-returned, caller-owned char* into a BEAM binary and free it
- * through the ABI. EVERY string result from the engine goes through here —
+ * through the ABI. EVERY string result from the core goes through here —
  * that is what makes the free impossible to forget. */
 static ERL_NIF_TERM take_binary(ErlNifEnv *env, char *s)
 {
@@ -618,7 +618,7 @@ static ERL_NIF_TERM nif_regions(ErlNifEnv *env, int argc, const ERL_NIF_TERM arg
 
     n = pn_region_count();
     list = enif_make_list(env, 0);
-    /* Build back-to-front so the result comes out in the engine's own order. */
+    /* Build back-to-front so the result comes out in the core's own order. */
     for (i = n - 1; i >= 0; i--) {
         ERL_NIF_TERM item = take_binary(env, pn_region_at(i));
         list = enif_make_list_cell(env, item, list);
@@ -634,15 +634,15 @@ static ERL_NIF_TERM nif_abi_version(ErlNifEnv *env, int argc, const ERL_NIF_TERM
     return enif_make_int(env, pn_abi_version());
 }
 
-/* ---- engine discovery + symbol resolution ----
+/* ---- core discovery + symbol resolution ----
  *
  * Order, matching every other binding in the monorepo:
  *   1. $LIBPHONENUMBER_AE_LIB
  *   2. priv/ next to this NIF (the bundled copy .build.ae stages)
  *   3. the OS loader's own search path
  *
- * We dlopen rather than link so the NIF .so has no DT_NEEDED on the engine:
- * the BEAM can load this module even when the engine is missing, and report a
+ * We dlopen rather than link so the NIF .so has no DT_NEEDED on the core:
+ * the BEAM can load this module even when the core is missing, and report a
  * clean load error instead of dying in the dynamic linker.
  */
 

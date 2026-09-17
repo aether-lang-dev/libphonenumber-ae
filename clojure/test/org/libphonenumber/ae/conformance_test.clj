@@ -1,14 +1,14 @@
 (ns org.libphonenumber.ae.conformance-test
   "The 47-check binding conformance suite (docs/conformance.md, v7), in Clojure.
 
-  Proves the **Clojure layer** reaches the same engine behaviour the Java and
+  Proves the **Clojure layer** reaches the same core behaviour the Java and
   Python suites see. Since that layer sits on the Java binding rather than on
   its own FFI, what this really pins down is that the Clojure wrapping — the
   keyword <-> enum translation, the vector coercion of `regions`/`find-numbers`,
   the plain-map `parse` — marshals every value shape correctly.
 
   It is NOT a phone-number test suite — the behavioural cases live in the
-  engine's own tests and run once, in Aether.
+  core's own tests and run once, in Aether.
 
   `clojure.test` rather than an external framework, so the run needs nothing but
   the Clojure jar itself: it works offline and cannot fail resolving a

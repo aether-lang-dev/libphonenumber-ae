@@ -1,6 +1,6 @@
-// Lua binding tests (a Lua 5.4 C extension that dlopen's the engine). Canonical
+// Lua binding tests (a Lua 5.4 C extension that dlopen's the core). Canonical
 // aeb grammar (no shell-out): lua.conformance() compiles the C extension, builds
-// the host, and runs the assertion suite; env() exports the engine .so path the
+// the host, and runs the assertion suite; env() exports the core .so path the
 // extension dlopen's (LIBPHONENUMBER_AE_LIB). Mirrors the selenium lua binding.
 import bldr
 import lua

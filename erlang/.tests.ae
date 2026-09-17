@@ -1,7 +1,7 @@
 // Erlang binding tests (the canonical BEAM NIF), as EUnit. Canonical aeb grammar
 // (no shell-out): erlang.eunit() compiles + runs the eunit suite against the NIF
 // app built by erlang/.build.ae (its erl_libs / nif_ebin artifacts), with env()
-// exporting ERL_LIBS + the engine .so path the NIF dlopen's. Mirrors the
+// exporting ERL_LIBS + the core .so path the NIF dlopen's. Mirrors the
 // selenium erlang binding.
 import bldr
 import erlang

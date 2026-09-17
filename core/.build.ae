@@ -1,9 +1,9 @@
-// The shared phonenumber engine, built ONCE for the whole monorepo.
+// The shared phonenumber core, built ONCE for the whole monorepo.
 //
 // Output: target/build/core/lib/libphonenumber_ae.so — every binding's
 // .tests.ae deps this node and loads/links that single artifact.
 //
-// The engine's metadata tables (core/*metadata*.ae, core/*_blobs.ae) and the
+// The core's metadata tables (core/*metadata*.ae, core/*_blobs.ae) and the
 // assembled ABI (core/embed.ae) are BUILD ARTIFACTS, not source — generated
 // from the pristine in-tree resources/ by core/gen/generate_metadata.sh and
 // assembled by core/gen/assemble_embed.sh. This node runs both (inline, via

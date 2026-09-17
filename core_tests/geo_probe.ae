@@ -1,4 +1,4 @@
-// core_tests/geo_probe — PhoneNumberOfflineGeocoder engine gate (pure Aether).
+// core_tests/geo_probe — PhoneNumberOfflineGeocoder core gate (pure Aether).
 //
 // Longest-prefix geographic-description lookup over the E.164 digits (English).
 // Run: ae run core_tests/geo_probe.ae

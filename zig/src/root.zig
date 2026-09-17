@@ -1,4 +1,4 @@
-//! phonenumber_ae — the Zig binding over the monorepo's one shared native engine.
+//! phonenumber_ae — the Zig binding over the monorepo's one shared native core.
 //!
 //! Validate, parse and format international phone numbers.
 //!
@@ -7,7 +7,7 @@
 //! AsYouTypeFormatter and the matcher all live in `core/phonenumber.ae` (pure
 //! Aether), exposed over the flat C ABI declared in `core/embed.ae`. This
 //! module marshals values across that boundary and nothing else. If a behaviour
-//! looks wrong, the bug is in the engine or in this marshalling — it is never a
+//! looks wrong, the bug is in the core or in this marshalling — it is never a
 //! policy decision made here.
 //!
 //! ## ABI v7
@@ -35,7 +35,7 @@
 //! ## Which family of binding is this?
 //!
 //! Like Go's cgo binding (and unlike Python/ctypes or Rust/libloading), this
-//! one **links** the engine rather than `dlopen`ing it: the `extern "c"`
+//! one **links** the core rather than `dlopen`ing it: the `extern "c"`
 //! declarations below resolve at link time against `-lphonenumber_ae`. That
 //! means the `.so` must exist when you *build*, not only when you run.
 //! `build.zig` handles the `-L` and the `rpath`; see the README.
@@ -48,7 +48,7 @@
 //! ## The one rule that matters
 //!
 //! **Every `[*c]u8` this ABI returns is CALLER-OWNED.** It came from a plain
-//! `malloc` inside the engine, and must go back through
+//! `malloc` inside the core, and must go back through
 //! `aether_pn_embed_free_string`. Forgetting this is the single most common
 //! bug in a binding, so this file routes *every* returned string through
 //! exactly one helper, `takeString`, which copies into a caller-supplied
@@ -184,7 +184,7 @@ pub const Format = enum(c_int) {
 };
 
 /// The kind of number `numberType` reports. Non-exhaustive: the ABI is
-/// append-only, so a future engine may return a code this build has no name
+/// append-only, so a future core may return a code this build has no name
 /// for, and that must not be illegal-value UB in a Zig enum. `unknown` is the
 /// ABI's `-1`.
 pub const NumberType = enum(c_int) {
@@ -308,8 +308,8 @@ pub const Error = error{
     OutOfMemory,
 };
 
-/// The ABI revision this engine implements. Check it to fail fast against an
-/// engine older than the features you expect — v7 is what this binding needs
+/// The ABI revision this core implements. Check it to fail fast against an
+/// core older than the features you expect — v7 is what this binding needs
 /// (the carrier/geocoder calls take a per-call `lang` argument).
 pub fn abiVersion() i32 {
     return @intCast(c.aether_pn_embed_abi_version());
@@ -443,7 +443,7 @@ pub fn regionCount() usize {
     return if (n < 0) 0 else @intCast(n);
 }
 
-/// The region id at `index` in the engine's own order; "" when out of range.
+/// The region id at `index` in the core's own order; "" when out of range.
 /// Caller frees.
 pub fn regionAt(allocator: std.mem.Allocator, index: usize) Error![]u8 {
     return takeString(allocator, c.aether_pn_embed_region_at(@intCast(index)));
@@ -969,7 +969,7 @@ pub fn shortExampleNumber(allocator: std.mem.Allocator, region: []const u8) Erro
 // PhoneNumberToTimeZonesMapper (timezone lookup).
 //
 // Longest-prefix match over the number's E.164 digits. Pass a raw (region,
-// input) like everywhere else; the engine parses to E.164 itself. The
+// input) like everywhere else; the core parses to E.164 itself. The
 // unknown-zone sentinel is "Etc/Unknown". Pure marshalling, like the rest.
 // =========================================================================
 
@@ -1028,7 +1028,7 @@ pub fn freeTimeZones(allocator: std.mem.Allocator, list: [][]u8) void {
 //
 // Longest-prefix match over the E.164 digits. `lang` is an ISO code ("en",
 // "de", …); "en" is always available and is the fallback for any language not
-// compiled into the engine. "" when no carrier is known for the number. Caller
+// compiled into the core. "" when no carrier is known for the number. Caller
 // frees each returned slice.
 //
 // Zig has no default arguments, so the `lang`-taking form is a `*InLang`

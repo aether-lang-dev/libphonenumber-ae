@@ -1,7 +1,7 @@
 <?php
 
 /**
- * A short tour of the PHP binding. Run it with the engine built:
+ * A short tour of the PHP binding. Run it with the core built:
  *
  *   aeb core/.build.ae
  *   cd php && LIBPHONENUMBER_AE_LIB=../target/build/core/lib/libphonenumber_ae.so \
@@ -25,7 +25,7 @@ use PhoneNumberAe\AsYouTypeFormatter;
 use PhoneNumberAe\PhoneNumber;
 
 printf(
-    "engine: %s (ABI v%d)\n",
+    "core: %s (ABI v%d)\n",
     PhoneNumber::nativeLibraryPath() ?? '(unknown)',
     PhoneNumber::abiVersion()
 );

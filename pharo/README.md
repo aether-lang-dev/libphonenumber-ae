@@ -1,14 +1,14 @@
 # phonenumber_ae — Pharo
 
-A thin Pharo binding over the shared, pure-Aether libphonenumber engine. All the
-phone logic lives in the one engine (`core/phonenumber.ae`); this binding is just
+A thin Pharo binding over the shared, pure-Aether libphonenumber core. All the
+phone logic lives in the one core (`core/phonenumber.ae`); this binding is just
 UnifiedFFI marshalling over `libphonenumber_ae.so`. Pharo is not a JVM, so it binds
-the flat C ABI directly — no Java classpath, only the engine `.so`. See the
+the flat C ABI directly — no Java classpath, only the core `.so`. See the
 [repo README](../README.md) for the whole picture.
 
 ## Use it
 
-Every call is class-side — the engine is stateless, so there is no handle to open
+Every call is class-side — the core is stateless, so there is no handle to open
 or close:
 
 ```smalltalk
@@ -43,7 +43,7 @@ Metacello new
     load.
 ```
 
-The engine `.so` is vendored under the package's `native/` (current-OS-only). Point
+The core `.so` is vendored under the package's `native/` (current-OS-only). Point
 the binding at it before the first FFI call — set `$LIBPHONENUMBER_AE_LIB`, or
 `PhonenumberAeLibrary explicitPath: '/path/to/libphonenumber_ae.so'`; the loader
 also checks `native/` beside the image, then the OS loader's search path.

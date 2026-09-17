@@ -1,4 +1,4 @@
-"""Idiomatic Python surface over the phonenumber engine (ABI v2).
+"""Idiomatic Python surface over the phonenumber core (ABI v2).
 
 Carries no phone-number logic — every function marshals to an
 `aether_pn_embed_*` call in `_native.py`.

@@ -1,7 +1,7 @@
 // The Kotlin layer's DISTRIBUTION artifact: a jar of THIS binding's own classes.
 //
 // Unlike java/.jar.ae, the JVM-family layers (kotlin/ groovy/ clojure/) do NOT
-// re-bundle the engine .so — java/.jar.ae already ships the self-contained fat
+// re-bundle the core .so — java/.jar.ae already ships the self-contained fat
 // jar, and these layers reuse it. So the honest hand-to-someone artifact here is
 // just the Kotlin binding's own compiled classes, packaged as a jar under
 // target/dist/. A consumer puts this jar plus the java fat jar (and the Kotlin

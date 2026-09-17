@@ -1,7 +1,7 @@
 // Kotlin binding tests. Canonical aeb grammar (no shell-out): kotlinc compiles
 // the maven-layout sources against java/.build.ae's classes (on the classpath via
 // the dep), and kotlin_test runs the ConformanceTest main. env() exports the
-// engine .so path; skip_below_jdk keeps it off a pre-FFM runtime. Needs a real
+// core .so path; skip_below_jdk keeps it off a pre-FFM runtime. Needs a real
 // kotlinc >= 2.x (Debian's 1.3 can't emit/read FFM bytecode) — provide it via
 // KOTLIN_HOME. Mirrors the selenium kotlin binding.
 import bldr

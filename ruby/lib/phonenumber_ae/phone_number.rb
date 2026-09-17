@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Idiomatic Ruby surface over the phonenumber engine (ABI v7).
+# Idiomatic Ruby surface over the phonenumber core (ABI v7).
 #
 # Carries no phone-number logic — see the monorepo's one rule in LLM.md. Every
 # method here marshals to an `aether_pn_embed_*` call in `native.rb`.
@@ -63,7 +63,7 @@ module PhoneNumberAe
 
   module_function
 
-  # The engine, loaded (and cached) on first use. Pass native_lib: to override.
+  # The core, loaded (and cached) on first use. Pass native_lib: to override.
   def _lib(native_lib = nil)
     Native.load(native_lib)
   end
@@ -315,14 +315,14 @@ module PhoneNumberAe
     _lib.call("aether_pn_embed_is_alpha_number", _enc(str)) != 0
   end
 
-  # The ABI revision the loaded engine reports.
+  # The ABI revision the loaded core reports.
   def abi_version
     _lib.call("aether_pn_embed_abi_version")
   end
 
   # ---- AsYouTypeFormatter ----
 
-  # Formats a number as it is typed, digit by digit. The engine state is a
+  # Formats a number as it is typed, digit by digit. The core state is a
   # caller-owned string threaded through each call; every input frees the old
   # state and adopts the new one.
   class AsYouTypeFormatter
@@ -443,7 +443,7 @@ module PhoneNumberAe
 
   # ---- PhoneNumberToTimeZonesMapper (timezone lookup) ----
 
-  # Maps a number to the IANA time-zone ids its area covers. The engine parses
+  # Maps a number to the IANA time-zone ids its area covers. The core parses
   # the raw (region, input) to E.164 itself; the unknown-zone sentinel is
   # "Etc/Unknown".
   module TimeZones
@@ -479,7 +479,7 @@ module PhoneNumberAe
   # ---- PhoneNumberToCarrierMapper (localized carrier names) ----
 
   # Maps a number to the name of the carrier that originally received its
-  # number range, localized by +lang+ (defaults to "en"). The engine parses the
+  # number range, localized by +lang+ (defaults to "en"). The core parses the
   # raw (region, input) to E.164 itself.
   module Carrier
     module_function
@@ -506,7 +506,7 @@ module PhoneNumberAe
   # ---- PhoneNumberOfflineGeocoder (localized geographic descriptions) ----
 
   # Maps a number to a geographic description of the area it belongs to,
-  # localized by +lang+ (defaults to "en"). The engine parses the raw
+  # localized by +lang+ (defaults to "en"). The core parses the raw
   # (region, input) to E.164 itself.
   module Geocoder
     module_function

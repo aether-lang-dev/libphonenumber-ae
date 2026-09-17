@@ -1,4 +1,4 @@
-// A short tour of the .NET binding (ABI v2). Run it with the engine built:
+// A short tour of the .NET binding (ABI v2). Run it with the core built:
 //
 //   aeb core/.build.ae
 //   cd dotnet && LIBPHONENUMBER_AE_LIB=../target/build/core/lib/libphonenumber_ae.so \
@@ -8,7 +8,7 @@ using System;
 
 using PhoneNumbers;
 
-Console.WriteLine($"engine: {PhoneNumber.NativeLibraryPath} (ABI v{PhoneNumber.AbiVersion})");
+Console.WriteLine($"core: {PhoneNumber.NativeLibraryPath} (ABI v{PhoneNumber.AbiVersion})");
 
 Console.WriteLine("country code US: " + PhoneNumber.CountryCode("US"));            // 1
 Console.WriteLine("is valid:        " + PhoneNumber.IsValidNumber("US", "+1 201 555 0123")); // True

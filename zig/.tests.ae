@@ -1,5 +1,5 @@
 // Zig binding tests. Canonical aeb grammar (no shell-out): zig.test() runs the
-// `zig test` blocks (src/conformance.zig via src/root.zig). Zig LINKS the engine
+// `zig test` blocks (src/conformance.zig via src/root.zig). Zig LINKS the core
 // (build.zig turns the dep into a -L search path + rpath), and the SDK walks
 // deps for the shared_library_deps artifact so the link resolves. Mirrors the
 // selenium zig binding.

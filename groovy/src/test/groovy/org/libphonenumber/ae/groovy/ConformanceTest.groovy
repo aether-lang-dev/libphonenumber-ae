@@ -43,13 +43,13 @@ import static org.libphonenumber.ae.groovy.PhoneNumbers.unknownTimeZone
 /**
  * The 47-check binding conformance suite (docs/conformance.md, v7), in Groovy.
  *
- * Proves the <b>Groovy layer</b> reaches the same engine behaviour the Java and
+ * Proves the <b>Groovy layer</b> reaches the same core behaviour the Java and
  * Python suites see. Since that layer sits on the Java binding rather than on
  * its own FFI, what this really pins down is that the Groovy facade marshals
  * every value shape correctly.
  *
  * It is NOT a phone-number test suite — the behavioural cases live in the
- * engine's own tests and run once, in Aether.
+ * core's own tests and run once, in Aether.
  *
  * A plain main method, not Spock/JUnit, for the same reason the Java suite is:
  * the run then needs nothing but a JDK and the Groovy jar, so it works offline

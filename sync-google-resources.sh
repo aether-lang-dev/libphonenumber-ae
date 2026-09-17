@@ -2,11 +2,11 @@
 # sync-google-resources.sh — pull Google's phone-number metadata into resources/.
 #
 # This repo is the Aether port, not a fork of Google's tree: the ONLY thing we
-# take from upstream libphonenumber is the metadata the engine compiles against.
+# take from upstream libphonenumber is the metadata the core compiles against.
 # This script copies exactly those paths from the Google mirror branch into
 # resources/ — a plain content checkout, never a git merge, so there is no
 # rename heuristic and no conflict resolution. It then records which upstream
-# commit the data came from and regenerates the engine so you can prove it green.
+# commit the data came from and regenerates the core so you can prove it green.
 #
 # The mirror is a branch that tracks Google verbatim (this repo's origin/master
 # is such a mirror). Override with MIRROR=<ref>, e.g. MIRROR=upstream/master
@@ -80,9 +80,9 @@ if [ "${NO_BUILD:-0}" = "1" ]; then
   exit 0
 fi
 
-# Regenerate the engine tables from the fresh resources and prove green.
+# Regenerate the core tables from the fresh resources and prove green.
 command -v aeb >/dev/null 2>&1 || { say "aeb not on PATH — skipping rebuild"; exit 0; }
-say "regenerating engine (aeb core/.build.ae)"
+say "regenerating core (aeb core/.build.ae)"
 rm -rf target
 aeb core/.build.ae
 say "running presubmit"

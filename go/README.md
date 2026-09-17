@@ -1,14 +1,14 @@
 # phonenumber — Go
 
-A thin Go binding over the shared, pure-Aether libphonenumber engine. All the
-phone logic lives in the one engine (`core/phonenumber.ae`); this binding is just
+A thin Go binding over the shared, pure-Aether libphonenumber core. All the
+phone logic lives in the one core (`core/phonenumber.ae`); this binding is just
 cgo marshalling over `libphonenumber_ae.so`. See the
 [repo README](../README.md) for the whole picture.
 
 ## Use it
 
 Once the module is in your tree (see *Install* — it is **not** `go get`-able,
-because cgo must link the Aether-built engine `.so`, which `go get` cannot
+because cgo must link the Aether-built core `.so`, which `go get` cannot
 produce):
 
 ```go
@@ -28,8 +28,8 @@ pn.GeoDescriptionForNumber("US", "6502530000")    // "Mountain View, CA"
 
 ## Install it in your project
 
-cgo **links** the engine, so it must be present at build time. Build the module
-tarball (from the repo root) — the engine `.so` is vendored inside at `native/`,
+cgo **links** the core, so it must be present at build time. Build the module
+tarball (from the repo root) — the core `.so` is vendored inside at `native/`,
 the path the `#cgo LDFLAGS -L/-rpath` already reference:
 
 ```sh
@@ -38,12 +38,12 @@ tar xzf target/dist/phonenumber-ae-go.tar.gz   # unpack into your module tree, t
 ```
 
 The tarball is current-OS-only (it vendors this platform's `.so`); with the
-bundled `native/libphonenumber_ae.so`, the baked-in rpath resolves the engine at
+bundled `native/libphonenumber_ae.so`, the baked-in rpath resolves the core at
 run time without the monorepo layout around it.
 
 ## Develop / test
 
-From the repo, `aeb` builds the engine, stages it into `go/native`, and runs
+From the repo, `aeb` builds the core, stages it into `go/native`, and runs
 `go test`:
 
 ```sh

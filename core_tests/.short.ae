@@ -1,4 +1,4 @@
-// ShortNumberInfo engine gate.
+// ShortNumberInfo core gate.
 import bldr
 import bldr (dep)
 import std.os

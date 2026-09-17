@@ -1,13 +1,13 @@
 "
-I am the FFI library handle for the shared libphonenumber engine.
+I am the FFI library handle for the shared libphonenumber core.
 
 I am the ONLY class in this package that knows where the shared library lives.
-Everything else reaches the engine through `PhonenumberAe`, which sends its FFI
+Everything else reaches the core through `PhonenumberAe`, which sends its FFI
 calls with `self ffiLibrary: PhonenumberAeLibrary`.
 
-## The engine
+## The core
 
-No phone-number logic lives in this package. The engine — the metadata table,
+No phone-number logic lives in this package. The core — the metadata table,
 isPossible / isValid, number typing and formatting — is the pure-Aether
 `core/phonenumber.ae`, compiled from Google libphonenumber's own metadata,
 shared by every language binding in this monorepo and reached through the
@@ -36,14 +36,14 @@ Class {
 
 { #category : 'accessing' }
 PhonenumberAeLibrary class >> explicitPath [
-	"An explicit engine path, or nil to use the usual search."
+	"An explicit core path, or nil to use the usual search."
 
 	^ ExplicitPath
 ]
 
 { #category : 'accessing' }
 PhonenumberAeLibrary class >> explicitPath: aStringOrNil [
-	"Pin the engine to one path. Pass nil to go back to the usual search.
+	"Pin the core to one path. Pass nil to go back to the usual search.
 	 Set this BEFORE the first FFI call: UnifiedFFI caches the resolved
 	 handle, so a later change does not move an already-bound session."
 
@@ -82,9 +82,9 @@ PhonenumberAeLibrary >> win32ModuleName [
 
 { #category : 'private' }
 PhonenumberAeLibrary >> resolvedPathFor: aFileName [
-	"The engine's path, by the monorepo's standard resolution order. Falls
+	"The core's path, by the monorepo's standard resolution order. Falls
 	 back to the bare file name, which lets the OS loader search its own
-	 paths — so a system-installed engine still works."
+	 paths — so a system-installed core still works."
 
 	| explicit env bundled |
 	explicit := self class explicitPath.

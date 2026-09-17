@@ -1,6 +1,6 @@
 // Nim binding tests (importc + a real link). Canonical aeb grammar (no
 // shell-out): nim.test() compiles + runs the test files; the {.passL.} in
-// nim/src/phonenumber_ae.nim points -L/-rpath at the engine, and the SDK walks
+// nim/src/phonenumber_ae.nim points -L/-rpath at the core, and the SDK walks
 // deps for the shared_library_deps artifact so the linker + rpath resolve.
 // Mirrors the selenium nim binding.
 import bldr

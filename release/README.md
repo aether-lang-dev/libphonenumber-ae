@@ -1,15 +1,15 @@
-# release — cross-built engine artifacts for GitHub Releases
+# release — cross-built core artifacts for GitHub Releases
 
-The engine (`libphonenumber_ae`) is pure Aether, so it **cross-compiles for the
+The core (`libphonenumber_ae`) is pure Aether, so it **cross-compiles for the
 whole platform matrix from one Linux host** — no per-OS runner. This directory
 builds those artifacts, checksums them, and attaches them to a GitHub Release.
 
-**Scope: the engine libs only.** These are the reusable, language-agnostic pieces
+**Scope: the core libs only.** These are the reusable, language-agnostic pieces
 a binding links or `dlopen`s. The per-language packages (wheel/gem/jar/crate/…)
 are built by each `<lang>/.dist.ae` and are **not** part of this release — they
 are toolchain-bound and belong to their own registries (PyPI, RubyGems, npm,
 Maven Central, crates.io), which would need per-registry secrets. gh-releases
-carries the linkable engine; the language registries carry the language packages.
+carries the linkable core; the language registries carry the language packages.
 
 ## Build
 
@@ -52,9 +52,9 @@ bytes* — no "works on my machine" gap. A Linux host can't *run* an arm64-macOS
 binary, so on-target verification is done out of band and (optionally) recorded
 as an attestation keyed by the artifact's SHA256.
 
-## Consuming a released engine
+## Consuming a released core
 
-A binding needs the engine `.so`/`.dylib`/`.dll` at runtime (or link time).
+A binding needs the core `.so`/`.dylib`/`.dll` at runtime (or link time).
 Instead of cloning this repo and running `aeb core/.build.ae`, a consumer can
 download the platform artifact from a release and point the binding at it —
 `LIBPHONENUMBER_AE_LIB=/path/to/libphonenumber_ae-<tag>-<os>-<arch>.so`, the OS

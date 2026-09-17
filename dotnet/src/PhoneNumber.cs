@@ -1,4 +1,4 @@
-// The idiomatic C# surface over the phonenumber engine (ABI v7).
+// The idiomatic C# surface over the phonenumber core (ABI v7).
 //
 // Carries no phone-number logic — every member here marshals to an
 // aether_pn_embed_* call in Native.cs. The stateless calls hang off the static
@@ -29,7 +29,7 @@ namespace PhoneNumbers;
 ///
 /// PhoneNumber.FindNumbers("call 201-555-0123 today", "US");
 /// </code>
-/// A thin binding over one shared native engine (pure Aether, compiled from
+/// A thin binding over one shared native core (pure Aether, compiled from
 /// Google libphonenumber's own metadata). Cross-language behaviour is identical
 /// by construction, not by test.
 /// </remarks>
@@ -37,10 +37,10 @@ public static class PhoneNumber
 {
     private static void Init() => Native.EnsureResolver();
 
-    /// <summary>Where the engine was loaded from, once known.</summary>
+    /// <summary>Where the core was loaded from, once known.</summary>
     public static string? NativeLibraryPath => Native.ResolvedPath;
 
-    /// <summary>The engine's ABI revision.</summary>
+    /// <summary>The core's ABI revision.</summary>
     public static int AbiVersion
     {
         get
@@ -51,7 +51,7 @@ public static class PhoneNumber
     }
 
     /// <summary>
-    /// Override the engine path (before first use). Otherwise:
+    /// Override the core path (before first use). Otherwise:
     /// $LIBPHONENUMBER_AE_LIB, then native/ next to the assembly, then
     /// ../core/native/, then the OS loader.
     /// </summary>
@@ -136,7 +136,7 @@ public static class PhoneNumber
         return Native.TakeString(Native.RegionAt(index));
     }
 
-    /// <summary>Every region id the metadata carries, in the engine's own order.</summary>
+    /// <summary>Every region id the metadata carries, in the core's own order.</summary>
     public static IReadOnlyList<string> Regions()
     {
         Init();
@@ -403,7 +403,7 @@ public static class PhoneNumber
     // ---- time zones (PhoneNumberToTimeZonesMapper) ----
     //
     // Longest-prefix match over the number's E.164 digits: pass a raw
-    // (region, input) like everywhere else and the engine parses to E.164
+    // (region, input) like everywhere else and the core parses to E.164
     // itself. The unknown-zone sentinel is "Etc/Unknown".
 
     /// <summary>The unknown-timezone sentinel, "Etc/Unknown".</summary>
@@ -442,7 +442,7 @@ public static class PhoneNumber
     //
     // Longest-prefix match over the E.164 digits. The optional `lang` is an ISO
     // code ("en", "de", …) defaulting to "en" (always available, and the
-    // fallback for any language not compiled into the engine), so a two-argument
+    // fallback for any language not compiled into the core), so a two-argument
     // call keeps working. "" when no carrier is known for the number.
 
     /// <summary>The carrier name for a number, localized by <paramref name="lang"/> (default "en"), or "" if none is known.</summary>

@@ -1,4 +1,4 @@
-## phonenumber_ae — the Nim binding over the monorepo's one shared native engine.
+## phonenumber_ae — the Nim binding over the monorepo's one shared native core.
 ##
 ## Validate, parse and format international phone numbers.
 ##
@@ -21,16 +21,16 @@
 ## ========================================================
 ##
 ## Several bindings in this repo (Python/ctypes, Ruby/Fiddle, Rust/libloading)
-## resolve the engine at run time so they can report a friendly error when it is
+## resolve the core at run time so they can report a friendly error when it is
 ## missing. Nim is a compiled, statically-linked-by-default language, and the
 ## house style for that family (Go/cgo, Zig) is to LINK. So we do: `{.passL.}`
 ## below points the linker at `nim/native` and `../core/native`, and bakes both
 ## in as `rpath` so an in-tree binary finds the `.so` with no `LD_LIBRARY_PATH`.
-## `nim/.tests.ae` stages the engine artifact into `nim/native/` before
+## `nim/.tests.ae` stages the core artifact into `nim/native/` before
 ## compiling, exactly as `go/.tests.ae` does for cgo, so the link and the rpath
 ## resolve wherever `aeb` put it.
 ##
-## The consequence to be aware of: the engine must exist at BUILD time, not just
+## The consequence to be aware of: the core must exist at BUILD time, not just
 ## at run time. A missing `.so` is a link error, not a nice exception.
 ##
 ## The one ownership rule
@@ -396,7 +396,7 @@ proc regionCount*(): int =
   int(pnRegionCount())
 
 proc regionAt*(index: int): string =
-  ## The region id at `index` in the engine's own order; "" when out of range.
+  ## The region id at `index` in the core's own order; "" when out of range.
   takeString(pnRegionAt(cint(index)))
 
 proc regions*(): seq[string] =
@@ -453,7 +453,7 @@ proc italianLeadingZero*(p: ParsedNumber): bool =
 
 proc source*(p: ParsedNumber): CountryCodeSource =
   # CountryCodeSource is an enum with holes (1,5,10,20); a plain conversion
-  # trips HoleEnumConv. cast avoids the check — the engine only ever returns
+  # trips HoleEnumConv. cast avoids the check — the core only ever returns
   # one of these four values.
   cast[CountryCodeSource](pnPnSource(p.pn.cstring))
 
@@ -582,7 +582,7 @@ proc isAlphaNumber*(s: string): bool =
   pnIsAlphaNumber(s.cstring) != 0
 
 proc abiVersion*(): int =
-  ## The ABI revision the linked engine reports (v7 — the Carrier and Geocoder
+  ## The ABI revision the linked core reports (v7 — the Carrier and Geocoder
   ## surfaces gained a per-call `lang` argument).
   int(pnAbiVersion())
 
@@ -592,7 +592,7 @@ proc abiVersion*(): int =
 
 type
   AsYouTypeFormatter* = object ## Formats a number as it is typed, digit by
-    ## digit. The engine state is threaded as a caller-owned string; each
+    ## digit. The core state is threaded as a caller-owned string; each
     ## `inputDigit` frees the previous state and adopts the new one.
     state: string
 
@@ -688,7 +688,7 @@ proc shortExampleNumber*(region: string): string =
 # ---------------------------------------------------------------------------
 #
 # Longest-prefix match over the number's E.164 digits. Pass a raw (region,
-# input) like everywhere else; the engine parses to E.164 itself. The
+# input) like everywhere else; the core parses to E.164 itself. The
 # unknown-zone sentinel is "Etc/Unknown".
 
 proc unknownTimeZone*(): string =
@@ -716,7 +716,7 @@ proc timeZonesForNumber*(region, input: string): seq[string] =
 #
 # Longest-prefix match over the E.164 digits. `lang` is an ISO code ("en", "de",
 # …); "en" is always available and is the fallback for any language not compiled
-# into the engine. "" when no carrier is known for the number.
+# into the core. "" when no carrier is known for the number.
 
 proc carrierNameForNumber*(region, input: string, lang = "en"): string =
   ## The carrier name for a number, localized by `lang` (default "en"), or "" if
@@ -732,7 +732,7 @@ proc carrierNameForValidNumber*(region, input: string, lang = "en"): string =
 # ---------------------------------------------------------------------------
 #
 # Longest-prefix match over the E.164 digits. Pass a raw (region, input) like
-# everywhere else; the engine parses to E.164 itself. `lang` is an ISO code
+# everywhere else; the core parses to E.164 itself. `lang` is an ISO code
 # ("en", "de", …); "en" is always available and is the fallback. "" when no
 # description is known for the number.
 

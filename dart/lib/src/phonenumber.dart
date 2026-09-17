@@ -1,4 +1,4 @@
-/// The idiomatic Dart surface over the phonenumber engine (ABI v7).
+/// The idiomatic Dart surface over the phonenumber core (ABI v7).
 ///
 /// Carries no phone-number logic — every member here marshals to an
 /// `aether_pn_embed_*` call in `native.dart`. Most of the surface is top-level
@@ -473,10 +473,10 @@ bool isAlphaNumber(String s) {
   return _withUtf8(s, (p) => api.isAlphaNumber(p) != 0);
 }
 
-/// The ABI revision the loaded engine reports.
+/// The ABI revision the loaded core reports.
 int abiVersion() => _api.abiVersion();
 
-/// The path the engine `.so` was loaded from.
+/// The path the core `.so` was loaded from.
 String get nativeLibraryPath => _api.path;
 
 // ---- AsYouTypeFormatter ----

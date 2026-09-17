@@ -16,7 +16,7 @@ pub fn main() !void {
     // std.debug.print goes to stderr, which is fine for a demo and avoids the
     // stdout-writer churn between Zig releases.
     const p = std.debug.print;
-    p("engine ABI version: {d}\n\n", .{pn.abiVersion()});
+    p("core ABI version: {d}\n\n", .{pn.abiVersion()});
 
     {
         const cc = try pn.countryCode(alloc, "US");

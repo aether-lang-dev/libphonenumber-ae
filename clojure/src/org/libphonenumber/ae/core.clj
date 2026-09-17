@@ -4,7 +4,7 @@
   geocoder).
 
   There is **no second FFI here**. The one JVM binding to the shared Aether
-  engine is `java/aether/` (FFM / Panama), and everything in this namespace is
+  core is `java/aether/` (FFM / Panama), and everything in this namespace is
   ordinary Clojure/Java interop on top of those classes. A Clojure-specific FFI
   would be a second copy of the ABI's marshalling and ownership rules to keep in
   step with `core/embed.ae`, and the first thing to drift.
@@ -20,7 +20,7 @@
       code this build does not know — the ABI's constants are append-only;
     * `parse` yields a plain map of the parsed fields.
 
-  The engine carries the logic; this namespace carries none."
+  The core carries the logic; this namespace carries none."
   (:import (org.libphonenumber.ae AsYouTypeFormatter
                                   Carrier
                                   CountryCodeSource
@@ -42,7 +42,7 @@
 ;; ---- enum <-> keyword ----------------------------------------------------
 ;;
 ;; Maps with explicit fallbacks, not a case, because the ABI's constants are
-;; append-only: a newer engine may return a value this build has never seen, and
+;; append-only: a newer core may return a value this build has never seen, and
 ;; that must become a fallback keyword rather than blow up.
 
 (def ^:private type->kw
@@ -403,6 +403,6 @@
 ;; ---- version -------------------------------------------------------------
 
 (defn abi-version
-  "The ABI revision the loaded engine reports (7 for this build)."
+  "The ABI revision the loaded core reports (7 for this build)."
   []
   (PhoneNumbers/abiVersion))

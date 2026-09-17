@@ -1,4 +1,4 @@
--- A short tour of the Lua binding (ABI v2). Run it with the engine built:
+-- A short tour of the Lua binding (ABI v2). Run it with the core built:
 --
 --   aeb core/.build.ae
 --   cd lua && cc -O2 -fPIC -shared -I/usr/include/lua5.4 \
@@ -9,7 +9,7 @@
 
 local pn = require("phonenumber_ae")
 
-print(string.format("engine: %s (ABI v%d)", pn.engine_path(), pn.abi_version()))
+print(string.format("core: %s (ABI v%d)", pn.engine_path(), pn.abi_version()))
 
 print("country code US: " .. pn.country_code("US"))            -- 1
 print("is valid:        " .. tostring(

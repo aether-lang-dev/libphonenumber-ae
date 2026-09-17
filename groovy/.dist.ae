@@ -1,7 +1,7 @@
 // The Groovy layer's DISTRIBUTION artifact: a jar of THIS binding's own sources.
 //
 // Like kotlin/ and clojure/, the Groovy layer sits on top of the java binding's
-// classes and does NOT re-bundle the engine .so — java/.jar.ae already ships the
+// classes and does NOT re-bundle the core .so — java/.jar.ae already ships the
 // self-contained fat jar, and this layer reuses it. The honest hand-to-someone
 // artifact is therefore just the Groovy binding's own code, packaged as a jar
 // under target/dist/. A consumer puts this jar plus the java fat jar (and a

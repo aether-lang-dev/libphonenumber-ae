@@ -4,11 +4,11 @@
 -- Module      : PhoneNumber
 -- Description : Validate, parse and format international phone numbers (ABI v7).
 --
--- A thin binding over the monorepo's ONE shared native engine —
+-- A thin binding over the monorepo's ONE shared native core —
 -- @core\/native\/libphonenumber_ae.so@, compiled from pure Aether over Google
 -- libphonenumber's own metadata. It contains __no phone-number logic__: every
 -- function here marshals to an @aether_pn_embed_*@ call across the flat C ABI
--- described in @core\/embed.ae@. One engine, one set of behaviours, N language
+-- described in @core\/embed.ae@. One core, one set of behaviours, N language
 -- surfaces.
 --
 -- == ABI v7
@@ -41,7 +41,7 @@
 --
 -- == Strings
 --
--- Everything is 'B.ByteString', holding UTF-8 bytes. The engine speaks UTF-8;
+-- Everything is 'B.ByteString', holding UTF-8 bytes. The core speaks UTF-8;
 -- passing bytes straight through is lossless and keeps the dependency set to
 -- @base@ + @bytestring@. If you work in 'Data.Text.Text', encode with
 -- @Data.Text.Encoding.encodeUtf8@ at the boundary.
@@ -194,7 +194,7 @@ formatCInt Rfc3966 = 3
 -- ---------------------------------------------------------------------------
 
 -- | The kind of number 'numberType' reports. @UnknownType@ is the ABI's @-1@,
--- and 'OtherType' stands in for any code a newer engine might introduce that
+-- and 'OtherType' stands in for any code a newer core might introduce that
 -- this build has no name for (the ABI is append-only).
 data NumberType
   = UnknownType
@@ -417,12 +417,12 @@ nddPrefixForRegion region stripNonDigits =
 regionCount :: IO Int
 regionCount = fromIntegral <$> N.aether_pn_embed_region_count
 
--- | The region id at an index (0-based, the engine's own order), or @\"\"@
+-- | The region id at an index (0-based, the core's own order), or @\"\"@
 -- when out of range.
 regionAt :: Int -> IO B.ByteString
 regionAt i = N.takeString =<< N.aether_pn_embed_region_at (fromIntegral i)
 
--- | Every region id the metadata carries, in the engine's own order.
+-- | Every region id the metadata carries, in the core's own order.
 regions :: IO [B.ByteString]
 regions = do
   n <- regionCount
@@ -432,7 +432,7 @@ regions = do
 sortedRegions :: IO [B.ByteString]
 sortedRegions = sort <$> regions
 
--- | Every region id that shares a country calling code, in the engine's order
+-- | Every region id that shares a country calling code, in the core's order
 -- (the main region first).
 regionsForCountryCode :: B.ByteString -> IO [B.ByteString]
 regionsForCountryCode cc =
@@ -448,7 +448,7 @@ regionsForCountryCode cc =
 -- | A parsed phone number. Wraps the caller-owned parsed-number string the ABI
 -- returns from 'parse'; its fields are read on demand through the @pn_*@
 -- accessors. Because the underlying string is a plain 'B.ByteString' copied out
--- of the engine, a 'ParsedNumber' is immutable and can be read as many times as
+-- of the core, a 'ParsedNumber' is immutable and can be read as many times as
 -- you like.
 newtype ParsedNumber = ParsedNumber B.ByteString
 
@@ -743,7 +743,7 @@ shortExampleNumber = str1 N.aether_pn_embed_short_example_number
 -- ---------------------------------------------------------------------------
 --
 -- Longest-prefix match over the number's E.164 digits. Pass a raw
--- @(region, input)@ like everywhere else; the engine parses to E.164 itself.
+-- @(region, input)@ like everywhere else; the core parses to E.164 itself.
 -- The unknown-zone sentinel is @\"Etc/Unknown\"@.
 
 -- | The IANA timezone ids for a number, as a list. A number with no known
@@ -773,7 +773,7 @@ unknownTimeZone = N.takeString =<< N.aether_pn_embed_tz_unknown
 --
 -- Longest-prefix match over the E.164 digits. @lang@ is an ISO code ("en",
 -- "de", …); "en" is always available and is the fallback for any language not
--- compiled into the engine. @\"\"@ when no carrier is known for the number.
+-- compiled into the core. @\"\"@ when no carrier is known for the number.
 --
 -- Haskell has no default arguments, so the language-taking form is a separate
 -- @…InLang@ function; the plain form is the "en" convenience over it, keeping
@@ -824,7 +824,7 @@ geoDescriptionForValidNumber region input = geoDescriptionForValidNumberInLang r
 -- Introspection
 -- ---------------------------------------------------------------------------
 
--- | The engine's ABI revision (@7@ for this binding — the Carrier and Geocoder
+-- | The core's ABI revision (@7@ for this binding — the Carrier and Geocoder
 -- calls take a per-call @lang@ argument).
 abiVersion :: IO Int
 abiVersion = fromIntegral <$> N.aether_pn_embed_abi_version

@@ -1,7 +1,7 @@
 --- The 47-check binding conformance suite (docs/conformance.md, v7).
 ---
 --- Proves the Lua binding marshals every value shape across the FFI. It is NOT
---- a phone-number test suite — the behavioural cases live in the engine's own
+--- a phone-number test suite — the behavioural cases live in the core's own
 --- tests and run once, in Aether.
 ---
 --- Lua 5.4 has no de-facto-standard test framework in its distribution, so this
@@ -63,7 +63,7 @@ local function eq_list(got, want, what)
 end
 
 print("=== phonenumber_ae Lua binding conformance (v7) ===")
-print(string.format("engine: %s (ABI v%d)", pn.engine_path(), pn.abi_version()))
+print(string.format("core: %s (ABI v%d)", pn.engine_path(), pn.abi_version()))
 
 -- ---- the forty-five ----
 

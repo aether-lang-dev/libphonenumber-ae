@@ -1,7 +1,7 @@
 %%% The binding conformance suite (docs/conformance.md, v6), as EUnit.
 %%%
 %%% Proves the Erlang binding marshals every value shape across the FFI. It is
-%%% NOT a phone-number test suite — the behavioural cases live in the engine's
+%%% NOT a phone-number test suite — the behavioural cases live in the core's
 %%% own tests and run once, in Aether. Here we sample each KIND of value that
 %%% crosses the FFI so the marshalling is proven, not the library.
 %%%

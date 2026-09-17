@@ -1,7 +1,7 @@
 // The 45-check binding conformance suite (docs/conformance.md, v7).
 //
 // Proves the Go binding marshals every value shape across the FFI. It is NOT a
-// phone-number test suite — the behavioural cases live in the engine's own
+// phone-number test suite — the behavioural cases live in the core's own
 // tests and run once, in Aether. A binding's suite samples each kind of value
 // crossing the FFI, so it proves the marshalling, not the library.
 package phonenumber

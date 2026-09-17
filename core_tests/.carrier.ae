@@ -1,4 +1,4 @@
-// PhoneNumberToCarrierMapper engine gate.
+// PhoneNumberToCarrierMapper core gate.
 import bldr
 import bldr (dep)
 import std.os

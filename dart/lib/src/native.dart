@@ -3,7 +3,7 @@
 /// This library is the ONLY place in the Dart binding that knows about the C
 /// ABI. Everything above it (`phonenumber.dart`) is idiomatic Dart over these
 /// symbols. No phone-number logic lives here or anywhere else in this package —
-/// the engine is `core/phonenumber.ae`, shared by every language binding.
+/// the core is `core/phonenumber.ae`, shared by every language binding.
 ///
 /// ## Naming
 ///
@@ -177,7 +177,7 @@ Iterable<String> libraryCandidates([String? explicit]) sync* {
   yield name;
 }
 
-/// A loaded engine: the `DynamicLibrary` plus every symbol bound once.
+/// A loaded core: the `DynamicLibrary` plus every symbol bound once.
 ///
 /// Binding the symbols eagerly (rather than per call) keeps the hot path free
 /// of repeated `lookupFunction` work and turns a missing symbol into a clear
@@ -328,7 +328,7 @@ class Api {
 
   final ffi.DynamicLibrary lib;
 
-  /// The path the engine was actually loaded from.
+  /// The path the core was actually loaded from.
   final String path;
 
   final _AbiVersion abiVersion;
@@ -422,7 +422,7 @@ class Api {
 
   static Api? _cached;
 
-  /// Load the engine, caching it process-wide when no explicit [path] is
+  /// Load the core, caching it process-wide when no explicit [path] is
   /// given. Throws [StateError] with every candidate tried when it cannot.
   static Api open([String? path]) {
     if (path == null && _cached != null) return _cached!;
@@ -440,7 +440,7 @@ class Api {
       }
     }
     throw StateError(
-        'could not load the phonenumber engine ($defaultLibraryName). Set '
+        'could not load the phonenumber core ($defaultLibraryName). Set '
         'LIBPHONENUMBER_AE_LIB to its absolute path, or build it with:\n'
         '  aeb core/.build.ae\n'
         'Tried: ${tried.join(", ")}\nLast error: $last');
@@ -448,7 +448,7 @@ class Api {
 
   /// Copy an ABI-returned string out and free it through the ABI.
   ///
-  /// Every `char*` the engine returns is caller-owned; leaking it is the
+  /// Every `char*` the core returns is caller-owned; leaking it is the
   /// single easiest mistake to make in any of these bindings. Every string
   /// result in this package goes through here.
   String takeString(_Utf8 p) {

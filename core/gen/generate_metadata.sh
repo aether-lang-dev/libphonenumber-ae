@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# generate_metadata.sh — regenerate the engine's metadata tables from the
+# generate_metadata.sh — regenerate the core's metadata tables from the
 # pristine in-tree resources/. These .ae tables are BUILD ARTIFACTS (gitignored),
 # derived from Google's XML/txt; this script is run before any `ae build` that
 # imports them (the .build.ae nodes and bootstrap.sh call it).

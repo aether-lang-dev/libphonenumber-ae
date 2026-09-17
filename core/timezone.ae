@@ -7,7 +7,7 @@
 // match over the E.164 digits (country code + national number).
 //
 // The input is a phone number's full E.164 digit string ("<cc><national>", no
-// '+'). For a raw (region, input) pair, the phonenumber engine's parse +
+// '+'). For a raw (region, input) pair, the phonenumber core's parse +
 // format_e164 produces that; the ABI layer does the joining, so this module
 // takes the E.164 digits directly.
 

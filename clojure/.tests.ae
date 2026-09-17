@@ -1,7 +1,7 @@
 // Clojure binding tests. Canonical aeb grammar (no shell-out): clojure.run_main()
 // loads the conformance namespace from source (no AOT) and runs its -main; the
 // SDK puts java/.build.ae's classpath (the Java binding classes it calls) on the
-// classpath. env() exports the engine .so path the NIF/Java layer dlopen's;
+// classpath. env() exports the core .so path the NIF/Java layer dlopen's;
 // skip_below_jdk keeps it off a pre-FFM (JDK < 22) runtime. Mirrors the selenium
 // clojure binding.
 import bldr

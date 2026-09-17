@@ -4,10 +4,10 @@
 //// which lives in `erlang/` and is compiled exactly once. There is no C source
 //// in this directory and no second `.so` — every function here is an
 //// `@external(erlang, "phonenumber_ae_nif", ...)` binding onto the very same
-//// compiled module the Erlang and Elixir bindings load. One engine, one NIF,
+//// compiled module the Erlang and Elixir bindings load. One core, one NIF,
 //// three languages.
 ////
-//// The engine itself (`core/native/libphonenumber_ae.so`) is pure Aether,
+//// The core itself (`core/native/libphonenumber_ae.so`) is pure Aether,
 //// compiled from Google libphonenumber's own metadata. No phone-number logic
 //// lives in this file: everything marshals to an `aether_pn_embed_*` call
 //// across the C ABI in `core/embed.ae` (docs/abi.md — 66 symbols, full
@@ -35,7 +35,7 @@
 //// This module is **Erlang-target only**. It cannot compile to JavaScript,
 //// because the whole binding is a NIF. That is not a limitation worth working
 //// around: the monorepo already has a JavaScript binding that talks to the
-//// same engine.
+//// same core.
 ////
 //// ## No handles
 ////
@@ -102,7 +102,7 @@ pub type CountryCodeSource {
 }
 
 /// Matcher leniency. `StrictGrouping` (2) and `ExactGrouping` (3) consult
-/// AlternateFormats in the engine; all levels hit the same `matcher_count`
+/// AlternateFormats in the core; all levels hit the same `matcher_count`
 /// symbol.
 pub type Leniency {
   Possible
@@ -850,7 +850,7 @@ pub fn short_example_number(region: String) -> String {
 
 // ---- PhoneNumberToTimeZonesMapper (timezone lookup) ----
 
-/// The IANA time-zone ids for a number, as a list. When the engine knows no
+/// The IANA time-zone ids for a number, as a list. When the core knows no
 /// zone (count 0) the result is a single-element list of the unknown zone,
 /// mirroring the other bindings — never an empty list.
 pub fn time_zones_for_number(region: String, input: String) -> List(String) {
@@ -865,7 +865,7 @@ pub fn time_zone_count(region: String, input: String) -> Int {
   tz_count_ffi(region, input)
 }
 
-/// The engine's sentinel unknown zone, "Etc/Unknown".
+/// The core's sentinel unknown zone, "Etc/Unknown".
 pub fn unknown_time_zone() -> String {
   tz_unknown_ffi()
 }
@@ -874,7 +874,7 @@ pub fn unknown_time_zone() -> String {
 //
 // Gleam has no default arguments; the `_number` forms default the language to
 // "en" (English, always available) and the `_in_language` forms take an ISO
-// code. A language not compiled into the engine falls back to English.
+// code. A language not compiled into the core falls back to English.
 
 /// The carrier name for a number in English, or "" if none is known.
 pub fn carrier_name_for_number(region: String, input: String) -> String {
@@ -936,12 +936,12 @@ pub fn geo_description_for_valid_number_in_language(
 
 // ---- introspection ----
 
-/// The engine's ABI revision (7).
+/// The core's ABI revision (7).
 pub fn abi_version() -> Int {
   abi_version_ffi()
 }
 
-/// The engine's ABI revision as a string, for display.
+/// The core's ABI revision as a string, for display.
 pub fn abi_version_string() -> String {
   int.to_string(abi_version_ffi())
 }

@@ -8,7 +8,7 @@ import std.os
 import bldr (dep, _get)
 aeb(cap) {
     bldr.build() {
-        dep("core/.build.ae")   // ensures the engine modules are compiled/cached
+        dep("core/.build.ae")   // ensures the core modules are compiled/cached
         root = _get("root")
         emb = "${root}/target/embed_validation.ae"
         vlib = "${root}/target/libphonenumber_ae_validation.so"

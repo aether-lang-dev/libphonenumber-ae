@@ -4,12 +4,12 @@
 // Composer packages are consumed from a VCS/tarball of source (there is no
 // compiled binary package format for a pure-PHP library), so the idiomatic
 // hand-to-someone artifact is a .tar.gz of the package: composer.json + the
-// PSR-4 src/ + a vendored copy of the engine .so under native/, so a consumer
+// PSR-4 src/ + a vendored copy of the core .so under native/, so a consumer
 // can point LIBPHONENUMBER_AE_LIB (or the loader's search) at the bundled
 // native/libphonenumber_ae.so with no external .so to place.
 //
-// The engine .so comes from core/.build.ae's shared_lib artifact (dep'd), so
-// the tarball always vendors the freshly-built engine. One .so per tarball =>
+// The core .so comes from core/.build.ae's shared_lib artifact (dep'd), so
+// the tarball always vendors the freshly-built core. One .so per tarball =>
 // the package is current-OS-only (the .so is this box's platform).
 //
 // Plain `tar` needs no PHP toolchain, so there is nothing to skip on here — the
@@ -39,16 +39,16 @@ aeb(cap) {
         cps = os.system("cp -R \"${root}/php/src\" \"${stage}/src\"")
         if cps != 0 { println("php dist: failed to stage src/"); return 1 }
 
-        // Vendor the freshly-built engine alongside the package.
+        // Vendor the freshly-built core alongside the package.
         cpl = os.system("cp \"${lib}\" \"${stage}/native/libphonenumber_ae.so\"")
-        if cpl != 0 { println("php dist: failed to vendor the engine .so"); return 1 }
+        if cpl != 0 { println("php dist: failed to vendor the core .so"); return 1 }
 
         // tar the staged package. -C so paths inside are relative to the package
         // root (phonenumber-ae-php/...), not the box's absolute tree.
         tar = "${dist}/phonenumber-ae-php.tar.gz"
         rc = os.system("tar -czf \"${tar}\" -C \"${root}/target/php-dist\" phonenumber-ae-php")
         if rc != 0 { println("php dist: tar failed"); return 1 }
-        println("php dist: target/dist/phonenumber-ae-php.tar.gz (composer package src + vendored engine .so at native/)")
+        println("php dist: target/dist/phonenumber-ae-php.tar.gz (composer package src + vendored core .so at native/)")
         return 0
     }
 }

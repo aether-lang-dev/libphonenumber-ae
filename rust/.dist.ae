@@ -1,18 +1,18 @@
 // The Rust binding's DISTRIBUTION artifact: a source .crate (cargo package).
 //
-// Unlike rust/.tests.ae (which runs `cargo test` against a loose engine .so
+// Unlike rust/.tests.ae (which runs `cargo test` against a loose core .so
 // pointed at by LIBPHONENUMBER_AE_LIB), this node produces a hand-to-someone
 // .crate under target/dist/: the standard Cargo source package (sources +
 // Cargo.lock), the idiomatic distributable for the ecosystem.
 //
-// No .so is bundled: the binding loads the engine via libloading at RUN time
+// No .so is bundled: the binding loads the core via libloading at RUN time
 // (LIBPHONENUMBER_AE_LIB / OS loader search path), and a published crate is
 // consumed as source and built by the consumer, so `cargo package`'s source
 // tarball is the correct, self-consistent artifact — matching how crates.io
 // distributes every crate.
 //
 // The node still deps core/.build.ae so the crate is only cut against a
-// buildable engine (the DAG stays honest), even though the .crate itself carries
+// buildable core (the DAG stays honest), even though the .crate itself carries
 // no binary.
 import bldr
 import std.os
@@ -52,7 +52,7 @@ aeb(cap) {
         rcp = os.system("cp \"${outdir}\"/package/*.crate \"${dist}/\"")
         if rcp != 0 { println("rust dist: no .crate produced to copy into target/dist"); return 1 }
 
-        println("rust dist: target/dist/*.crate (cargo source package; engine loaded via FFI at consumer build time)")
+        println("rust dist: target/dist/*.crate (cargo source package; core loaded via FFI at consumer build time)")
         return 0
     }
 }

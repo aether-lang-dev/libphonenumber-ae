@@ -1,5 +1,5 @@
 // Ruby binding tests (Fiddle). Canonical aeb grammar: ruby.bundle() resolves the
-// Gemfile (rspec lives there) and runs rspec; env() exports the engine .so path
+// Gemfile (rspec lives there) and runs rspec; env() exports the core .so path
 // the Fiddle loader reads (LIBPHONENUMBER_AE_LIB), pointed at the shared artifact
 // this node deps. No shell-out — the SDK handles gem/bundler resolution and the
 // env export.

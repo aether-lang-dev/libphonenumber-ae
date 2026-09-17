@@ -96,5 +96,5 @@ main() {
 }
 
 // Territories whose example legitimately can't round-trip under our current
-// engine (documented). Baseline holds the known count; a NEW failure reddens.
+// core (documented). Baseline holds the known count; a NEW failure reddens.
 fn allowed_failures() -> int { return 0 }

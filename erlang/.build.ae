@@ -7,7 +7,7 @@
 //     _build/phonenumber_ae_nif/ebin/phonenumber_ae_nif.beam
 //     _build/phonenumber_ae_nif/ebin/phonenumber_ae_nif.app
 //     _build/phonenumber_ae_nif/priv/phonenumber_ae_nif.so   (the NIF)
-//     _build/phonenumber_ae_nif/priv/libphonenumber_ae.so    (the engine)
+//     _build/phonenumber_ae_nif/priv/libphonenumber_ae.so    (the core)
 //
 // elixir/ and gleam/ dep THIS node and put `erlang/_build` on ERL_LIBS, which
 // is how OTP finds an application; they then load the very same compiled
@@ -19,7 +19,7 @@
 // the deliberate omission of -lphonenumber_ae from the NIF link line (a
 // DT_NEEDED there kills the BEAM inside the dynamic linker instead of reporting
 // a clean load error), erlc into ebin/, the verbatim app.src copy, and staging
-// the engine into priv/. A missing toolchain is a first-class SKIP.
+// the core into priv/. A missing toolchain is a first-class SKIP.
 //
 // The phone ABI is stateless string/int in/out — no handle, no callbacks — so
 // this NIF is much smaller than the html-sanitizer sibling it was mirrored

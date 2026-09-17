@@ -1,4 +1,4 @@
-// core_tests/probe — the engine behavioural gate (pure Aether, no C ABI).
+// core_tests/probe — the core behavioural gate (pure Aether, no C ABI).
 //
 // Proves core/phonenumber.ae directly against the generated metadata. Covers the
 // full PhoneNumberUtil-parity surface: parse, region detection, isPossible/

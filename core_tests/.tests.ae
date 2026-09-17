@@ -1,9 +1,9 @@
-// Engine-level tests: the pure-Aether phonenumber engine, exercised through
+// Core-level tests: the pure-Aether phonenumber core, exercised through
 // the `phonenumber` module directly (no C ABI, no binding). This is the
 // behavioural spec — metadata plumbing, isPossibleNumber, isValidNumber (with
 // the per-type national-number regexes), getNumberType, and formatting.
 //
-// Deliberately does NOT dep core/.build.ae: this path proves the ENGINE, and
+// Deliberately does NOT dep core/.build.ae: this path proves the CORE, and
 // building the .so is irrelevant to it. The ABI is proven separately by
 // core_tests/.abi.ae.
 
@@ -30,7 +30,7 @@ aeb(cap) {
             println("core_tests: probe.ae reported a failure")
             return 1
         }
-        println("core_tests: PASS — engine behaviour")
+        println("core_tests: PASS — core behaviour")
         return 0
     }
 }

@@ -1,6 +1,6 @@
 // Pharo binding tests. Canonical aeb grammar (no shell-out): pharo.sunit() loads
 // the Tonel sources (via BaselineOfPhonenumberAe) into a throwaway image and runs
-// the SUnit suite; env() exports the engine .so path the FFI binding dlopen's.
+// the SUnit suite; env() exports the core .so path the FFI binding dlopen's.
 import bldr
 import pharo
 import bldr (dep, dep_artifact)

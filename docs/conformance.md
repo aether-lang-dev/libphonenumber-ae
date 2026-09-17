@@ -2,9 +2,9 @@
 
 Every language binding runs the same suite. These sample each *kind* of value
 crossing the FFI — they prove the marshalling, not the library (the phone
-behaviour is proven once in the engine, `core_tests/probe.ae`, and once over the
+behaviour is proven once in the core, `core_tests/probe.ae`, and once over the
 raw ABI, `core_tests/abi_smoke.c`). Canonical numbers come from the shared
-engine over Google's metadata.
+core over Google's metadata.
 
 | # | Call | Expected |
 |---|---|---|

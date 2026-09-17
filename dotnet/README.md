@@ -1,7 +1,7 @@
 # PhoneNumber.Aether — .NET
 
-A thin .NET binding over the shared, pure-Aether libphonenumber engine. All the
-phone logic lives in the one engine (`core/phonenumber.ae`); this binding is just
+A thin .NET binding over the shared, pure-Aether libphonenumber core. All the
+phone logic lives in the one core (`core/phonenumber.ae`); this binding is just
 P/Invoke marshalling over `libphonenumber_ae.so`. See the
 [repo README](../README.md) for the whole picture.
 
@@ -28,7 +28,7 @@ PhoneNumber.GeoDescriptionForNumber("US", "6502530000");      // "Mountain View,
 
 ## Install it in your project
 
-Build the NuGet package (from the repo root), then add it — the engine `.so` is
+Build the NuGet package (from the repo root), then add it — the core `.so` is
 bundled inside as a native asset, so nothing else is needed at runtime:
 
 ```sh
@@ -37,7 +37,7 @@ dotnet add package PhoneNumber.Aether --source target/dist
 ```
 
 The package is current-OS-only (it bundles this platform's `.so`). The loader
-finds the engine in this order: an explicit
+finds the core in this order: an explicit
 `PhoneNumber.UseNativeLibrary(path)`, `$LIBPHONENUMBER_AE_LIB`, the `native/`
 dir next to the assembly, then the OS loader's own probing — so an installed
 package needs no configuration. `PhoneNumber.NativeLibraryPath` reports which
@@ -45,7 +45,7 @@ candidate loaded.
 
 ## Develop / test
 
-From the repo, `aeb` builds the engine and runs the suite against the source
+From the repo, `aeb` builds the core and runs the suite against the source
 tree:
 
 ```sh

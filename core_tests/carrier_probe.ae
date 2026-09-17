@@ -1,4 +1,4 @@
-// core_tests/carrier_probe — PhoneNumberToCarrierMapper engine gate (pure Aether).
+// core_tests/carrier_probe — PhoneNumberToCarrierMapper core gate (pure Aether).
 //
 // Longest-prefix carrier-name lookup over the E.164 digits (English names).
 // Run: ae run core_tests/carrier_probe.ae

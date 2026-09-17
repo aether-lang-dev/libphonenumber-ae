@@ -1,16 +1,16 @@
 ## The 47-check binding conformance suite (docs/conformance.md, v7), in Nim.
 ##
 ## Proves this binding marshals every value shape across the FFI. It is NOT a
-## phone-number test suite — the behavioural cases live in the engine's own
+## phone-number test suite — the behavioural cases live in the core's own
 ## tests and run once, in Aether (`core_tests/`).
 ##
 ## Run it directly (no nimble needed):
 ##
 ##     nim c -r tests/tconformance.nim
 ##
-## The engine must be linkable: `nim/.tests.ae` stages it into `nim/native/`,
+## The core must be linkable: `nim/.tests.ae` stages it into `nim/native/`,
 ## and an in-tree checkout also has `core/native/libphonenumber_ae.so` once the
-## engine is built. Both directories are baked into the binary as rpath by
+## core is built. Both directories are baked into the binary as rpath by
 ## `src/phonenumber_ae.nim`.
 
 import std/unittest

@@ -1,6 +1,6 @@
 // The Java binding's classes, compiled once and shared by the whole JVM
 // family: kotlin/, groovy/ and clojure/ all layer over THESE classes rather
-// than binding the engine a second time.
+// than binding the core a second time.
 //
 // Flat layout: the .java sources sit directly in this module dir (java/),
 // NOT under a Maven src/main/java tree. aeb's `java.javac` builder, with no

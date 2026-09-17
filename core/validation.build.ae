@@ -1,4 +1,4 @@
-// Validation-only variant of the engine — the minimum build: full core
+// Validation-only variant of the core — the minimum build: full core
 // PhoneNumberUtil surface (parse, validate, format, match, AsYouType, matcher)
 // with NONE of the side-library data blobs. ~320 KB vs the full ~8 MB (26x
 // smaller), because the geocoder/carrier/timezone/short-number metadata is not

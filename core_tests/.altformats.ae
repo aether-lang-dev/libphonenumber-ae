@@ -1,4 +1,4 @@
-// Matcher grouping leniency + AlternateFormats engine gate.
+// Matcher grouping leniency + AlternateFormats core gate.
 import bldr
 import bldr (dep)
 import std.os

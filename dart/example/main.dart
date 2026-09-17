@@ -1,4 +1,4 @@
-// A short tour of the Dart binding. Run it with the engine built:
+// A short tour of the Dart binding. Run it with the core built:
 //
 //   aeb core/.build.ae
 //   cd dart && dart pub get
@@ -8,7 +8,7 @@
 import 'package:phonenumber_ae/phonenumber_ae.dart' as pn;
 
 void main() {
-  print('engine: ${pn.nativeLibraryPath} (ABI v${pn.abiVersion()})');
+  print('core: ${pn.nativeLibraryPath} (ABI v${pn.abiVersion()})');
 
   // 1. country codes
   print('US -> +${pn.countryCode('US')}, GB -> +${pn.countryCode('GB')}');

@@ -6,9 +6,9 @@ defmodule PhonenumberAe do
   which lives in `erlang/` and is compiled exactly once. There is no C source
   in this directory and no second `.so` — every function here delegates to
   `:phonenumber_ae_nif`, the very same compiled module the Erlang and Gleam
-  bindings load. One engine, one NIF, three languages.
+  bindings load. One core, one NIF, three languages.
 
-  The engine itself (`core/native/libphonenumber_ae.so`) is pure Aether,
+  The core itself (`core/native/libphonenumber_ae.so`) is pure Aether,
   compiled from Google libphonenumber's own metadata. No phone-number logic
   lives in this file: everything marshals to an `aether_pn_embed_*` call across
   the C ABI in `core/embed.ae` (docs/abi.md — 66 symbols, full
@@ -347,7 +347,7 @@ defmodule PhonenumberAe do
   # ---- time zones (PhoneNumberToTimeZonesMapper) ----
 
   @doc """
-  The IANA time-zone ids for a number, as a list. When the engine knows no zone
+  The IANA time-zone ids for a number, as a list. When the core knows no zone
   (count 0) the result is a single-element list of the unknown zone, mirroring
   the other bindings — never an empty list.
   """
@@ -363,7 +363,7 @@ defmodule PhonenumberAe do
   @spec time_zone_count(iodata(), iodata()) :: non_neg_integer()
   def time_zone_count(region, input), do: :phonenumber_ae_nif.tz_count(region, input)
 
-  @doc ~S'The engine\'s sentinel unknown zone, "Etc/Unknown".'
+  @doc ~S'The core\'s sentinel unknown zone, "Etc/Unknown".'
   @spec unknown_time_zone() :: binary()
   def unknown_time_zone(), do: :phonenumber_ae_nif.tz_unknown()
 
@@ -371,7 +371,7 @@ defmodule PhonenumberAe do
 
   @doc ~S'''
   The carrier name for a number, or "" if none is known. `lang` defaults to
-  "en"; a language not compiled into the engine falls back to English.
+  "en"; a language not compiled into the core falls back to English.
   '''
   @spec carrier_name_for_number(iodata(), iodata(), iodata()) :: binary()
   def carrier_name_for_number(region, input, lang \\ "en"),
@@ -386,7 +386,7 @@ defmodule PhonenumberAe do
 
   @doc ~S'''
   A geographic description for a number, or "" if none is known. `lang`
-  defaults to "en"; a language not compiled into the engine falls back to
+  defaults to "en"; a language not compiled into the core falls back to
   English.
   '''
   @spec geo_description_for_number(iodata(), iodata(), iodata()) :: binary()
@@ -400,7 +400,7 @@ defmodule PhonenumberAe do
 
   # ---- introspection ----
 
-  @doc "The engine's ABI revision (7)."
+  @doc "The core's ABI revision (7)."
   @spec abi_version() :: non_neg_integer()
   defdelegate abi_version(), to: :phonenumber_ae_nif
 
@@ -425,7 +425,7 @@ defmodule PhonenumberAe do
   defp type_atom(8), do: :uan
   defp type_atom(9), do: :voicemail
   defp type_atom(10), do: :fixed_line_or_mobile
-  # A newer engine could return an unseen code; degrade rather than crash.
+  # A newer core could return an unseen code; degrade rather than crash.
   defp type_atom(_), do: :unknown
 
   defp type_code(:unknown), do: -1
@@ -459,7 +459,7 @@ defmodule PhonenumberAe do
   defp match_atom(_), do: :no_match
 
   # Matcher leniency codes. :strict_grouping (2) and :exact_grouping (3) consult
-  # AlternateFormats in the engine; all levels hit the same matcher_count symbol.
+  # AlternateFormats in the core; all levels hit the same matcher_count symbol.
   defp leniency_code(:possible), do: 0
   defp leniency_code(:valid), do: 1
   defp leniency_code(:strict_grouping), do: 2
@@ -470,6 +470,6 @@ defmodule PhonenumberAe do
   defp cost_atom(1), do: :standard_rate
   defp cost_atom(2), do: :premium_rate
   defp cost_atom(3), do: :unknown
-  # A newer engine could return an unseen code; degrade rather than crash.
+  # A newer core could return an unseen code; degrade rather than crash.
   defp cost_atom(_), do: :unknown
 end

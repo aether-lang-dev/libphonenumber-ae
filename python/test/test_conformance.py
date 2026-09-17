@@ -1,7 +1,7 @@
 """The binding conformance suite (docs/conformance.md, v2).
 
 Proves the Python binding marshals every value shape across the FFI. Not a
-phone-number test suite — behaviour is proven in the engine.
+phone-number test suite — behaviour is proven in the core.
 """
 
 import phonenumber_ae as pn

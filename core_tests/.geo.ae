@@ -1,4 +1,4 @@
-// PhoneNumberOfflineGeocoder engine gate.
+// PhoneNumberOfflineGeocoder core gate.
 import bldr
 import bldr (dep)
 import std.os

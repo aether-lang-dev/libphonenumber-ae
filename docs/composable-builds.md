@@ -1,6 +1,6 @@
 # Composable builds — pay only for the features you use
 
-The engine's side-libraries bake large data tables into the shared library. The
+The core's side-libraries bake large data tables into the shared library. The
 geocoder blob alone is ~7 MB, so the **full** `.so` is ~8 MB, while a
 **validation-only** build is **~320 KB** (26× smaller). A consumer who only
 needs phone-number validation/formatting shouldn't carry the geocoder, carrier,

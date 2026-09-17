@@ -2,7 +2,7 @@
 //
 // This file is the ONLY place in the .NET binding that knows about the C ABI.
 // Everything above it (PhoneNumber.cs) is idiomatic C# over these symbols. No
-// phone-number logic lives here or anywhere else in this assembly — the engine
+// phone-number logic lives here or anywhere else in this assembly — the core
 // is core/phonenumber.ae, shared by every language binding.
 //
 // The ABI is scalar-only (`const char*` and `int`): every export is a pure
@@ -10,7 +10,7 @@
 // and an AsYouType state are themselves caller-owned STRINGS you pass back to
 // the accessor calls, then free like any other returned string. There are
 // therefore no delegates, no UnmanagedFunctionPointer types and no keepalive
-// list here — just a flat P/Invoke surface over a dlopen'd engine.
+// list here — just a flat P/Invoke surface over a dlopen'd core.
 //
 // ## Naming
 //
@@ -385,7 +385,7 @@ public static class Native
 
     // -- PhoneNumberToCarrierMapper (localized carrier names) --
     // v7: a trailing `lang` ISO code ("en", "de", …). "en" is always available
-    // and is the fallback for any language not compiled into the engine.
+    // and is the fallback for any language not compiled into the core.
 
     [DllImport(Lib, EntryPoint = "aether_pn_embed_carrier_name", CallingConvention = CallingConvention.Cdecl)]
     public static extern IntPtr CarrierName(byte[] region, byte[] input, byte[] lang);
@@ -418,7 +418,7 @@ public static class Native
     /// <summary>
     /// Copy an ABI-returned string out and free it through the ABI.
     ///
-    /// Every char* the engine returns is caller-owned; leaking it is the single
+    /// Every char* the core returns is caller-owned; leaking it is the single
     /// easiest mistake to make in any of these bindings. Every string result in
     /// this assembly goes through here.
     /// </summary>
@@ -441,7 +441,7 @@ public static class Native
     private static bool _resolverInstalled;
     private static string? _explicitPath;
 
-    /// <summary>The path the engine was actually loaded from, once known.</summary>
+    /// <summary>The path the core was actually loaded from, once known.</summary>
     public static string? ResolvedPath { get; private set; }
 
     /// <summary>

@@ -7,7 +7,7 @@
 // Reads the pristine, in-tree resources/timezones/map_data.txt (Google's own,
 // Apache-2.0). That file is one "prefix|tz1&tz2&..." entry per line (comments
 // begin with '#'); the prefix is the leading digits of an E.164 number (country
-// code + area), the value is an '&'-joined list of IANA timezone ids. The engine
+// code + area), the value is an '&'-joined list of IANA timezone ids. The core
 // does a longest-prefix match over these.
 //
 // Row layout, 0x1F-separated: prefix | tz1&tz2&...

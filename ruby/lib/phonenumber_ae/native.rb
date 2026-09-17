@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-# Fiddle bindings for the phonenumber engine (libphonenumber_ae.so), ABI v7.
+# Fiddle bindings for the phonenumber core (libphonenumber_ae.so), ABI v7.
 #
 # This file is the ONLY place in the Ruby binding that knows about the C ABI.
 # Everything above it (`phone_number.rb`) is idiomatic Ruby over these symbols.
-# No phone-number logic lives here or anywhere else in this gem — the engine is
+# No phone-number logic lives here or anywhere else in this gem — the core is
 # `core/phonenumber.ae`, shared by every language binding.
 #
 # Library resolution, in order:
@@ -169,7 +169,7 @@ module PhoneNumberAe
       "aether_pn_embed_geo_description_for_valid" => [[P, P, P], P]
     }.freeze
 
-    # A loaded engine: the Fiddle::Handle plus a memoized Fiddle::Function per
+    # A loaded core: the Fiddle::Handle plus a memoized Fiddle::Function per
     # exported symbol. `fn.call("aether_pn_embed_country_code", ...)` is the
     # whole calling convention.
     class Lib
@@ -192,7 +192,7 @@ module PhoneNumberAe
 
       # Copy an ABI-returned string out and free it through the ABI.
       #
-      # Every char* the engine returns is caller-owned; leaking it is the
+      # Every char* the core returns is caller-owned; leaking it is the
       # single easiest mistake to make in any of these bindings, so all string
       # reads go through this one method.
       def take_string(ptr)
@@ -211,7 +211,7 @@ module PhoneNumberAe
     end
 
     class << self
-      # Load the engine .so, caching it process-wide. Returns a Lib.
+      # Load the core .so, caching it process-wide. Returns a Lib.
       def load(path = nil)
         return @lib if @lib && path.nil?
 
@@ -225,7 +225,7 @@ module PhoneNumberAe
         end
         if lib.nil?
           raise Fiddle::DLError,
-                "could not load the phonenumber engine (#{LIB_NAME}). Set " \
+                "could not load the phonenumber core (#{LIB_NAME}). Set " \
                 "LIBPHONENUMBER_AE_LIB to its absolute path, or install a gem " \
                 "that bundles it. Last error: #{last}"
         end

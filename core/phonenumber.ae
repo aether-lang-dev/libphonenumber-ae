@@ -1,10 +1,10 @@
-// core.phonenumber — a pure-Aether libphonenumber engine (PhoneNumberUtil parity).
+// core.phonenumber — a pure-Aether libphonenumber core (PhoneNumberUtil parity).
 //
 // Derived from Google's libphonenumber (Apache-2.0) by compiling its metadata
 // XML into a generated table (core/metadata.ae). No XML at runtime — every
 // serious libphonenumber port compiles the metadata once, and so do we.
 //
-// This module is the whole core engine: parse (with national-prefix, IDD and
+// This module is the whole core: parse (with national-prefix, IDD and
 // extension handling), region detection, isPossible/isValid (with reasons),
 // getNumberType, isNumberMatch, the full formatter set, and a range of helpers,
 // plus the primitives the stateful features (AsYouTypeFormatter, matcher) build
@@ -746,7 +746,7 @@ fn default_region_for_cc(cc: string) -> string {
 }
 
 // national_number(region, input): the national significant number for a plain
-// input, using parse. Kept for API compatibility with the earlier engine.
+// input, using parse. Kept for API compatibility with the earlier core.
 national_number(region: string, input: string) -> string {
     pn = parse(input, region)
     if pn_error(pn) != "" { return digits(input) }

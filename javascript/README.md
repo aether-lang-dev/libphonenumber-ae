@@ -1,7 +1,7 @@
 # phonenumber_ae — JavaScript / Node
 
-A thin Node binding over the shared, pure-Aether libphonenumber engine. All the
-phone logic lives in the one engine (`core/phonenumber.ae`); this binding is just
+A thin Node binding over the shared, pure-Aether libphonenumber core. All the
+phone logic lives in the one core (`core/phonenumber.ae`); this binding is just
 [koffi](https://koffi.dev) FFI marshalling over `libphonenumber_ae.so`. See the
 [repo README](../README.md) for the whole picture.
 
@@ -24,7 +24,7 @@ pn.Geocoder.geoDescriptionForNumber('US', '6502530000');   // 'Mountain View, CA
 
 ## Install it in your project
 
-Build the npm tarball (from the repo root), then install it — the engine `.so`
+Build the npm tarball (from the repo root), then install it — the core `.so`
 is bundled inside, so nothing else is needed at runtime:
 
 ```sh
@@ -33,7 +33,7 @@ npm install target/dist/phonenumber_ae-*.tgz
 ```
 
 The tarball is current-OS-only (it bundles this platform's `.so`). The loader
-finds the engine in this order: an explicit
+finds the core in this order: an explicit
 `require('phonenumber_ae/lib/native').load(path)`, `$LIBPHONENUMBER_AE_LIB`, the
 `native/` dir the tarball ships, then the OS loader's search path — so an
 installed package needs no configuration. `koffi` is a runtime dependency, pulled
@@ -41,7 +41,7 @@ in with the package.
 
 ## Develop / test
 
-From the repo, `aeb` builds the engine and runs the suite against the source
+From the repo, `aeb` builds the core and runs the suite against the source
 tree:
 
 ```sh

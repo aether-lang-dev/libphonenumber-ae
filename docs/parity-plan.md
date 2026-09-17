@@ -1,6 +1,6 @@
 # Full PhoneNumberUtil parity — build plan
 
-Goal: the Aether engine matches Google libphonenumber's **core** `PhoneNumberUtil`
+Goal: the Aether core matches Google libphonenumber's **core** `PhoneNumberUtil`
 functional surface, driven entirely from the pristine in-tree Google metadata
 (`resources/PhoneNumberMetadata.xml` — unmodified, read directly by the
 generator). Side-libraries (geocoder, carrier, timezone, ShortNumberInfo) are
@@ -123,7 +123,7 @@ Beyond the 26 curated exact-string cases, a second gate asserts invariants that
 must hold for EVERY territory in the production metadata: each territory's own
 example number is possible, valid, has a known type, formats to a "+cc..." E.164
 string, and round-trips through parse (same cc + national number). Result: **245
-territories checked, 0 failures**. This proves the engine works across the whole
+territories checked, 0 failures**. This proves the core works across the whole
 world, not only the sampled cases — and any regression names the offending
 territory.
 

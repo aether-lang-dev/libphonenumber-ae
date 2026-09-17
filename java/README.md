@@ -1,7 +1,7 @@
 # phonenumber_ae — Java
 
-A thin Java binding over the shared, pure-Aether libphonenumber engine. All the
-phone logic lives in the one engine (`core/phonenumber.ae`); this binding is just
+A thin Java binding over the shared, pure-Aether libphonenumber core. All the
+phone logic lives in the one core (`core/phonenumber.ae`); this binding is just
 Java 22+ FFM (Panama) marshalling over `libphonenumber_ae.so`. It is the one FFI
 for the whole JVM family — Kotlin, Clojure and Groovy layer over these classes.
 See the [repo README](../README.md) for the whole picture.
@@ -26,12 +26,12 @@ Carrier.carrierNameForNumber("GB", "7106000000");            // "O2"
 Geocoder.geoDescriptionForNumber("US", "6502530000");        // "Mountain View, CA"
 ```
 
-All entry points are static and stateless; the engine is loaded lazily and cached.
+All entry points are static and stateless; the core is loaded lazily and cached.
 
 ## Install it in your project
 
 Build the fat jar (from the repo root), then add it to your classpath — the
-engine `.so` is bundled at `/native/` inside the jar, so nothing else is needed:
+core `.so` is bundled at `/native/` inside the jar, so nothing else is needed:
 
 ```sh
 aeb core/.build.ae && aeb java/.jar.ae   # -> target/dist/phonenumber-ae.jar

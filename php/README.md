@@ -1,7 +1,7 @@
 # phonenumber_ae — PHP
 
-A thin PHP binding over the shared, pure-Aether libphonenumber engine. All the
-phone logic lives in the one engine (`core/phonenumber.ae`); this binding is just
+A thin PHP binding over the shared, pure-Aether libphonenumber core. All the
+phone logic lives in the one core (`core/phonenumber.ae`); this binding is just
 ext-ffi marshalling over `libphonenumber_ae.so`. See the
 [repo README](../README.md) for the whole picture.
 
@@ -31,7 +31,7 @@ Geocoder::geoDescriptionForNumber('US', '6502530000');   // 'Mountain View, CA'
 ## Install it in your project
 
 Build the Composer package tarball (from the repo root), then require it — the
-engine `.so` is vendored under `native/`, so nothing else is needed at runtime:
+core `.so` is vendored under `native/`, so nothing else is needed at runtime:
 
 ```sh
 aeb core/.build.ae && aeb php/.dist.ae   # -> target/dist/phonenumber-ae-php.tar.gz
@@ -40,7 +40,7 @@ composer require libphonenumber-ae/phonenumber --dev \
 ```
 
 The tarball is current-OS-only (it vendors this platform's `.so`). The loader
-finds the engine in this order: an explicit `PhoneNumberAe\Native::load($path)`,
+finds the core in this order: an explicit `PhoneNumberAe\Native::load($path)`,
 `$LIBPHONENUMBER_AE_LIB`, the package's own `native/`, then the OS loader's
 search path — so an installed package needs no configuration.
 `PhoneNumber::nativeLibraryPath()` reports which candidate loaded. Requires
@@ -49,7 +49,7 @@ in `php.ini`).
 
 ## Develop / test
 
-From the repo, `aeb` builds the engine and runs the suite against the source
+From the repo, `aeb` builds the core and runs the suite against the source
 tree:
 
 ```sh

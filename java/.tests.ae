@@ -13,7 +13,7 @@
 // (No Maven: the binding is built by aeb/javac over a flat source dir, like the
 // javascript/ sibling — no pom.xml, no src/main/java tree.)
 //
-// The engine path IS passed by hand, and has to be. Native.openLibrary() uses
+// The core path IS passed by hand, and has to be. Native.openLibrary() uses
 // Panama's SymbolLookup.libraryLookup, which goes through the OS loader directly
 // and never consults java.library.path. Its candidates are
 // $LIBPHONENUMBER_AE_LIB, -Dlibphonenumber_ae.lib, ./native/<lib>, then the bare

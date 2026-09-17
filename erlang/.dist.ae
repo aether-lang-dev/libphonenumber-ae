@@ -3,14 +3,14 @@
 // Unlike erlang/.build.ae (which compiles the canonical BEAM NIF into the app
 // under erlang/_build/phonenumber_ae_nif for the in-repo test/BEAM family to run
 // against), this node produces a hand-to-someone tarball under target/dist/: the
-// whole OTP app — ebin/ (the compiled .beam + .app) plus priv/, with the engine
+// whole OTP app — ebin/ (the compiled .beam + .app) plus priv/, with the core
 // .so vendored under priv/ alongside the NIF .so.
 //
 // The BEAM idiom for "here is my app, unpack it onto ERL_LIBS" is a tar of the
 // application directory. erlang/.build.ae already stages the freshly-built
-// engine into priv/phonenumber_ae_nif's priv/libphonenumber_ae.so (next to the
+// core into priv/phonenumber_ae_nif's priv/libphonenumber_ae.so (next to the
 // NIF phonenumber_ae_nif.so), so the tarball is self-contained: the NIF's load
-// callback finds the engine in priv/ with no external .so to place.
+// callback finds the core in priv/ with no external .so to place.
 //
 // One .so per tarball => current-OS-only (the .so is this box's platform), same
 // caveat as the fat jar. A missing Erlang/OTP toolchain is a first-class SKIP:
@@ -46,12 +46,12 @@ aeb(cap) {
             return 0
         }
 
-        // Tar the whole OTP app directory (ebin/ + priv/, engine .so vendored in
+        // Tar the whole OTP app directory (ebin/ + priv/, core .so vendored in
         // priv/ by the build). -C the app's PARENT so the archive expands to a
         // top-level phonenumber_ae_nif/ ready to drop onto ERL_LIBS.
         rc = os.system("tar -czf \"${dist}/phonenumber-ae-erlang.tar.gz\" -C \"${root}/erlang/_build\" phonenumber_ae_nif")
         if rc != 0 { println("erlang dist: failed to build the app tarball"); return 1 }
-        println("erlang dist: target/dist/phonenumber-ae-erlang.tar.gz (OTP app, engine .so vendored under priv/)")
+        println("erlang dist: target/dist/phonenumber-ae-erlang.tar.gz (OTP app, core .so vendored under priv/)")
         return 0
     }
 }

@@ -1,7 +1,7 @@
 # phonenumber_ae — Dart
 
-A thin Dart binding over the shared, pure-Aether libphonenumber engine. All the
-phone logic lives in the one engine (`core/phonenumber.ae`); this binding is just
+A thin Dart binding over the shared, pure-Aether libphonenumber core. All the
+phone logic lives in the one core (`core/phonenumber.ae`); this binding is just
 `dart:ffi` marshalling over `libphonenumber_ae.so` (ABI v7, 66 exports). See the
 [repo README](../README.md) for the whole picture.
 
@@ -24,7 +24,7 @@ pn.Geocoder.geoDescriptionForNumber('US', '6502530000');     // 'Mountain View, 
 
 ## Install it in your project
 
-Build the tarball (from the repo root), then unpack it — the engine `.so` is
+Build the tarball (from the repo root), then unpack it — the core `.so` is
 vendored at `native/` inside, so nothing else is needed at runtime:
 
 ```sh
@@ -34,14 +34,14 @@ tar xzf target/dist/phonenumber-ae-dart.tar.gz   # -> phonenumber-ae-dart/
 
 Add it as a path dependency in your `pubspec.yaml`
 (`phonenumber_ae: {path: ../phonenumber-ae-dart}`) and `dart pub get`. The tarball
-is current-OS-only (it vendors this platform's `.so`). The loader finds the engine
+is current-OS-only (it vendors this platform's `.so`). The loader finds the core
 in this order: an explicit `Api.open(path)`, `$LIBPHONENUMBER_AE_LIB`, the package's
 own `native/` dir, then the OS loader's search path — so an unpacked tarball needs
 no configuration.
 
 ## Develop / test
 
-From the repo, `aeb` builds the engine and runs the suite against the source
+From the repo, `aeb` builds the core and runs the suite against the source
 tree:
 
 ```sh

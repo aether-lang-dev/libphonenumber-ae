@@ -1,7 +1,7 @@
 // Metadata generation node. Runs core/gen/generate_metadata.sh to produce the
-// engine's metadata tables + language dispatchers from the pristine in-tree
+// core's metadata tables + language dispatchers from the pristine in-tree
 // resources/. These .ae tables are build artifacts (gitignored), so every node
-// that compiles an engine module (the .so build and each engine gate) deps this
+// that compiles a core module (the .so build and each core gate) deps this
 // so a fresh checkout builds. Default language: English.
 import bldr
 import std.os

@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Cross-build the engine (libphonenumber_ae) for the release matrix from ONE host.
+# Cross-build the core (libphonenumber_ae) for the release matrix from ONE host.
 #
-# The engine is pure Aether; `ae build --target=<triple>` cross-compiles via zig
+# The core is pure Aether; `ae build --target=<triple>` cross-compiles via zig
 # cc — no per-OS runner. Output name:
 #   libphonenumber_ae-<tag>-<os>-<arch>.<ext>   (.so linux / .dylib macos / .dll windows)
 # Alongside each: <artifact>.sha256, plus a combined release/dist/SHA256SUMS.txt.
 #
-# We ship the ENGINE LIBS ONLY — the reusable, language-agnostic artifact every
+# We ship the CORE LIBS ONLY — the reusable, language-agnostic artifact every
 # binding links or dlopens. The per-language packages (wheel/gem/jar/crate/…) are
 # built by each `<lang>/.dist.ae` and are deliberately NOT part of this release:
 # they are toolchain-bound and belong to their own registries, not gh-releases.
@@ -61,7 +61,7 @@ say "generating metadata + assembling embed (host-side, once)"
 core/gen/generate_metadata.sh en >/dev/null || die "generate_metadata.sh failed"
 core/gen/assemble_embed.sh core/embed.ae all >/dev/null || die "assemble_embed.sh failed"
 
-say "engine: libphonenumber_ae  tag: $TAG"
+say "core: libphonenumber_ae  tag: $TAG"
 say "matrix: $MATRIX"
 echo
 
@@ -79,7 +79,7 @@ for t in $MATRIX; do
   fi
 
   printf 'release:   %-18s -> %s ... ' "$t" "$name"
-  # --size strips the artifact. No --with / --lib: the engine has no caps and
+  # --size strips the artifact. No --with / --lib: the core has no caps and
   # imports nothing by bare name (mirrors core/.build.ae's aether.shared_lib()).
   # Run from ROOT: core/embed.ae imports `core.phonenumber` etc., which resolve
   # from the project root, not from inside core/. --extra takes an ABSOLUTE path
@@ -109,5 +109,5 @@ done
 ( cd "$DIST" && sha256sum ./*.so ./*.dylib ./*.dll ./*.dll.lib 2>/dev/null > SHA256SUMS.txt || true )
 
 echo
-say "built $built engine artifact(s) into release/dist/ ($failed failed)"
+say "built $built core artifact(s) into release/dist/ ($failed failed)"
 [ "$failed" -eq 0 ] || exit 1

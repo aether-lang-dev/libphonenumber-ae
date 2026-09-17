@@ -2,12 +2,12 @@
 
 These metadata files are vendored verbatim from Google's **libphonenumber**
 (<https://github.com/google/libphonenumber>), Apache License 2.0, © The
-Libphonenumber Authors. They are the sole authority the Aether engine compiles
+Libphonenumber Authors. They are the sole authority the Aether core compiles
 against; nothing here is hand-edited.
 
 ## What is vendored (and why)
 
-The Aether build consumes exactly these paths — the engine's generators read
+The Aether build consumes exactly these paths — the core's generators read
 them directly (see `core/gen/`), and the generated `.ae` tables are build
 artifacts, never committed:
 

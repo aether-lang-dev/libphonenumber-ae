@@ -1,9 +1,9 @@
 /// Validate, parse and format international phone numbers (ABI v7).
 ///
-/// A thin `dart:ffi` binding over the monorepo's one shared native engine
+/// A thin `dart:ffi` binding over the monorepo's one shared native core
 /// (`core/native/libphonenumber_ae.so`, compiled from pure Aether over Google
 /// libphonenumber's own metadata). It contains **no phone-number logic**: every
-/// member marshals to an `aether_pn_embed_*` call. One engine, one set of
+/// member marshals to an `aether_pn_embed_*` call. One core, one set of
 /// behaviours, N language surfaces.
 ///
 /// ```dart

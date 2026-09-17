@@ -2,7 +2,7 @@
 //
 // The Groovy layer is NOT a second FFI: it compiles against the Java binding's
 // classes (bldr.dep java/.build.ae -> the standard JVM classpath artifact) and
-// reaches the engine through them. So this node deps BOTH java/.build.ae (for
+// reaches the core through them. So this node deps BOTH java/.build.ae (for
 // the classpath) and core/.build.ae (for the .so that LIBPHONENUMBER_AE_LIB
 // points at).
 //

@@ -4,7 +4,7 @@
  * The 47-check binding conformance suite (docs/conformance.md, v7).
  *
  * Proves the PHP binding marshals every value shape across the FFI. It is NOT a
- * phone-number test suite — the behavioural cases live in the engine's own
+ * phone-number test suite — the behavioural cases live in the core's own
  * tests and run once, in Aether.
  *
  * ## Why a plain runner and not PHPUnit
@@ -122,7 +122,7 @@ if (!extension_loaded('ffi')) {
     exit(2);
 }
 printf(
-    "engine: %s (ABI v%d)\n",
+    "core: %s (ABI v%d)\n",
     PhoneNumber::nativeLibraryPath() ?? '(unknown)',
     PhoneNumber::abiVersion()
 );

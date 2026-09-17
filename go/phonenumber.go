@@ -1,11 +1,11 @@
 // Package phonenumber validates and formats international phone numbers.
 //
-// It is a thin cgo binding over the monorepo's ONE shared native engine
+// It is a thin cgo binding over the monorepo's ONE shared native core
 // (core/native/libphonenumber_ae.so, compiled from pure Aether over Google
 // libphonenumber's own metadata). No phone-number logic lives in this package —
 // every function marshals to an `aether_pn_embed_*` call across the flat C ABI
 // described in docs/abi.md (v7, full PhoneNumberUtil parity plus
-// ShortNumberInfo, TimeZones, Carrier and Geocoder). One engine, one set of behaviours,
+// ShortNumberInfo, TimeZones, Carrier and Geocoder). One core, one set of behaviours,
 // N language surfaces.
 //
 // The ABI is stateless and handle-free: a parsed number and an AsYouType state
@@ -27,7 +27,7 @@ package phonenumber
 #include <stdlib.h>
 
 // ---- the C ABI (core/embed.ae, docs/abi.md). Declared, not defined: we LINK
-// the engine rather than dlopen it, so cgo resolves these at build time.
+// the core rather than dlopen it, so cgo resolves these at build time.
 // Every returned char* is caller-owned — copy it out then free it through
 // aether_pn_embed_free_string. There is no handle and there are no callbacks:
 // a parsed number and an AsYouType state cross the seam as caller-owned STRINGS. ----
@@ -228,7 +228,7 @@ const (
 
 // takeString copies an ABI-returned string out and frees it through the ABI.
 //
-// Every char* the engine returns is caller-owned; leaking it is the single
+// Every char* the core returns is caller-owned; leaking it is the single
 // easiest mistake to make in any of these bindings, so every string result in
 // this file goes through here.
 func takeString(s *C.char) string {
@@ -609,7 +609,7 @@ func IsAlphaNumber(s string) bool {
 	return C.aether_pn_embed_is_alpha_number(cs) != 0
 }
 
-// ABIVersion is the ABI revision the linked engine reports (currently 5).
+// ABIVersion is the ABI revision the linked core reports (currently 5).
 func ABIVersion() int { return int(C.aether_pn_embed_abi_version()) }
 
 // ---- AsYouTypeFormatter ----
@@ -755,7 +755,7 @@ func ShortExampleNumber(region string) string {
 
 // ---- PhoneNumberToTimeZonesMapper (timezone lookup) ----
 
-// The engine parses the raw (region, input) to E.164 itself, then does a
+// The core parses the raw (region, input) to E.164 itself, then does a
 // longest-prefix match over its digits. The unknown-zone sentinel is
 // "Etc/Unknown".
 
@@ -796,7 +796,7 @@ func UnknownTimeZone() string {
 // langOrEn resolves the optional trailing lang argument of the carrier/geo
 // wrappers. Go has no default parameters, so the language is a variadic tail:
 // callers that pass nothing get "en" (always available, and the fallback for
-// any language the engine was not built with); the first value, if given, wins.
+// any language the core was not built with); the first value, if given, wins.
 func langOrEn(lang []string) string {
 	if len(lang) > 0 && lang[0] != "" {
 		return lang[0]

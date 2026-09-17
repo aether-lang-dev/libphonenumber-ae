@@ -20,7 +20,7 @@ import org.libphonenumber.ae.ValidationResult
  * geocoder).
  *
  * There is <b>no second FFI here</b>. The one JVM binding to the shared Aether
- * engine is {@code java/aether/} (FFM / Panama); everything in this file is
+ * core is {@code java/aether/} (FFM / Panama); everything in this file is
  * ordinary Groovy/Java interop on top of those classes. A Groovy-specific FFI
  * would be a second copy of the marshalling rules to keep in step with
  * {@code core/embed.ae}, and the first thing to drift.

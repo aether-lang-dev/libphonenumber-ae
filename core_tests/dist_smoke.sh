@@ -3,7 +3,7 @@
 #
 # For each artifact that was produced (toolchain-absent bindings skip and produce
 # nothing, which is fine), check it exists and is non-empty; for artifacts that
-# bundle the engine natively, check the engine is actually inside.
+# bundle the core natively, check the core is actually inside.
 #
 # Exit 0 = every produced artifact is valid (and at least the JVM jar, which
 # builds wherever a JDK 22+ is present, was checked). Exit 1 = a produced
@@ -26,7 +26,7 @@ nonempty() {  # <path> <label>
   [ -s "$1" ] || fail "$2 is empty: $1"
 }
 
-# --- JVM fat jar: must exist, be non-empty, and bundle the engine at native/ ---
+# --- JVM fat jar: must exist, be non-empty, and bundle the core at native/ ---
 JAR="$DIST/phonenumber-ae.jar"
 if [ -f "$JAR" ]; then
   nonempty "$JAR" "jvm jar"
@@ -43,12 +43,12 @@ if [ -f "$JAR" ]; then
 fi
 
 # --- The JVM-layer thin jars (kotlin/groovy/clojure) layer over java/'s classes
-# and deliberately do NOT bundle the engine; check presence + non-empty only. ---
+# and deliberately do NOT bundle the core; check presence + non-empty only. ---
 shopt -s nullglob
 for f in "$DIST"/kotlin-phonenumber-ae.jar "$DIST"/groovy-phonenumber-ae.jar \
          "$DIST"/clojure-phonenumber-ae.jar; do
   nonempty "$f" "jvm-layer jar"
-  say "$(basename "$f") OK — present, non-empty (thin, reuses the fat jar's engine)"
+  say "$(basename "$f") OK — present, non-empty (thin, reuses the fat jar's core)"
   checked=$((checked + 1))
 done
 

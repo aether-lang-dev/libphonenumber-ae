@@ -1,7 +1,7 @@
 # phonenumber_ae — Kotlin
 
-A thin Kotlin binding over the shared, pure-Aether libphonenumber engine. All the
-phone logic lives in the one engine (`core/phonenumber.ae`); this layer carries no
+A thin Kotlin binding over the shared, pure-Aether libphonenumber core. All the
+phone logic lives in the one core (`core/phonenumber.ae`); this layer carries no
 FFI of its own — it is idiomatic sugar over the Java binding (FFM / Panama), which
 holds the single JVM FFI. See the [repo README](../README.md) for the whole picture.
 
@@ -36,7 +36,7 @@ kotlinc -cp kotlin-phonenumber-ae.jar:phonenumber-ae.jar MyApp.kt
 ```
 
 Only the Java fat jar (`phonenumber-ae.jar`, from `aeb java/.jar.ae`) carries the
-engine `.so` — it is bundled at `/native/` and self-extracts on first use, so put
+core `.so` — it is bundled at `/native/` and self-extracts on first use, so put
 both jars on the classpath and no external `.so` or `LIBPHONENUMBER_AE_LIB` is
 needed. Building the jar needs a real kotlinc 2.x via `KOTLIN_HOME` (Debian's 1.3
 cannot read the Java binding's FFM-era bytecode).

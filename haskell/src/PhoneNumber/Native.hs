@@ -5,9 +5,9 @@
 -- Description : The 1:1 symbol table for the phonenumber C ABI (v7).
 --
 -- This module is the ONLY place in the Haskell binding that knows about the C
--- ABI. Every symbol the engine exports appears here once, with the exact C
+-- ABI. Every symbol the core exports appears here once, with the exact C
 -- signature, in the order @core\/embed.ae@ declares it. No phone-number logic
--- lives here or anywhere else in this package — the engine is
+-- lives here or anywhere else in this package — the core is
 -- @core\/phonenumber.ae@, compiled to @libphonenumber_ae.so@.
 --
 -- == ABI v7
@@ -353,7 +353,7 @@ foreign import ccall unsafe "aether_pn_embed_tz_unknown"
 
 -- PhoneNumberToCarrierMapper (localized carrier names) ---------------------
 -- v7: a trailing @const char* lang@ ISO code ("en", "de", …). "en" is always
--- available and is the fallback for any language not compiled into the engine.
+-- available and is the fallback for any language not compiled into the core.
 
 foreign import ccall unsafe "aether_pn_embed_carrier_name"
   aether_pn_embed_carrier_name :: CString -> CString -> CString -> IO CString
@@ -377,13 +377,13 @@ foreign import ccall unsafe "aether_pn_embed_geo_description_for_valid"
 -- | Copy an ABI-returned string out and free it through the ABI.
 --
 -- __This is the only place a returned @CString@ is consumed.__ The one rule of
--- this ABI is that every @char*@ out of the engine is caller-owned; funnelling
+-- this ABI is that every @char*@ out of the core is caller-owned; funnelling
 -- them all through one function is what makes that auditable. A null pointer
 -- (which the ABI does not currently produce) yields @\"\"@ rather than a
 -- segfault.
 --
 -- The result is a 'B.ByteString' of the raw UTF-8 bytes. This binding does not
--- decode to 'String'\/'Data.Text.Text': the engine speaks UTF-8 bytes, so
+-- decode to 'String'\/'Data.Text.Text': the core speaks UTF-8 bytes, so
 -- handing bytes back is both lossless and dependency-free.
 takeString :: CString -> IO B.ByteString
 takeString p
@@ -391,7 +391,7 @@ takeString p
   | otherwise = do
       -- packCString COPIES up to the NUL, so the ByteString stays valid after
       -- the free below. (unsafePackCString would alias the buffer we are about
-      -- to hand back to the engine — a use-after-free.)
+      -- to hand back to the core — a use-after-free.)
       bs <- B.packCString p
       aether_pn_embed_free_string p
       pure bs

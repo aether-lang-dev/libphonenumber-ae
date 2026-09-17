@@ -1,7 +1,7 @@
 <?php
 
 /**
- * IANA time-zone lookup over the phonenumber engine (ABI v5).
+ * IANA time-zone lookup over the phonenumber core (ABI v5).
  *
  * Mirrors libphonenumber's `PhoneNumberToTimeZonesMapper`. Carries no
  * phone-number logic — every method marshals to an `aether_pn_embed_tz_*` call

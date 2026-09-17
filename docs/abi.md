@@ -132,7 +132,7 @@ is the raw short number plus a region. **ShortNumberCost** (`short_expected_cost
 ### PhoneNumberToTimeZonesMapper (timezone lookup)
 
 Longest-prefix match over the number's E.164 digits. Pass a raw `(region, input)`
-like everywhere else; the engine parses to E.164 internally. The unknown-zone
+like everywhere else; the core parses to E.164 internally. The unknown-zone
 sentinel is `"Etc/Unknown"`.
 
 | Symbol | Signature |
@@ -149,7 +149,7 @@ and is the fallback for any language not compiled into the `.so` (which
 languages a build carries is chosen at build time — see docs/composable-builds.md).
 
 Longest-prefix match over the E.164 digits. Pass a raw `(region, input)`; the
-engine parses to E.164 internally. English names only. Returns `""` when no
+core parses to E.164 internally. English names only. Returns `""` when no
 carrier is known for the number.
 
 | Symbol | Signature |
@@ -160,7 +160,7 @@ carrier is known for the number.
 ### PhoneNumberOfflineGeocoder (geographic descriptions, per language)
 
 Longest-prefix match over the E.164 digits. Pass a raw `(region, input)`; the
-engine parses to E.164 internally. English descriptions only. Returns `""` when
+core parses to E.164 internally. English descriptions only. Returns `""` when
 no description is known.
 
 | Symbol | Signature |

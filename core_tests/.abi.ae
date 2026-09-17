@@ -1,11 +1,11 @@
-// C ABI conformance: a pure-C consumer that dlopens the engine .so and drives
+// C ABI conformance: a pure-C consumer that dlopens the core .so and drives
 // every exported symbol — the caller-owned-string contract, the query surface
 // (country code, example, lengths, national-number extraction, isPossible,
 // isValid, number-type, all three format styles) and region enumeration.
 //
 // This is the gate that matters for the bindings. Every language binding is
 // marshalling over exactly these symbols, so if this passes, a binding failure
-// is a binding bug, not an engine one. Keep it in C with nothing but dlopen +
+// is a binding bug, not a core one. Keep it in C with nothing but dlopen +
 // dlsym: no language runtime can mask a problem here.
 
 import bldr

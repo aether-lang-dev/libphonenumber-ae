@@ -13,7 +13,7 @@ PhonenumberAe numberType: '2015550123' region: 'US'. ""-> #fixedLine""
 
 ## No phone-number logic here
 
-I am **marshalling only**. The engine — the metadata table, isPossible /
+I am **marshalling only**. The core — the metadata table, isPossible /
 isValid, number typing and formatting — is the pure-Aether
 `core/phonenumber.ae`, compiled from Google libphonenumber's own metadata,
 shared by every language binding in this monorepo and reached through the
@@ -87,7 +87,7 @@ PhonenumberAe class >> leniencyExactGrouping [ ^ 3 ]
 { #category : 'constants - leniency' }
 PhonenumberAe class >> leniencyFor: aSymbol [
 	"Map a leniency symbol onto the ABI's integer code. #strictGrouping (2) and
-	 #exactGrouping (3) consult AlternateFormats in the engine; all levels hit
+	 #exactGrouping (3) consult AlternateFormats in the core; all levels hit
 	 the same matcher_count symbol."
 
 	^ aSymbol
@@ -105,7 +105,7 @@ PhonenumberAe class >> leniencyFor: aSymbol [
 PhonenumberAe class >> numberTypeSymbolFor: anInteger [
 	"The ABI number-type code as a Symbol. The constants are append-only, so a
 	 code this build does not know becomes #unknown rather than an error, and
-	 -1 is the engine's own 'unknown' sentinel."
+	 -1 is the core's own 'unknown' sentinel."
 
 	^ anInteger
 		  caseOf: {
@@ -756,7 +756,7 @@ PhonenumberAe class >> regionAt: anIndex [
 { #category : 'regions' }
 PhonenumberAe class >> regions [
 	"Every region id the metadata carries, as an OrderedCollection of ISO-3166
-	 codes in the engine's own order."
+	 codes in the core's own order."
 
 	| n out |
 	n := self primRegionCount.
@@ -1074,7 +1074,7 @@ PhonenumberAe class >> shortExampleNumber: aRegion [
 { #category : 'time zones' }
 PhonenumberAe class >> timeZonesForNumber: anInput region: aRegion [
 	"The IANA time-zone ids for a number, as an OrderedCollection. When the
-	 engine knows no zone (count 0) the result is a single-element collection of
+	 core knows no zone (count 0) the result is a single-element collection of
 	 the unknown zone, mirroring the other bindings — never empty."
 
 	| region input n out |
@@ -1099,7 +1099,7 @@ PhonenumberAe class >> timeZoneCount: anInput region: aRegion [
 
 { #category : 'time zones' }
 PhonenumberAe class >> unknownTimeZone [
-	"The engine's sentinel unknown zone, 'Etc/Unknown'."
+	"The core's sentinel unknown zone, 'Etc/Unknown'."
 
 	^ self takeString: self primTzUnknown
 ]
@@ -1118,7 +1118,7 @@ PhonenumberAe class >> carrierNameForNumber: anInput region: aRegion [
 { #category : 'carrier' }
 PhonenumberAe class >> carrierNameForNumber: anInput region: aRegion lang: aLang [
 	"The carrier name for a number, localized by aLang, or '' if none is known.
-	 A language not compiled into the engine falls back to English."
+	 A language not compiled into the core falls back to English."
 
 	^ self takeString: (self
 			   primCarrierName: (aRegion ifNil: [ '' ])
@@ -1161,7 +1161,7 @@ PhonenumberAe class >> geoDescriptionForNumber: anInput region: aRegion [
 { #category : 'geocoder' }
 PhonenumberAe class >> geoDescriptionForNumber: anInput region: aRegion lang: aLang [
 	"A geographic description localized by aLang, or '' if none is known.
-	 A language not compiled into the engine falls back to English."
+	 A language not compiled into the core falls back to English."
 
 	^ self takeString: (self
 			   primGeoDescription: (aRegion ifNil: [ '' ])
@@ -1192,7 +1192,7 @@ PhonenumberAe class >> geoDescriptionForValidNumber: anInput region: aRegion lan
 
 { #category : 'introspection' }
 PhonenumberAe class >> abiVersion [
-	"The engine's ABI revision (7)."
+	"The core's ABI revision (7)."
 
 	^ self primAbiVersion
 ]

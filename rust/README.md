@@ -1,7 +1,7 @@
 # phonenumber_ae — Rust
 
-A thin Rust binding over the shared, pure-Aether libphonenumber engine. All the
-phone logic lives in the one engine (`core/phonenumber.ae`); this crate is just
+A thin Rust binding over the shared, pure-Aether libphonenumber core. All the
+phone logic lives in the one core (`core/phonenumber.ae`); this crate is just
 [libloading](https://docs.rs/libloading) FFI marshalling over
 `libphonenumber_ae.so`. See the [repo README](../README.md) for the whole picture.
 
@@ -25,7 +25,7 @@ pn::geo_description_for_number("US", "6502530000", None);          // "Mountain 
 ## Install it in your project
 
 Build the source `.crate` (from the repo root), then add it as a dependency. No
-`.so` is bundled — the crate is built by the consumer and loads the engine via
+`.so` is bundled — the crate is built by the consumer and loads the core via
 FFI at run time:
 
 ```sh
@@ -33,22 +33,22 @@ aeb core/.build.ae && aeb rust/.dist.ae   # -> target/dist/phonenumber_ae-*.crat
 cargo add phonenumber_ae   # or point a path/registry dependency at the .crate
 ```
 
-At run time the engine is resolved in this order: an explicit
+At run time the core is resolved in this order: an explicit
 `PhoneNumbers::with_library(Some(path))`, `$LIBPHONENUMBER_AE_LIB`, a `native/`
 dir next to the crate, then the OS loader's search path — so set
 `LIBPHONENUMBER_AE_LIB` or drop the `.so` beside the binary.
 
-You don't need aeb for the engine: download the prebuilt one for your platform
+You don't need aeb for the core: download the prebuilt one for your platform
 from a [release](https://github.com/aether-lang-dev/libphonenumber-ae/releases)
 and point at it:
 
 ```sh
-export LIBPHONENUMBER_AE_LIB="$(curl -fsSL https://raw.githubusercontent.com/aether-lang-dev/libphonenumber-ae/main/get-engine.sh | sh)"
+export LIBPHONENUMBER_AE_LIB="$(curl -fsSL https://raw.githubusercontent.com/aether-lang-dev/libphonenumber-ae/main/get-core.sh | sh)"
 ```
 
 ## Develop / test
 
-From the repo, `aeb` builds the engine and runs the suite against the source
+From the repo, `aeb` builds the core and runs the suite against the source
 tree:
 
 ```sh

@@ -11,7 +11,7 @@
 // be added later the same way.
 //
 // Row layout, 0x1F-separated: cc | prefix | CarrierName
-// The explicit leading cc lets the engine narrow to one country's entries before
+// The explicit leading cc lets the core narrow to one country's entries before
 // the longest-prefix scan — important because en/ has ~29k entries total (a flat
 // per-call linear scan would be slow), while any single cc is far smaller.
 

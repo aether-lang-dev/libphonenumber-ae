@@ -12,7 +12,7 @@
 // Stored as ONE newline-joined string blob (rows "cc<0x1F>prefix<0x1F>desc"),
 // like the carrier table: too many entries for the compiler's per-function
 // statement cap as list.add calls, but a single 7 MB string constant compiles
-// in ~0.4s. The engine scans it with the cached-length accessors (char_at_n /
+// in ~0.4s. The core scans it with the cached-length accessors (char_at_n /
 // substring_n) so a lookup is O(n), not O(n^2). Longest-prefix match.
 
 import std.string

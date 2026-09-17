@@ -6,7 +6,7 @@
 // package metadata Hex requires.
 //
 // This package ships NO native code: the NIF is built once by erlang/.build.ae
-// and loaded at runtime (see mix.exs and the one-engine rule), so there is no C
+// and loaded at runtime (see mix.exs and the one-core rule), so there is no C
 // and no second .so to vendor here — the Hex tar is the honest Elixir artifact.
 //
 // `mix hex.build` needs the `hex` archive; if mix (or hex) is absent it cannot

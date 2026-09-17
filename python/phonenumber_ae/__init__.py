@@ -1,6 +1,6 @@
 """phonenumber_ae — validate, parse and format international phone numbers.
 
-A thin Python binding over one shared native engine (pure Aether, compiled from
+A thin Python binding over one shared native core (pure Aether, compiled from
 Google libphonenumber's own metadata), the same artifact every other language
 binding in this monorepo uses. Cross-language behaviour is identical by
 construction, not by test.

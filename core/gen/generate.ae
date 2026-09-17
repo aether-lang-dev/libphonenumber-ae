@@ -135,7 +135,7 @@ main() {
     cur_maincountry = ""    // mainCountryForCode ("true"/"")
     // ALL display formats, 0x1E-joined and positionally aligned. Each format
     // carries pattern, template, leadingDigits, nationalPrefixFormattingRule and
-    // intlFormat so the engine can route by leadingDigits (as upstream does)
+    // intlFormat so the core can route by leadingDigits (as upstream does)
     // and apply the national-prefix formatting rule.
     fmt_patterns = ""       // patterns, 0x1E-joined
     fmt_templates = ""      // national-format templates, 0x1E-joined

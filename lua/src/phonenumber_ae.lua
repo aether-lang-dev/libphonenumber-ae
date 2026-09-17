@@ -1,9 +1,9 @@
 --- Validate, parse and format international phone numbers (ABI v7).
 ---
---- The idiomatic Lua surface over the phonenumber engine. Carries no
+--- The idiomatic Lua surface over the phonenumber core. Carries no
 --- phone-number logic — every function here marshals to the C extension in
 --- `phonenumber_ae_native` (lua/src/phonenumber_ae.c), which in turn calls the
---- `aether_pn_embed_*` ABI. One engine, one set of behaviours, N language
+--- `aether_pn_embed_*` ABI. One core, one set of behaviours, N language
 --- surfaces.
 ---
 ---     local pn = require("phonenumber_ae")
@@ -134,7 +134,7 @@ function M.region_at(index)
   return native.region_at(index)
 end
 
---- Every region id the metadata carries, as a table (engine order).
+--- Every region id the metadata carries, as a table (core order).
 function M.regions()
   local out = {}
   for i = 1, native.region_count() do
@@ -419,7 +419,7 @@ end
 
 -- ---- PhoneNumberToTimeZonesMapper (timezone lookup) ----
 -- Longest-prefix match over the number's E.164 digits: pass a raw (region,
--- input) like everywhere else and the engine parses to E.164 itself. The
+-- input) like everywhere else and the core parses to E.164 itself. The
 -- unknown-zone sentinel is "Etc/Unknown".
 
 --- The unknown-timezone sentinel, "Etc/Unknown".
@@ -450,7 +450,7 @@ end
 -- ---- PhoneNumberToCarrierMapper (localized carrier names) ----
 -- Longest-prefix match over the E.164 digits. `lang` is an ISO code ("en",
 -- "de", …), defaulting to "en" (always available, and the fallback for any
--- language not compiled into the engine). "" when no carrier is known.
+-- language not compiled into the core). "" when no carrier is known.
 
 --- The carrier name for a number, localized by `lang` (default "en"), or "".
 function M.carrier_name_for_number(region, input, lang)
@@ -479,17 +479,17 @@ end
 
 -- ---- lifecycle ----
 
---- The engine's ABI revision.
+--- The core's ABI revision.
 function M.abi_version()
   return native.abi_version()
 end
 
---- Where the engine `.so` was actually loaded from.
+--- Where the core `.so` was actually loaded from.
 function M.engine_path()
   return native.engine_path()
 end
 
---- Force the engine to load from an explicit path (before first use). Returns
+--- Force the core to load from an explicit path (before first use). Returns
 --- the resolved path.
 function M.load(path)
   return native.load(path)

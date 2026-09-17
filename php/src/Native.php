@@ -6,7 +6,7 @@
  * This file is the ONLY place in the PHP binding that knows about the C ABI.
  * Everything above it (PhoneNumber.php) is idiomatic PHP over these symbols.
  * No phone-number logic lives here or anywhere else in this package — the
- * engine is core/phonenumber.ae, shared by every language binding.
+ * core is core/phonenumber.ae, shared by every language binding.
  *
  * ## Naming
  *
@@ -216,7 +216,7 @@ final class Native
     private static ?string $path = null;
 
     /**
-     * Load the engine, caching it process-wide when no explicit path is given.
+     * Load the core, caching it process-wide when no explicit path is given.
      *
      * Resolution order:
      *   1. an explicit $path passed here
@@ -257,7 +257,7 @@ final class Native
         }
 
         throw new RuntimeException(sprintf(
-            "phonenumber_ae: could not load the engine (%s). Set "
+            "phonenumber_ae: could not load the core (%s). Set "
             . "LIBPHONENUMBER_AE_LIB to its absolute path, or build it with:\n"
             . "  aeb core/.build.ae\nTried: %s\nLast error: %s",
             self::fileName(),
@@ -266,7 +266,7 @@ final class Native
         ));
     }
 
-    /** Where the engine was actually loaded from, once known. */
+    /** Where the core was actually loaded from, once known. */
     public static function path(): ?string
     {
         return self::$path;
@@ -311,7 +311,7 @@ final class Native
     /**
      * Copy an ABI-returned string out and free it through the ABI.
      *
-     * Every char* the engine returns is caller-owned; leaking it is the single
+     * Every char* the core returns is caller-owned; leaking it is the single
      * easiest mistake to make in any of these bindings. Every string result in
      * this package goes through here.
      *

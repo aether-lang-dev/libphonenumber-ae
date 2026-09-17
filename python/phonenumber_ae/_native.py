@@ -1,8 +1,8 @@
-"""ctypes bindings for the phonenumber engine (libphonenumber_ae.so), ABI v2.
+"""ctypes bindings for the phonenumber core (libphonenumber_ae.so), ABI v2.
 
 The ONLY place in the Python binding that knows the C ABI. Everything above it
 (`_phonenumber.py`) is idiomatic Python over these symbols. No phone-number
-logic lives here — the engine is `core/phonenumber.ae`, shared by every binding.
+logic lives here — the core is `core/phonenumber.ae`, shared by every binding.
 
 Library resolution: explicit path → $LIBPHONENUMBER_AE_LIB → native/ beside this
 package → the OS loader's search path.
@@ -86,7 +86,7 @@ def _candidates(explicit=None):
 
 
 def load(path=None):
-    """Load the engine .so, caching it process-wide. Returns the CDLL."""
+    """Load the core .so, caching it process-wide. Returns the CDLL."""
     global _lib
     if _lib is not None and path is None:
         return _lib
@@ -99,7 +99,7 @@ def load(path=None):
             last = exc
     else:
         raise OSError(
-            "could not load the phonenumber engine ({}). Set "
+            "could not load the phonenumber core ({}). Set "
             "LIBPHONENUMBER_AE_LIB to its absolute path. Last error: {}".format(
                 _LIB_NAME, last))
     _declare(lib)

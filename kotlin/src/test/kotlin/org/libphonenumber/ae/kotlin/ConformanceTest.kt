@@ -11,14 +11,14 @@ import org.libphonenumber.ae.ValidationResult
 /**
  * The 47-check binding conformance suite (docs/conformance.md, v7), in Kotlin.
  *
- * Proves the **Kotlin layer** reaches the same engine behaviour the Java and
+ * Proves the **Kotlin layer** reaches the same core behaviour the Java and
  * Python suites see. Since that layer sits on the Java binding rather than on
  * its own FFI, what this really pins down is that the Kotlin sugar — the
  * top-level functions, the [Format]-keyed `format`, the `regions` property, the
  * re-exported value types — marshals every value shape correctly.
  *
  * It is NOT a phone-number test suite — the behavioural cases live in the
- * engine's own tests and run once, in Aether.
+ * core's own tests and run once, in Aether.
  *
  * A plain main method, not JUnit, for the same reason the Java suite is: the run
  * then needs nothing but a JDK and a Kotlin compiler, so it works offline and

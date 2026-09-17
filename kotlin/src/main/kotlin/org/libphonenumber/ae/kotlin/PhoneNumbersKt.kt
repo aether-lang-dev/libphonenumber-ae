@@ -23,7 +23,7 @@ import org.libphonenumber.ae.ValidationResult
  * geocoder).
  *
  * There is **no second FFI here**. The one JVM binding to the shared Aether
- * engine is `java/aether/` (FFM / Panama); everything in this file is ordinary
+ * core is `java/aether/` (FFM / Panama); everything in this file is ordinary
  * Kotlin/Java interop on top of those classes. That is deliberate — a
  * Kotlin-specific FFI would be a second copy of the marshalling rules to keep in
  * sync with `core/embed.ae`, and the first thing to drift.
@@ -37,7 +37,7 @@ import org.libphonenumber.ae.ValidationResult
  *  * the value types ([ParsedNumber], [AsYouTypeFormatter], [Matcher]) re-exported
  *    by typealias so callers need not name the Java package.
  *
- * The engine carries the logic; this file carries none.
+ * The core carries the logic; this file carries none.
  */
 
 typealias PhoneNumber = ParsedNumber

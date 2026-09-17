@@ -2,7 +2,7 @@
 //   prereq             — skip cleanly when dart is absent
 //   dart.test { … }    — `dart pub get` (pub_get_first) then `dart test`,
 //                        offline once the pub cache is warm; env() exports the
-//                        engine .so path the dart:ffi loader reads.
+//                        core .so path the dart:ffi loader reads.
 // Mirrors the selenium binding's proven pattern.
 import bldr
 import dart

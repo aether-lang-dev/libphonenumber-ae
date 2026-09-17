@@ -60,7 +60,7 @@
 %%------------------------------------------------------------------
 
 %% Load the NIF, handing the C side our priv/ directory so it can find the
-%% bundled engine .so without guessing. The C load callback tries
+%% bundled core .so without guessing. The C load callback tries
 %% $LIBPHONENUMBER_AE_LIB first, then priv/, then the OS loader path.
 init() ->
     PrivDir = priv_dir(),

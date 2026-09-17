@@ -4,11 +4,11 @@
  * This file is the ONLY place in the Lua binding that knows about the C ABI.
  * Everything above it (lua/src/phonenumber_ae.lua) is idiomatic Lua over these
  * functions. No phone-number logic lives here or anywhere else in this binding
- * — the engine is core/phonenumber.ae, shared by every language binding.
+ * — the core is core/phonenumber.ae, shared by every language binding.
  *
  * Lua has no FFI in its standard distribution (LuaJIT's `ffi` is not Lua 5.4),
  * so unlike the ctypes/Fiddle/koffi bindings this one is a real C extension. It
- * still `dlopen`s the engine rather than linking it, so the same
+ * still `dlopen`s the core rather than linking it, so the same
  * LIBPHONENUMBER_AE_LIB resolution order as every other binding applies and one
  * .so serves them all.
  *
@@ -19,7 +19,7 @@
  * code — "en" is always available and is the fallback). There are
  * still no opaque handles — a parsed
  * number and an AsYouType state are themselves caller-owned STRINGS that come
- * back from the engine, get passed to accessor calls, and are freed like any
+ * back from the core, get passed to accessor calls, and are freed like any
  * other returned string. So there is still no per-object userdata here: the
  * idiomatic ParsedNumber / AsYouTypeFormatter objects live in the Lua layer and
  * simply hold that string.
@@ -67,7 +67,7 @@ typedef char* (*fn_matcher_str)(const char*, const char*, int, int);
 typedef int   (*fn_count3)(const char*, const char*, int);
 
 typedef struct {
-    void* handle;                     /* the dlopen'd engine */
+    void* handle;                     /* the dlopen'd core */
     char  path[4096];                 /* where it came from */
 
     fn_int_void    abi_version;
@@ -151,7 +151,7 @@ typedef struct {
 
 static Engine ENGINE;                 /* process-wide; loaded once */
 
-/* ---- engine loading ---- */
+/* ---- core loading ---- */
 
 static int load_symbols(lua_State* L, void* lib, const char* path) {
 #define SYM(field, name)                                                   \
@@ -160,7 +160,7 @@ static int load_symbols(lua_State* L, void* lib, const char* path) {
         if (!ENGINE.field) {                                               \
             dlclose(lib);                                                  \
             memset(&ENGINE, 0, sizeof(ENGINE));                            \
-            return luaL_error(L, "phonenumber_ae: engine at '%s' is missing "\
+            return luaL_error(L, "phonenumber_ae: core at '%s' is missing "\
                                  "symbol %s", path, name);                 \
         }                                                                  \
     } while (0)
@@ -280,14 +280,14 @@ static int engine_load(lua_State* L, const char* explicit_path) {
         if (e) last_err = e;
     }
     return luaL_error(L,
-        "phonenumber_ae: could not load the engine (%s). Set "
+        "phonenumber_ae: could not load the core (%s). Set "
         "LIBPHONENUMBER_AE_LIB to its absolute path, or build it with:\n"
         "  aeb core/.build.ae\nLast dlerror: %s", NAME, last_err);
 }
 
 /* ---- string helper ---- */
 
-/* Push an ABI-returned string and FREE it. Every char* out of the engine is
+/* Push an ABI-returned string and FREE it. Every char* out of the core is
  * caller-owned; this is the single place that ownership is discharged. */
 static void push_owned(lua_State* L, char* s) {
     if (!s) { lua_pushliteral(L, ""); return; }
@@ -309,7 +309,7 @@ static int l_engine_path(lua_State* L) {
     return 1;
 }
 
-/* The optional first argument to load() is an explicit engine path. It is only
+/* The optional first argument to load() is an explicit core path. It is only
  * honored the first time (before the process-wide handle is set). */
 static int l_load(lua_State* L) {
     const char* path = luaL_optstring(L, 1, NULL);
@@ -722,7 +722,7 @@ static int l_short_example_number(lua_State* L) {
 
 /* ---- PhoneNumberToTimeZonesMapper (timezone lookup) ---- */
 /* Longest-prefix match over the number's E.164 digits: pass a raw (region,
- * input) and the engine parses to E.164 itself. Unknown zone is "Etc/Unknown". */
+ * input) and the core parses to E.164 itself. Unknown zone is "Etc/Unknown". */
 
 static int l_tz_count(lua_State* L) {
     engine_load(L, NULL);
@@ -756,7 +756,7 @@ static int l_tz_unknown(lua_State* L) {
 /* ---- PhoneNumberToCarrierMapper (localized carrier names) ---- */
 /* v7: a trailing `lang` ISO code crosses the ABI. It is optional here and
  * defaults to "en" (always available, and the fallback for any language not
- * compiled into the engine), so a two-argument call from Lua keeps working. */
+ * compiled into the core), so a two-argument call from Lua keeps working. */
 
 static int l_carrier_name(lua_State* L) {
     engine_load(L, NULL);

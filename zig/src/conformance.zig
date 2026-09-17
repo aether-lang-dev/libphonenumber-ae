@@ -1,7 +1,7 @@
 //! The 47-check binding conformance suite (docs/conformance.md, v7).
 //!
 //! Proves the Zig binding marshals every value shape across the FFI. It is NOT
-//! a phone-number test suite — the behavioural cases live in the engine's own
+//! a phone-number test suite — the behavioural cases live in the core's own
 //! tests (`core_tests/`) and run once, in Aether. Here we only ask: does each
 //! *kind of value* cross the boundary intact?
 //!
@@ -295,7 +295,7 @@ test "extra region_at out of range is an owned empty string" {
 
 test "extra number_type unknown maps cleanly" {
     // Not asserting a specific unknown case, just that the enum path never
-    // yields illegal-value UB for whatever the engine returns.
+    // yields illegal-value UB for whatever the core returns.
     const t = try pn.numberType(alloc, "US", "2015550123");
     try testing.expect(t == .fixed_line_or_mobile);
 }

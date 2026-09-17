@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Carrier-name lookup over the phonenumber engine (ABI v7).
+ * Carrier-name lookup over the phonenumber core (ABI v7).
  *
  * Mirrors libphonenumber's `PhoneNumberToCarrierMapper`. Carries no
  * phone-number logic — every method marshals to an `aether_pn_embed_carrier_*`

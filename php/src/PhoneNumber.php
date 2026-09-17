@@ -1,7 +1,7 @@
 <?php
 
 /**
- * The idiomatic PHP surface over the phonenumber engine (ABI v5).
+ * The idiomatic PHP surface over the phonenumber core (ABI v5).
  *
  * Carries no phone-number logic — every method here marshals to an
  * `aether_pn_embed_*` call in {@see Native}.
@@ -320,13 +320,13 @@ final class PhoneNumber
         return self::ffi()->aether_pn_embed_is_alpha_number($s) !== 0;
     }
 
-    /** The ABI revision the loaded engine reports. */
+    /** The ABI revision the loaded core reports. */
     public static function abiVersion(): int
     {
         return self::ffi()->aether_pn_embed_abi_version();
     }
 
-    /** Where the engine .so was actually loaded from. */
+    /** Where the core .so was actually loaded from. */
     public static function nativeLibraryPath(): ?string
     {
         self::ffi(); // ensure it is loaded so path() is populated

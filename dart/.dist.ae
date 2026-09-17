@@ -2,19 +2,19 @@
 //
 // Dart/pub has no binary package format that can carry a native .so (a published
 // pub package is source-only), so the hand-to-someone distributable is a
-// .tar.gz of the package sources PLUS the engine .so vendored at
+// .tar.gz of the package sources PLUS the core .so vendored at
 // native/libphonenumber_ae.so inside the tarball. native.dart's loader already
 // probes native/ beside the package ($cwd/native/<lib>), so unpacking the
-// tarball and running from its root resolves the engine with no
+// tarball and running from its root resolves the core with no
 // LIBPHONENUMBER_AE_LIB and no external .so to place.
 //
 // One .so per tarball => the tarball is current-OS-only (the .so is this box's
 // platform). Built with plain `tar` (no Dart toolchain needed to package), so
 // this node produces its artifact even where the `dart` CLI is absent — only
-// the engine .so (from core) is required.
+// the core .so (from core) is required.
 //
-// The engine .so comes from core/.build.ae's shared_lib artifact (dep'd), so the
-// tarball always vendors the freshly-built engine.
+// The core .so comes from core/.build.ae's shared_lib artifact (dep'd), so the
+// tarball always vendors the freshly-built core.
 import bldr
 import std.os
 import bldr (dep, dep_artifact, _get)
@@ -34,11 +34,11 @@ aeb(cap) {
             return 0
         }
 
-        // Vendor the freshly-built engine so the tarball is self-contained.
+        // Vendor the freshly-built core so the tarball is self-contained.
         dartnative = "${root}/dart/native"
         _mk = os.system("mkdir -p \"${dartnative}\"")
         rcc = os.system("cp \"${lib}\" \"${dartnative}/libphonenumber_ae.so\"")
-        if rcc != 0 { println("dart dist: failed to vendor engine .so into dart/native"); return 1 }
+        if rcc != 0 { println("dart dist: failed to vendor core .so into dart/native"); return 1 }
 
         // Tar the package sources + vendored .so. Named entries only (not the
         // whole dir) so build cruft (.dart_tool/, target/, example/) stays out of
@@ -49,7 +49,7 @@ aeb(cap) {
         rcb = os.system(cmd)
         if rcb != 0 { println("dart dist: `tar` of the package failed"); return 1 }
 
-        println("dart dist: target/dist/phonenumber-ae-dart.tar.gz (sources + engine vendored at native/)")
+        println("dart dist: target/dist/phonenumber-ae-dart.tar.gz (sources + core vendored at native/)")
         return 0
     }
 }

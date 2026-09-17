@@ -3,7 +3,7 @@
 // Run standalone it only checks what's already in target/dist/; the .dist.ae
 // aggregator deps the per-binding dist nodes FIRST, so by the time this runs the
 // artifacts are present. Verifies existence, non-emptiness, and that the fat jar
-// actually bundles the engine (native/libphonenumber_ae.so). See dist_smoke.sh.
+// actually bundles the core (native/libphonenumber_ae.so). See dist_smoke.sh.
 import bldr
 import bldr (dep)
 import std.os

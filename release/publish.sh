@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Cut a GitHub release of the cross-built engine — no repo settings, no Actions,
+# Cut a GitHub release of the cross-built core — no repo settings, no Actions,
 # no secrets. Uses your existing `gh` auth to attach the artifacts to a tag.
 #
-# We publish the ENGINE LIBS ONLY (libphonenumber_ae.<so|dylib|dll> per platform,
+# We publish the CORE LIBS ONLY (libphonenumber_ae.<so|dylib|dll> per platform,
 # each with a .sha256, plus SHA256SUMS.txt). These are the reusable, language-
 # agnostic pieces a binding links or dlopens. The per-language packages
 # (wheel/gem/jar/crate/…) are NOT published here — they are toolchain-bound and
@@ -40,23 +40,23 @@ command -v gh >/dev/null 2>&1 || die "gh (GitHub CLI) not on PATH — install it
 gh auth status >/dev/null 2>&1 || die "not authenticated — run \`gh auth login\`"
 
 if [ "$NO_BUILD" = "0" ]; then
-  say "building the engine matrix for $TAG"
+  say "building the core matrix for $TAG"
   RELEASE_TAG="$TAG" "$HERE/build.sh" || die "build failed — fix it, or --no-build to publish existing dist"
 fi
 
 bins=( "$DIST"/*.so "$DIST"/*.dylib "$DIST"/*.dll "$DIST"/*.dll.lib )
 sums=( "$DIST"/*.sha256 )
 manifest=( "$DIST"/SHA256SUMS.txt )
-[ "${#bins[@]}" -gt 0 ] || die "no engine artifacts in release/dist — run release/build.sh (or drop --no-build)"
+[ "${#bins[@]}" -gt 0 ] || die "no core artifacts in release/dist — run release/build.sh (or drop --no-build)"
 assets=( "${bins[@]}" "${sums[@]}" "${manifest[@]}" )
 
 # Count real platform libs (exclude the Windows .dll.lib import stub).
 nbin=0; for f in "${bins[@]}"; do case "$f" in *.dll.lib) ;; *) nbin=$((nbin+1)) ;; esac; done
 
 COMMIT="$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || echo unknown)"
-notes="Cross-built \`libphonenumber_ae\` engine — ${nbin} platform artifact(s), each with a \`.sha256\` (and a combined \`SHA256SUMS.txt\`).
+notes="Cross-built \`libphonenumber_ae\` core — ${nbin} platform artifact(s), each with a \`.sha256\` (and a combined \`SHA256SUMS.txt\`).
 
-The engine is the shared, language-agnostic core every binding uses. Download the
+The core is the shared, language-agnostic library every binding uses. Download the
 \`.so\`/\`.dylib\`/\`.dll\` for your platform and point a binding at it
 (\`LIBPHONENUMBER_AE_LIB\`, the OS loader path, or bundle it beside your app). The
 per-language packages (wheel/gem/jar/crate/…) are built from this repo's

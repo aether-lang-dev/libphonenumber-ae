@@ -1,7 +1,7 @@
 # phonenumber_ae — Ruby
 
-A thin Ruby binding over the shared, pure-Aether libphonenumber engine. All the
-phone logic lives in the one engine (`core/phonenumber.ae`); this binding is just
+A thin Ruby binding over the shared, pure-Aether libphonenumber core. All the
+phone logic lives in the one core (`core/phonenumber.ae`); this binding is just
 Fiddle marshalling over `libphonenumber_ae.so`. See the
 [repo README](../README.md) for the whole picture.
 
@@ -24,7 +24,7 @@ PhoneNumberAe::Geocoder.geo_description_for_number("US", "6502530000") # => "Mou
 
 ## Install it in your project
 
-Build the gem (from the repo root), then install it — the engine `.so` is
+Build the gem (from the repo root), then install it — the core `.so` is
 vendored inside, so nothing else is needed at runtime:
 
 ```sh
@@ -33,14 +33,14 @@ gem install target/dist/phonenumber_ae-*.gem
 ```
 
 The gem is current-OS-only (it bundles this platform's `.so`).
-`PhoneNumberAe::Native.load` finds the engine in this order: an explicit
+`PhoneNumberAe::Native.load` finds the core in this order: an explicit
 `PhoneNumberAe::Native.load(path)`, `$LIBPHONENUMBER_AE_LIB`, the `native/` dir
 bundled in the gem, then the OS loader's search path — so an installed gem needs
 no configuration.
 
 ## Develop / test
 
-From the repo, `aeb` builds the engine and runs the suite against the source
+From the repo, `aeb` builds the core and runs the suite against the source
 tree:
 
 ```sh

@@ -1,4 +1,4 @@
-// core_tests/tz_probe — PhoneNumberToTimeZonesMapper engine gate (pure Aether).
+// core_tests/tz_probe — PhoneNumberToTimeZonesMapper core gate (pure Aether).
 //
 // Longest-prefix timezone lookup over the E.164 digits. Run:
 //     ae run core_tests/tz_probe.ae

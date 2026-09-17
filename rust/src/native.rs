@@ -2,9 +2,9 @@
 //!
 //! This module is the ONLY place in the Rust binding that knows about the C
 //! ABI, and it is the canonical cross-binding reference: every symbol the
-//! engine exports appears here once, with the exact C signature, in the order
+//! core exports appears here once, with the exact C signature, in the order
 //! `core/embed.ae` declares it. No phone-number logic lives here or anywhere
-//! else in this crate — the engine is `core/phonenumber.ae`, shared by every
+//! else in this crate — the core is `core/phonenumber.ae`, shared by every
 //! language binding in this monorepo.
 //!
 //! ## Naming
@@ -95,7 +95,7 @@ pub const COST_STANDARD_RATE: c_int = 1;
 pub const COST_PREMIUM_RATE: c_int = 2;
 pub const COST_UNKNOWN: c_int = 3;
 
-/// The platform's shared-library file name for the engine.
+/// The platform's shared-library file name for the core.
 pub const LIB_NAME: &str = if cfg!(target_os = "macos") {
     "libphonenumber_ae.dylib"
 } else if cfg!(target_os = "windows") {
@@ -104,7 +104,7 @@ pub const LIB_NAME: &str = if cfg!(target_os = "macos") {
     "libphonenumber_ae.so"
 };
 
-/// Errors from loading the engine.
+/// Errors from loading the core.
 #[derive(Debug)]
 pub enum Error {
     /// The shared library could not be found or opened.
@@ -120,10 +120,10 @@ impl std::fmt::Display for Error {
         match self {
             Error::Load(m) => write!(
                 f,
-                "could not load the phonenumber engine ({LIB_NAME}). Set \
+                "could not load the phonenumber core ({LIB_NAME}). Set \
                  LIBPHONENUMBER_AE_LIB to its absolute path. Last error: {m}"
             ),
-            Error::Symbol(s) => write!(f, "missing symbol {s} (engine too old?)"),
+            Error::Symbol(s) => write!(f, "missing symbol {s} (core too old?)"),
             Error::NulByte => write!(f, "string contains an interior NUL byte"),
         }
     }
@@ -251,7 +251,7 @@ macro_rules! sym {
 }
 
 impl Api {
-    /// Load the engine and resolve every symbol.
+    /// Load the core and resolve every symbol.
     ///
     /// Resolution order, matching every other binding in the monorepo:
     ///   1. `explicit`, when given

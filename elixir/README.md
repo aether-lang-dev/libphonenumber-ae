@@ -1,9 +1,9 @@
 # phonenumber_ae — Elixir
 
-A thin Elixir binding over the shared, pure-Aether libphonenumber engine. All the
-phone logic lives in the one engine (`core/phonenumber.ae`); this binding compiles
+A thin Elixir binding over the shared, pure-Aether libphonenumber core. All the
+phone logic lives in the one core (`core/phonenumber.ae`); this binding compiles
 no C — every function `defdelegate`s to `:phonenumber_ae_nif`, the **canonical BEAM
-NIF** the Erlang binding builds (and Gleam shares). One engine, one NIF, three
+NIF** the Erlang binding builds (and Gleam shares). One core, one NIF, three
 languages. See the [repo README](../README.md) for the whole picture.
 
 ## Use it
@@ -34,7 +34,7 @@ mix hex.publish   # or unpack the tar and depend on it: {:phonenumber_ae, path: 
 ```
 
 The Hex package ships **no native code** — the shared NIF is built once by the
-Erlang node and loaded at runtime. The NIF `dlopen`s the engine in this order:
+Erlang node and loaded at runtime. The NIF `dlopen`s the core in this order:
 `$LIBPHONENUMBER_AE_LIB`, then `priv/` beside the app, then the OS loader's search
 path.
 

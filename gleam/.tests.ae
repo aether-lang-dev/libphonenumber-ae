@@ -1,7 +1,7 @@
 // Gleam binding tests. Canonical aeb grammar (no shell-out): gleam.test() runs
 // `gleam test` on the erlang target against the shared BEAM NIF built by
 // erlang/.build.ae; env() exports ERL_LIBS (gleam honours it, unlike mix) plus
-// the engine .so path the NIF dlopen's. Mirrors the selenium gleam binding.
+// the core .so path the NIF dlopen's. Mirrors the selenium gleam binding.
 import bldr
 import gleam
 import bldr (dep, dep_artifact)

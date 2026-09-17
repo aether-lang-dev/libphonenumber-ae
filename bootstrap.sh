@@ -2,14 +2,14 @@
 # One-command casual-dev bootstrap for the Aether libphonenumber monorepo.
 #
 # Ensures the Aether toolchain (`ae`) and the build runner (`aeb`) are present,
-# then builds the native phonenumber engine and every binding whose language
+# then builds the native phonenumber core and every binding whose language
 # toolchain is actually installed on this box.
 #
 # The toolchains install via aeb's canonical remote installer, get.sh, which
 # ensures BOTH `ae` and `aeb` binary-first (no compiler, no make). It works from
 # a bare clone, installs released builds to a user prefix, and runs no tests.
 #
-# Installing the toolchain needs only `curl`. BUILDING THE ENGINE additionally
+# Installing the toolchain needs only `curl`. BUILDING THE CORE additionally
 # needs a C compiler (Aether compiles to C) — checked below, before the build.
 #
 # Idempotent: a no-op for the toolchain when `ae`/`aeb` are already good.
@@ -56,15 +56,15 @@ else
     say "ae $(ae_version) + aeb ready"
 fi
 
-# ---- 2. Preflight for BUILDING the engine: a C compiler ----
+# ---- 2. Preflight for BUILDING the core: a C compiler ----
 command -v cc >/dev/null 2>&1 || command -v gcc >/dev/null 2>&1 || command -v clang >/dev/null 2>&1 \
-    || die "a C compiler (cc/gcc/clang) is required to build the engine — Aether compiles to C. Install e.g. build-essential (Debian/Ubuntu) or the Xcode Command Line Tools (macOS)."
+    || die "a C compiler (cc/gcc/clang) is required to build the core — Aether compiles to C. Install e.g. build-essential (Debian/Ubuntu) or the Xcode Command Line Tools (macOS)."
 
 # ---- 3. Build ----
 cd "$HERE"
 case ":$PATH:" in *":$PREFIX/bin:"*) : ;; *) say "tip: add '$PREFIX/bin' to your shell PATH permanently";; esac
 
-# With explicit args, honor them verbatim. Otherwise build the engine (which
+# With explicit args, honor them verbatim. Otherwise build the core (which
 # needs only `ae` + a C compiler) plus the leaves whose toolchain is present.
 # Each binding leaf also skips itself gracefully when its toolchain is missing,
 # so this sniff keeps the run short rather than being load-bearing.

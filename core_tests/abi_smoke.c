@@ -1,6 +1,6 @@
 /* core_tests/abi_smoke.c — a complete consumer of the full phonenumber C ABI,
  * in C, using nothing but dlopen + dlsym. If this passes, a binding failure is a
- * binding bug, not an engine one.
+ * binding bug, not a core one.
  *
  * Build + run (the .abi.ae gate does this for you):
  *     cc -D_GNU_SOURCE -o abi_smoke core_tests/abi_smoke.c -ldl
@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* format styles (match the engine's constants) */
+/* format styles (match the core's constants) */
 #define FMT_E164 0
 #define FMT_INTERNATIONAL 1
 #define FMT_NATIONAL 2

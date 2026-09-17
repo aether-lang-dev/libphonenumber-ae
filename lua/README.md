@@ -1,7 +1,7 @@
 # phonenumber_ae — Lua
 
-A thin Lua 5.4 binding over the shared, pure-Aether libphonenumber engine. All the
-phone logic lives in the one engine (`core/phonenumber.ae`); this binding is just a
+A thin Lua 5.4 binding over the shared, pure-Aether libphonenumber core. All the
+phone logic lives in the one core (`core/phonenumber.ae`); this binding is just a
 small C extension that `dlopen`s and marshals to `libphonenumber_ae.so` (ABI v7,
 66 exports). See the [repo README](../README.md) for the whole picture.
 
@@ -24,7 +24,7 @@ pn.geo_description_for_number("US", "6502530000")     -- "Mountain View, CA"
 
 ## Install it in your project
 
-Build the rock (from the repo root), then install it — the engine `.so` is
+Build the rock (from the repo root), then install it — the core `.so` is
 vendored at `native/` inside the package, so nothing else is needed at runtime:
 
 ```sh
@@ -35,13 +35,13 @@ luarocks install target/dist/phonenumber_ae-0.2.0-1.*.rock
 (Where luarocks is absent, `.dist.ae` emits a `phonenumber-ae-lua.tar.gz` of the
 same sources + rockspec instead; unpack it and `luarocks make` the rockspec.) The
 package is current-OS-only (it vendors this platform's `.so`). The extension
-`dlopen`s the engine: point `$LIBPHONENUMBER_AE_LIB` at the vendored
+`dlopen`s the core: point `$LIBPHONENUMBER_AE_LIB` at the vendored
 `native/libphonenumber_ae.so` (or pass it to `pn.load(path)`); `pn.engine_path()`
 reports which one loaded.
 
 ## Develop / test
 
-From the repo, `aeb` builds the engine and extension, then runs the suite:
+From the repo, `aeb` builds the core and extension, then runs the suite:
 
 ```sh
 aeb lua/.tests.ae      # the 47-check conformance suite

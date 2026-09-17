@@ -1,7 +1,7 @@
 # phonenumber_ae — Gleam
 
-A thin Gleam binding over the shared, pure-Aether libphonenumber engine. All the
-phone logic lives in the one engine (`core/phonenumber.ae`); this binding compiles
+A thin Gleam binding over the shared, pure-Aether libphonenumber core. All the
+phone logic lives in the one core (`core/phonenumber.ae`); this binding compiles
 no C — every function is an `@external(erlang, "phonenumber_ae_nif", ...)` onto the
 **canonical BEAM NIF** the Erlang binding builds (and Elixir shares). Erlang target
 only. See the [repo README](../README.md) for the whole picture.
@@ -35,7 +35,7 @@ aeb core/.build.ae && aeb gleam/.dist.ae   # -> target/dist/phonenumber-ae-gleam
 tar -xzf target/dist/phonenumber-ae-gleam.tar.gz   # -> phonenumber_ae/ (add path = "..." dep)
 ```
 
-The engine `.so` is vendored under the package's `priv/` (current-OS-only). The NIF
+The core `.so` is vendored under the package's `priv/` (current-OS-only). The NIF
 `dlopen`s it in this order: `$LIBPHONENUMBER_AE_LIB`, then `priv/` beside the app,
 then the OS loader's search path — and `gleam` honours `$ERL_LIBS` for resolving the
 shared `phonenumber_ae_nif` module at runtime.

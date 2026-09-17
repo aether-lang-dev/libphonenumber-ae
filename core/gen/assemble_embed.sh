@@ -3,7 +3,7 @@
 # feature fragments, so a consumer builds a .so with ONLY the features (and
 # their embedded metadata blobs) they want.
 #
-# Why this exists: the engine's side-libraries bake large data tables into the
+# Why this exists: the core's side-libraries bake large data tables into the
 # .so (the geocoder blob alone is ~7 MB). A validation-only build is ~200 KB;
 # the full build is ~8.4 MB. `ae build --emit=lib` compiles ONE physical source
 # module and does not emit re-exported imports, so each variant .so must contain

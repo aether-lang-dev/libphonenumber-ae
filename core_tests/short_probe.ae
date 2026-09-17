@@ -1,4 +1,4 @@
-// core_tests/short_probe — ShortNumberInfo engine gate (pure Aether).
+// core_tests/short_probe — ShortNumberInfo core gate (pure Aether).
 //
 // Cases drawn from libphonenumber's ShortNumberInfoTest behaviour: emergency
 // numbers, validity, possible-length, cost. Run: ae run core_tests/short_probe.ae

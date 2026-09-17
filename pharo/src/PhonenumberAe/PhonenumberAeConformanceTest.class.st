@@ -2,7 +2,7 @@
 The 47-check binding conformance suite (docs/conformance.md, v6), in Pharo.
 
 I prove the Pharo binding marshals every value shape across the FFI. I am NOT a
-phone-number test suite — the behavioural cases live in the engine's own tests
+phone-number test suite — the behavioural cases live in the core's own tests
 and run once, in Aether.
 
 Unlike the Kotlin/Scala/Clojure/Groovy layers, which sit on the Java binding,

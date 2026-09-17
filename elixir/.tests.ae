@@ -1,6 +1,6 @@
 // Elixir binding tests. Canonical aeb grammar (no shell-out): elixir.test() runs
 // `mix test` against the shared BEAM NIF built by erlang/.build.ae; env() exports
-// ERL_LIBS + the nif_ebin + the engine .so path the NIF dlopen's. Mirrors the
+// ERL_LIBS + the nif_ebin + the core .so path the NIF dlopen's. Mirrors the
 // selenium elixir binding.
 import bldr
 import elixir

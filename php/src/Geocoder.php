@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Geographic-description lookup over the phonenumber engine (ABI v7).
+ * Geographic-description lookup over the phonenumber core (ABI v7).
  *
  * Mirrors libphonenumber's `PhoneNumberOfflineGeocoder`. Carries no
  * phone-number logic — every method marshals to an `aether_pn_embed_geo_*`

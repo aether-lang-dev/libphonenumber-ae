@@ -1,6 +1,6 @@
 %%% phonenumber_ae — validate, parse and format international phone numbers.
 %%%
-%%% A thin Erlang binding over the monorepo's ONE shared native engine
+%%% A thin Erlang binding over the monorepo's ONE shared native core
 %%% (core/native/libphonenumber_ae.so, compiled from Google libphonenumber's
 %%% own metadata as pure Aether). No phone-number logic lives here: every
 %%% function marshals to an `aether_pn_embed_*` call (ABI v7, docs/abi.md)
@@ -16,7 +16,7 @@
 %%%
 %%% This module's job is to turn the NIF's integer 0/1 predicates into
 %%% booleans, its enum integers into atoms, and its format-style atom into the
-%%% ABI integer. The engine is stateless — a parsed number and an AsYouType
+%%% ABI integer. The core is stateless — a parsed number and an AsYouType
 %%% state are themselves caller-owned STRINGS (binaries here), passed back to
 %%% accessor calls — so there is nothing to open or close.
 -module(phonenumber_ae).
@@ -454,7 +454,7 @@ short_example_number(Region) ->
 %% PhoneNumberToTimeZonesMapper (timezone lookup)
 %%------------------------------------------------------------------
 
-%% The IANA time-zone ids for a number, as a list. When the engine knows no
+%% The IANA time-zone ids for a number, as a list. When the core knows no
 %% zone (count 0) the result is a single-element list of the unknown zone,
 %% mirroring the other bindings — never an empty list.
 -spec time_zones_for_number(iodata(), iodata()) -> [binary()].
@@ -465,12 +465,12 @@ time_zones_for_number(Region, Input) ->
               || I <- lists:seq(0, N - 1)]
     end.
 
-%% How many time zones the engine maps the number to (0 = only the unknown zone).
+%% How many time zones the core maps the number to (0 = only the unknown zone).
 -spec time_zone_count(iodata(), iodata()) -> non_neg_integer().
 time_zone_count(Region, Input) ->
     phonenumber_ae_nif:tz_count(Region, Input).
 
-%% The engine's sentinel unknown zone, <<"Etc/Unknown">>.
+%% The core's sentinel unknown zone, <<"Etc/Unknown">>.
 -spec unknown_time_zone() -> binary().
 unknown_time_zone() -> phonenumber_ae_nif:tz_unknown().
 
@@ -479,7 +479,7 @@ unknown_time_zone() -> phonenumber_ae_nif:tz_unknown().
 %%------------------------------------------------------------------
 
 %% The carrier name for a number, or <<>> if none is known. Lang defaults to
-%% <<"en">>; any language not compiled into the engine falls back to English.
+%% <<"en">>; any language not compiled into the core falls back to English.
 -spec carrier_name_for_number(iodata(), iodata()) -> binary().
 carrier_name_for_number(Region, Input) ->
     carrier_name_for_number(Region, Input, <<"en">>).
@@ -503,7 +503,7 @@ carrier_name_for_valid_number(Region, Input, Lang) ->
 %%------------------------------------------------------------------
 
 %% A geographic description for a number, or <<>> if none is known. Lang
-%% defaults to <<"en">>; any language not compiled into the engine falls back
+%% defaults to <<"en">>; any language not compiled into the core falls back
 %% to English.
 -spec geo_description_for_number(iodata(), iodata()) -> binary().
 geo_description_for_number(Region, Input) ->
@@ -527,7 +527,7 @@ geo_description_for_valid_number(Region, Input, Lang) ->
 %% Introspection
 %%------------------------------------------------------------------
 
-%% The engine's ABI revision (7).
+%% The core's ABI revision (7).
 -spec abi_version() -> non_neg_integer().
 abi_version() -> phonenumber_ae_nif:abi_version().
 
@@ -565,7 +565,7 @@ type_atom(7)  -> pager;
 type_atom(8)  -> uan;
 type_atom(9)  -> voicemail;
 type_atom(10) -> fixed_line_or_mobile;
-%% A newer engine could return a code this build has not seen; degrade rather
+%% A newer core could return a code this build has not seen; degrade rather
 %% than crash. The append-only rule means the number is still meaningful.
 type_atom(_)  -> unknown.
 
@@ -607,7 +607,7 @@ source_atom(20) -> from_default_country;
 source_atom(_)  -> unspecified.
 
 %% Matcher leniency codes. STRICT_GROUPING=2 and EXACT_GROUPING=3 consult
-%% AlternateFormats in the engine; the levels hit the same matcher_count symbol.
+%% AlternateFormats in the core; the levels hit the same matcher_count symbol.
 leniency_code(possible)        -> 0;
 leniency_code(valid)           -> 1;
 leniency_code(strict_grouping) -> 2;
@@ -618,6 +618,6 @@ cost_atom(0) -> toll_free;
 cost_atom(1) -> standard_rate;
 cost_atom(2) -> premium_rate;
 cost_atom(3) -> unknown;
-%% A newer engine could return a code this build has not seen; degrade rather
+%% A newer core could return a code this build has not seen; degrade rather
 %% than crash. The append-only rule means the number is still meaningful.
 cost_atom(_) -> unknown.

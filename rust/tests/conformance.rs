@@ -1,10 +1,10 @@
 //! The binding conformance suite (docs/conformance.md, v7 — 45 checks).
 //!
 //! Proves the Rust binding marshals every value shape across the FFI. It is
-//! NOT a phone-number test suite — the behavioural cases live in the engine's
+//! NOT a phone-number test suite — the behavioural cases live in the core's
 //! own tests and run once, in Aether.
 //!
-//! Each test loads its own engine over `$LIBPHONENUMBER_AE_LIB`, mirroring the
+//! Each test loads its own core over `$LIBPHONENUMBER_AE_LIB`, mirroring the
 //! other bindings' suites. A couple of extras exercise the typed idiomatic
 //! surface (enums, the `PhoneNumbers` object, the `AsYouTypeFormatter` class,
 //! the matcher iterator) that still bottoms out at these calls.
@@ -13,7 +13,7 @@ use phonenumber_ae as pn;
 use phonenumber_ae::PhoneNumbers;
 
 fn engine() -> PhoneNumbers {
-    PhoneNumbers::new().expect("load the engine (set LIBPHONENUMBER_AE_LIB)")
+    PhoneNumbers::new().expect("load the core (set LIBPHONENUMBER_AE_LIB)")
 }
 
 #[test]
@@ -364,7 +364,7 @@ fn cost_enum_matches_raw() {
 
 #[test]
 fn free_functions_share_one_engine() {
-    // The crate-level free functions load one process-wide engine.
+    // The crate-level free functions load one process-wide core.
     assert_eq!(pn::abi_version(), 7);
     assert_eq!(pn::country_code("US"), "1");
     let num = pn::parse("+1 201 555 0123", "US");

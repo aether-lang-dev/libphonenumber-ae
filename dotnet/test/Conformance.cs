@@ -3,7 +3,7 @@
 // Proves the .NET binding marshals every value shape across the P/Invoke
 // boundary — a parsed number and its accessors, an AsYouType formatter, the
 // matcher, the stateless calls and every constant group. It is NOT a
-// phone-number test suite — the behavioural cases live in the engine's own
+// phone-number test suite — the behavioural cases live in the core's own
 // tests and run once, in Aether.
 //
 // ## Why a console runner and not xunit/NUnit
@@ -75,7 +75,7 @@ internal static class Conformance
     public static int Main()
     {
         Console.WriteLine("=== phonenumber_ae .NET binding conformance (v7) ===");
-        Console.WriteLine($"engine: {PhoneNumber.NativeLibraryPath ?? "(default probing)"} " +
+        Console.WriteLine($"core: {PhoneNumber.NativeLibraryPath ?? "(default probing)"} " +
                           $"(ABI v{PhoneNumber.AbiVersion})");
 
         // ---- the forty-seven (docs/conformance.md) ----

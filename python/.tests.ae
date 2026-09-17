@@ -2,7 +2,7 @@
 //   prereq   — skip cleanly when python is absent (no false pass)
 //   pip      — declare pytest as a venv dependency
 //   install  — build the aeb-managed venv (pytest + this package)
-//   pytest   — run the suite; env() exports the engine .so path the ctypes
+//   pytest   — run the suite; env() exports the core .so path the ctypes
 //              loader reads (LIBPHONENUMBER_AE_LIB), plus disables third-party
 //              pytest plugin autoload so a broken box plugin can't fail the run.
 // Mirrors the selenium/ python binding's proven pattern.
