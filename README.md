@@ -46,7 +46,7 @@ sudo — pinned to the versions this repo is tested on
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/aether-lang-dev/aeb/main/get.sh \
-  | AE_PIN=0.677.0 AEB_REF=v0.312 sh
+  | AE_PIN=0.681.0 AEB_REF=v0.315 sh
 ```
 
 **2. Build the engine, then your language's binding** (each needs only that
