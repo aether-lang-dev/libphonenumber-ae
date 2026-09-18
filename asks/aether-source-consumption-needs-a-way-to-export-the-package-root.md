@@ -2,13 +2,15 @@
 
 **From:** the datastar-aether line, 2026-09-18. Against `reboot` @ `edb9716e`,
 `ae` 0.681.0, after the `v0.1.0` release.
-**Status:** a real blocker, diagnosed to the exact cause. **DECIDED (Paul,
-2026-09-18): fix B — wait on the upstream toolchain fix; keep the `core.`
-prefix.** Filed upstream as
-`../aether/asks/modules-cannot-export-the-package-root-for-dotted-package-imports.md`.
-Fix A (drop the prefix) was considered and declined. This repo makes no import
-changes; it stays blocked-on-toolchain until `ae` gains a root-export
-mechanism, at which point we add an `aether.toml` (companion ask #2).
+**Status:** ✅ RESOLVED via fix B. `ae` 0.691.0 (aether #2088) added the
+explicit package-root export, spelled `modules = "."` (Paul's choice). Added
+`aether.toml` with `modules = "."` (commit aaf8fc70); the `core.` prefix is
+kept. Verified end-to-end: an `ae add` consumer resolves `import
+core.phonenumber` with no `--lib`, all five nested `core.*` modules resolve, and
+it fails without the opt-in. Fix A (drop the prefix) was considered and
+declined. Upstream ask
+`../aether/asks/modules-cannot-export-the-package-root-for-dotted-package-imports.md`
+was actioned by the aether-toolchain session ('a').
 
 ## What I was doing
 
