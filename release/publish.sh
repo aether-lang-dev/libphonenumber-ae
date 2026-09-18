@@ -24,17 +24,26 @@ DIST="$ROOT/release/dist"
 say() { printf 'publish: %s\n' "$*"; }
 die() { printf 'publish: %s\n' "$*" >&2; exit 1; }
 
-TAG=""; NO_BUILD=0; GH_FLAGS=()
+TAG=""; NO_BUILD=0; TARGET=""; GH_FLAGS=()
 for a in "$@"; do
   case "$a" in
     --no-build)   NO_BUILD=1 ;;
     --draft)      GH_FLAGS+=(--draft) ;;
     --prerelease) GH_FLAGS+=(--prerelease) ;;
+    --target=*)   TARGET="${a#--target=}" ;;
     -*)           die "unknown flag: $a" ;;
     *)            TAG="$a" ;;
   esac
 done
-[ -n "$TAG" ] || die "usage: release/publish.sh <tag> [--draft] [--prerelease] [--no-build]"
+[ -n "$TAG" ] || die "usage: release/publish.sh <tag> [--target=<branch|sha>] [--draft] [--prerelease] [--no-build]"
+
+# Anchor the tag to the commit the binaries were built from. gh creates the tag
+# at --target on the remote; default it to the CURRENT branch so a release cut
+# from a divergent branch (e.g. reboot) tags THAT branch's HEAD, not the repo's
+# default branch — the "tag and binaries are the same code" invariant, enforced
+# remotely too. (publish.sh already refuses a dirty tracked tree below.)
+[ -n "$TARGET" ] || TARGET="$(git rev-parse --abbrev-ref HEAD)"
+GH_FLAGS+=(--target "$TARGET")
 
 command -v gh >/dev/null 2>&1 || die "gh (GitHub CLI) not on PATH — install it and \`gh auth login\`"
 gh auth status >/dev/null 2>&1 || die "not authenticated — run \`gh auth login\`"
