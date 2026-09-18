@@ -1,0 +1,25 @@
+# What an Aether-SOURCE consumer gets from
+#   ae add github.com/aether-lang-dev/libphonenumber-ae
+# (ae >= 0.691.0, which resolves [dependencies] onto the module search path —
+# no --lib, no path knowledge on the consumer's side). This is the pure-Aether
+# consumption path: the consumer `import core.phonenumber` and compiles the .ae
+# graph in-process. It is DISTINCT from the FFI path — the language bindings
+# dlopen a prebuilt libphonenumber_ae.* from a GitHub release over the C ABI and
+# do NOT use this manifest.
+#
+# modules = "." is the explicit package-ROOT export (ae 0.691.0, aether #2088).
+# Our engine lives in core/*.ae and its modules import each other with a dotted
+# package prefix — phonenumber.ae does `import core.metadata`, consumers do
+# `import core.phonenumber` — which resolves only with the repo ROOT on the
+# search path (so core/ is a package subdirectory). A normal `modules` entry
+# joins the PARENT of a named module and never the root; "." is the opt-in that
+# joins the root itself, so the dotted `core.*` namespacing stays intact AND the
+# package is `ae add`-consumable. (The publisher opting in keeps the "root is
+# never joined SPECULATIVELY" principle — docs/module-system-design.md.)
+#
+# Chosen (Paul) over flattening the imports to match selaenium's flat-module
+# layout; the dotted namespacing is worth keeping, and the fix is general.
+[package]
+name = "libphonenumber-ae"
+version = "0.1.0"
+modules = "."
