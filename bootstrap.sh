@@ -32,7 +32,11 @@ AEB_GET_URL="https://raw.githubusercontent.com/aether-lang-dev/aeb/main/get.sh"
 # Pins from ci/versions.env (shell-overridable). AETHER_REF vX.Y.Z -> AE_PIN X.Y.Z.
 # shellcheck disable=SC1091
 [ -f "$HERE/ci/versions.env" ] && . "$HERE/ci/versions.env"
-MIN_AE="${MIN_AE:-${AETHER_REF#v}}"; MIN_AE="${MIN_AE:-0.653.0}"
+# Floor precedence: shell MIN_AE override -> AETHER_MIN from versions.env (the
+# explicit, declared floor) -> the pinned AETHER_REF itself -> a last-ditch
+# default. AETHER_MIN is the one to bump when the port needs a newer ae than an
+# older pin would admit (an "already on PATH" ae below it is rejected, not used).
+MIN_AE="${MIN_AE:-${AETHER_MIN:-${AETHER_REF#v}}}"; MIN_AE="${MIN_AE:-0.653.0}"
 
 say() { printf '\033[1;36m==>\033[0m %s\n' "$*"; }
 die() { printf '\033[1;31merror:\033[0m %s\n' "$*" >&2; exit 1; }
