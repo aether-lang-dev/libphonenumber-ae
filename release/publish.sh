@@ -71,6 +71,17 @@ The core is the shared, language-agnostic library every binding uses. Download t
 per-language packages (wheel/gem/jar/crate/…) are built from this repo's
 \`<lang>/.dist.ae\` and are not attached here.
 
+### Two ways to consume the core
+
+- **FFI (prebuilt core)** — the artifacts above. The language bindings \`dlopen\`
+  the core over its C ABI; a consumer fetches the platform artifact (see
+  \`get-core.sh\`) and points a binding at it. This is what these release assets are for.
+- **Aether source** — an Aether program that \`import\`s the engine and compiles the
+  \`.ae\` graph in-process (no \`.so\`, no FFI). This path needs no release artifact; it
+  will become a declared \`ae add\` dependency once the toolchain can export a package
+  root for dotted \`import core.*\` imports (tracked upstream). Until then, consume it
+  with \`--lib <checkout-root>\`.
+
 Built from ${COMMIT:0:9}."
 
 say "creating release $TAG with ${#assets[@]} asset(s)$([ "${#GH_FLAGS[@]}" -gt 0 ] && echo " (${GH_FLAGS[*]})")"
