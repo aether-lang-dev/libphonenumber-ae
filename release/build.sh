@@ -146,9 +146,32 @@ for t in $MATRIX; do
   fi
 done
 
+# The Aether-source-consumer manifest: a single aether.toml release asset that
+# turns the bare per-triple cores into an `ae add` BINARY PACKAGE (aether #2105,
+# ae add's ae_try_binary_package). ae add fetches <release>/aether.toml first,
+# reads `[package] binary = "<stem>"`, and builds "<stem>-<tag>-<triple><ext>" —
+# which is EXACTLY our core asset name (stem = libphonenumber_ae). `modules = "."`
+# then puts the installed lib on the consumer's search path so the binary-import
+# prepass synthesizes the interface from its aether_lib_meta() catalog. So an
+# Aether consumer does `ae add github.com/aether-lang-dev/libphonenumber-ae@<tag>`
+# and gets the prebuilt core — no source, no metadata tables, no --lib. (This is
+# ONE asset for the whole release, not per-triple: ae add picks the host's core
+# by the triple it appends.) Checksummed like every other asset.
+cat > "$DIST/aether.toml" <<AETHERTOML
+# Published release asset (NOT the in-repo aether.toml). It declares the release
+# a binary package for \`ae add\`: the bare per-triple core + this manifest =
+# a prebuilt-core dependency an Aether consumer resolves with no source build.
+[package]
+name = "libphonenumber-ae"
+version = "$TAG"
+binary = "libphonenumber_ae"
+modules = "."
+AETHERTOML
+( cd "$DIST" && sha256sum aether.toml > aether.toml.sha256 )
+
 # A combined checksum manifest over every artifact (not the .sha256 sidecars).
 # Named SHA256SUMS.txt so a browser renders it inline (no forced download).
-( cd "$DIST" && sha256sum ./*.so ./*.dylib ./*.dll ./*.dll.lib 2>/dev/null > SHA256SUMS.txt || true )
+( cd "$DIST" && sha256sum ./*.so ./*.dylib ./*.dll ./*.dll.lib aether.toml 2>/dev/null > SHA256SUMS.txt || true )
 
 echo
 say "built $built core artifact(s) into release/dist/ ($failed failed)"

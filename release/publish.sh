@@ -54,10 +54,15 @@ if [ "$NO_BUILD" = "0" ]; then
 fi
 
 bins=( "$DIST"/*.so "$DIST"/*.dylib "$DIST"/*.dll "$DIST"/*.dll.lib )
-sums=( "$DIST"/*.sha256 )
+sums=( "$DIST"/*.sha256 )                 # includes aether.toml.sha256
 manifest=( "$DIST"/SHA256SUMS.txt )
+# The Aether-source-consumer manifest: a single aether.toml declaring the release
+# a binary package for `ae add` (see release/build.sh). Fetched by `ae add` from
+# the release root, so it must be attached as a release asset in its own right.
+toml=( "$DIST"/aether.toml )
 [ "${#bins[@]}" -gt 0 ] || die "no core artifacts in release/dist — run release/build.sh (or drop --no-build)"
-assets=( "${bins[@]}" "${sums[@]}" "${manifest[@]}" )
+[ -f "$DIST/aether.toml" ] || die "no aether.toml in release/dist — run release/build.sh (or drop --no-build)"
+assets=( "${bins[@]}" "${toml[@]}" "${sums[@]}" "${manifest[@]}" )
 
 # Count real platform libs (exclude the Windows .dll.lib import stub).
 nbin=0; for f in "${bins[@]}"; do case "$f" in *.dll.lib) ;; *) nbin=$((nbin+1)) ;; esac; done
@@ -71,16 +76,18 @@ The core is the shared, language-agnostic library every binding uses. Download t
 per-language packages (wheel/gem/jar/crate/…) are built from this repo's
 \`<lang>/.dist.ae\` and are not attached here.
 
-### Two ways to consume the core
+### Two ways to consume the core — both use the prebuilt binaries above
 
-- **FFI (prebuilt core)** — the artifacts above. The language bindings \`dlopen\`
-  the core over its C ABI; a consumer fetches the platform artifact (see
-  \`get-core.sh\`) and points a binding at it. This is what these release assets are for.
-- **Aether source** — an Aether program that \`import\`s the engine and compiles the
-  \`.ae\` graph in-process (no \`.so\`, no FFI). This path needs no release artifact; it
-  will become a declared \`ae add\` dependency once the toolchain can export a package
-  root for dotted \`import core.*\` imports (tracked upstream). Until then, consume it
-  with \`--lib <checkout-root>\`.
+- **FFI / other languages** — the language bindings \`dlopen\` the core over its C
+  ABI. A consumer fetches the platform artifact (see \`get-core.sh\`) and points a
+  binding at it (\`LIBPHONENUMBER_AE_LIB\`, the OS loader path, or bundled beside the app).
+- **Aether (\`ae add\`)** — an Aether program consumes the SAME prebuilt core as an
+  \`ae add\` binary package: this release attaches an \`aether.toml\` declaring
+  \`[package] binary = \"libphonenumber_ae\"\`, so \`ae add
+  github.com/aether-lang-dev/libphonenumber-ae@$TAG\` fetches the host's core, and
+  the consumer \`import\`s it and calls its catalog (\`pn_embed_is_valid_number\`, …)
+  — no source checkout, no metadata tables, no \`--lib\`. (Requires an \`ae\` with the
+  binary-package \`ae add\` path — aether #2105.)
 
 Built from ${COMMIT:0:9}."
 
