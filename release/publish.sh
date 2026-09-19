@@ -62,6 +62,17 @@ manifest=( "$DIST"/SHA256SUMS.txt )
 toml=( "$DIST"/aether.toml )
 [ "${#bins[@]}" -gt 0 ] || die "no core artifacts in release/dist — run release/build.sh (or drop --no-build)"
 [ -f "$DIST/aether.toml" ] || die "no aether.toml in release/dist — run release/build.sh (or drop --no-build)"
+
+# A published .sha256 is now LOAD-BEARING, not optional: ae add's binary-package
+# path (aether #2110) REFUSES to install a binary whose sidecar is missing (and a
+# mismatch is fatal). So a release that dropped a sidecar would silently break
+# every `ae add` consumer on ae >= that fix. Assert here that every binary AND the
+# aether.toml has its .sha256 before we create the release — fail loud, don't ship
+# a release ae add will reject.
+for f in "${bins[@]}" "${toml[@]}"; do
+  [ -f "$f.sha256" ] || die "missing checksum sidecar $f.sha256 — ae add (aether #2110) refuses a binary package without it; re-run release/build.sh"
+done
+
 assets=( "${bins[@]}" "${toml[@]}" "${sums[@]}" "${manifest[@]}" )
 
 # Count real platform libs (exclude the Windows .dll.lib import stub).
