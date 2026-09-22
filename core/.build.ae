@@ -19,11 +19,32 @@
 // embed (see docs/composable-builds.md). No caps(): the generation runs at BUILD
 // time in this orchestrator, not in the produced .so.
 
+// TWO paths, selected by LIBPHONENUMBER_AE_TARGET (release/build.sh sets it once
+// per triple):
+//
+//  - unset (normal monorepo build — every binding's .tests.ae deps this): HOST
+//    build of libphonenumber_ae.so for local consumption (dep_artifact /
+//    LIBPHONENUMBER_AE_LIB). No ae-add asset.
+//
+//  - set to a triple (release, the ONE-HOST CROSS-BUILD model): CROSS-build the
+//    lib for that triple with --size (release strip), AND stage the canonical
+//    `ae add` binary-package asset for it via aether.emit_binary_package —
+//    target/build/core/ae-add/{aether.toml, libphonenumber_ae-<tag>-<triple><ext>,
+//    <asset>.sha256}. release/build.sh loops the triples setting this env; every
+//    triple stages into the same ae-add/ dir, so one flat upload publishes the
+//    whole per-triple set. This REPLACES the hand-rolled asset naming + sha256 +
+//    aether.toml heredoc the release script used to reproduce — the aeb builder
+//    owns the contract now (aeb >= v0.324 for emit_binary_package's target()
+//    cross-emit). Tag from $AEB_RELEASE_TAG (release/publish.sh sets it), else
+//    v0.0.0. output() is required on BOTH builders: a cross --emit=lib writes
+//    lib….so.dll/.dylib on disk, and emit_binary_package resolves the real name
+//    from its own output() (a separate builder map from shared_lib's).
 import bldr
 import aether
 import std.os
+import std.string
 import bldr (_get)
-import aether (source, extra_source, output)
+import aether (source, extra_source, output, size, stem, target)
 
 aeb(cap) {
     bldr.build() {
@@ -32,6 +53,24 @@ aeb(cap) {
         if rc0 != 0 { println("core: generate_metadata.sh failed"); return 1 }
         rc1 = os.system("cd \"${root}\" && core/gen/assemble_embed.sh core/embed.ae all")
         if rc1 != 0 { println("core: assemble_embed.sh (full) failed"); return 1 }
+
+        t = os.getenv("LIBPHONENUMBER_AE_TARGET")
+        if string.length(t) > 0 {
+            aether.shared_lib() {
+                source("embed.ae")
+                extra_source("_embed_support.c")
+                size()
+                output("libphonenumber_ae.so")
+                target(t)
+            }
+            aether.emit_binary_package() {
+                stem("libphonenumber_ae")
+                output("libphonenumber_ae.so")
+                target(t)
+            }
+            return 0
+        }
+
         aether.shared_lib() {
             source("embed.ae")
             extra_source("_embed_support.c")

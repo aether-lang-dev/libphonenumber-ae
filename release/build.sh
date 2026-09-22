@@ -56,19 +56,26 @@ fi
 
 DIST="$ROOT/release/dist"
 rm -rf "$DIST"; mkdir -p "$DIST"
+# Clear aeb's ae-add staging dir too: emit_binary_package ACCUMULATES each triple's
+# asset there across a run, so a stale asset from a prior build could otherwise be
+# collected. (We copy per-triple by exact name, but keep the source dir clean.)
+rm -rf "$ROOT/target/build/core/ae-add"
 
 # triple -> {os, arch, extension} for the artifact name.
 os_of()  { case "$1" in *-linux|*-linux-musl) echo linux;; *-macos) echo macos;; *-windows) echo windows;; *-freebsd) echo freebsd;; *) echo unknown;; esac; }
 arch_of(){ case "$1" in aarch64-*) echo arm64;; x86_64-*) echo x86_64;; *) echo "$1";; esac; }
 ext_of() { case "$1" in *-macos) echo dylib;; *-windows) echo dll;; *) echo so;; esac; }
 
-# The metadata tables + the assembled ABI are BUILD ARTIFACTS, generated from the
-# pristine in-tree resources/ (exactly as core/.build.ae does before its compile).
-# Generate them ONCE, host-side — they are platform-independent source that every
-# target then cross-compiles.
-say "generating metadata + assembling embed (host-side, once)"
-core/gen/generate_metadata.sh en >/dev/null || die "generate_metadata.sh failed"
-core/gen/assemble_embed.sh core/embed.ae all >/dev/null || die "assemble_embed.sh failed"
+# aeb owns metadata generation + the cross-build + the `ae add` asset trio now:
+# `LIBPHONENUMBER_AE_TARGET=<triple> aeb core/.build.ae` (with AEB_RELEASE_TAG set)
+# generates the tables, cross-builds the .so with --size, and stages
+# target/build/core/ae-add/{aether.toml, libphonenumber_ae-<tag>-<triple><ext>,
+# <asset>.sha256} via aether.emit_binary_package (aeb >= v0.324). We loop the
+# matrix, then collect each triple's asset trio into release/dist/. This replaces
+# the old hand-rolled `ae build --target` + sha256sum + aether.toml heredoc — the
+# aeb builder is the single source of the asset-name/manifest/checksum contract.
+have aeb || die "aeb not on PATH (run ./bootstrap.sh, or ci/versions.env's pins)"
+CORE_AEADD="$ROOT/target/build/core/ae-add"
 
 say "core: libphonenumber_ae  tag: $TAG"
 say "matrix: $MATRIX"
@@ -119,24 +126,42 @@ for t in $MATRIX; do
   fi
 
   printf 'release:   %-18s -> %s ... ' "$t" "$name"
-  # --size strips the artifact. No --with / --lib: the core has no caps and
-  # imports nothing by bare name (mirrors core/.build.ae's aether.shared_lib()).
-  # Run from ROOT: core/embed.ae imports `core.phonenumber` etc., which resolve
-  # from the project root, not from inside core/. --extra takes an ABSOLUTE path
-  # (ae's cross path does not resolve a relative --extra C file from CWD).
-  # AETHER_SYSROOT is set per-target (the freebsd base for this arch, or empty
-  # for the sysroot-free targets — ae ignores an empty one).
+  # CRITICAL: clean the shared build lib dir before each triple. All triples write
+  # target/build/core/lib/, and emit_binary_package resolves the built lib by trying
+  # the plain output name (libphonenumber_ae.so) FIRST, then the cross-mangled
+  # <out>.<ext> (…so.dll / …so.dylib). A prior triple's leftover plain .so would be
+  # matched instead of THIS target's cross lib — silently staging the wrong-platform
+  # bytes into the asset (a windows .dll that is actually a Mach-O). Wiping the dir
+  # leaves only the current build's lib, so the resolver can't grab a stale one.
+  rm -rf "$ROOT/target/build/core/lib"
+  # aeb cross-builds the .so (--size, via aether.shared_lib target()) AND stages
+  # the `ae add` asset trio (via aether.emit_binary_package) into core's ae-add/.
+  # Run from ROOT: core/embed.ae imports `core.phonenumber` etc., resolved from the
+  # project root. AETHER_SYSROOT is set per-target (freebsd base for this arch, or
+  # empty — ae ignores an empty one); the freebsd emit inherits it exactly as the
+  # cross shared_lib does. AEB_RELEASE_TAG names the assets; the LIBPHONENUMBER_AE_
+  # TARGET env selects core/.build.ae's release path.
   if ( cd "$ROOT" && AETHER_SYSROOT="$sysroot" \
-       ae build --emit=lib --size --target="$t" \
-            core/embed.ae --extra "$ROOT/core/_embed_support.c" -o "$out" ) >"$log" 2>&1; then
-    ( cd "$DIST" && sha256sum "$name" > "$name.sha256" )
-    # Windows emits an import library (<dll>.lib) beside the DLL — needed only by
-    # a consumer that LINKS the DLL at build time (our FFI bindings dlopen at
-    # runtime and don't use it, but ship it so Windows is first-class). Checksum it.
-    if [ "$os" = "windows" ] && [ -f "$out.lib" ]; then
-      ( cd "$DIST" && sha256sum "$name.lib" > "$name.lib.sha256" )
+       AEB_RELEASE_TAG="$TAG" LIBPHONENUMBER_AE_TARGET="$t" \
+       aeb core/.build.ae ) >"$log" 2>&1 \
+     && [ -f "$CORE_AEADD/$name" ]; then
+    # Collect this triple's trio (lib + .sha256 + the shared aether.toml) from the
+    # builder's staging dir into release/dist/.
+    cp "$CORE_AEADD/$name" "$DIST/$name"
+    cp "$CORE_AEADD/$name.sha256" "$DIST/$name.sha256"
+    cp "$CORE_AEADD/aether.toml" "$DIST/aether.toml"          # shared; same each triple
+    # Windows also emits an import library (<lib>.so.lib) beside the cross DLL —
+    # needed only by a consumer that LINKS the DLL at build time (our FFI bindings
+    # dlopen at runtime and don't use it, but ship it so Windows is first-class).
+    # It is NOT part of the ae-add trio; grab it from the build lib dir + checksum.
+    if [ "$os" = "windows" ]; then
+      libsrc=$(ls "$ROOT"/target/build/core/lib/libphonenumber_ae.so.lib "$ROOT"/target/build/core/lib/libphonenumber_ae.dll.lib 2>/dev/null | head -1)
+      if [ -n "$libsrc" ] && [ -f "$libsrc" ]; then
+        cp "$libsrc" "$DIST/$name.lib"
+        ( cd "$DIST" && sha256sum "$name.lib" > "$name.lib.sha256" )
+      fi
     fi
-    printf 'ok  (%s)\n' "$(file -b "$out" 2>/dev/null | cut -c1-42)"
+    printf 'ok  (%s)\n' "$(file -b "$DIST/$name" 2>/dev/null | cut -c1-42)"
     built=$((built+1))
     rm -f "$log"
   else
@@ -146,28 +171,10 @@ for t in $MATRIX; do
   fi
 done
 
-# The Aether-source-consumer manifest: a single aether.toml release asset that
-# turns the bare per-triple cores into an `ae add` BINARY PACKAGE (aether #2105,
-# ae add's ae_try_binary_package). ae add fetches <release>/aether.toml first,
-# reads `[package] binary = "<stem>"`, and builds "<stem>-<tag>-<triple><ext>" —
-# which is EXACTLY our core asset name (stem = libphonenumber_ae). `modules = "."`
-# then puts the installed lib on the consumer's search path so the binary-import
-# prepass synthesizes the interface from its aether_lib_meta() catalog. So an
-# Aether consumer does `ae add github.com/aether-lang-dev/libphonenumber-ae@<tag>`
-# and gets the prebuilt core — no source, no metadata tables, no --lib. (This is
-# ONE asset for the whole release, not per-triple: ae add picks the host's core
-# by the triple it appends.) Checksummed like every other asset.
-cat > "$DIST/aether.toml" <<AETHERTOML
-# Published release asset (NOT the in-repo aether.toml). It declares the release
-# a binary package for \`ae add\`: the bare per-triple core + this manifest =
-# a prebuilt-core dependency an Aether consumer resolves with no source build.
-[package]
-name = "libphonenumber-ae"
-version = "$TAG"
-binary = "libphonenumber_ae"
-modules = "."
-AETHERTOML
-( cd "$DIST" && sha256sum aether.toml > aether.toml.sha256 )
+# The aether.toml (ae add binary-package manifest) is now emitted by
+# aether.emit_binary_package and copied above — one shared asset for the whole
+# release (ae add picks the host's core by the triple it appends). Checksum it.
+[ -f "$DIST/aether.toml" ] && ( cd "$DIST" && sha256sum aether.toml > aether.toml.sha256 )
 
 # A combined checksum manifest over every artifact (not the .sha256 sidecars).
 # Named SHA256SUMS.txt so a browser renders it inline (no forced download).
