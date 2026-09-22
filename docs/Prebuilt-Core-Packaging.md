@@ -14,7 +14,7 @@ package is built around the *downloaded* core instead of a compiled one:
 ```sh
 # (a) grab the prebuilt core from the release (nothing to compile):
 aeb <lang>/.dist.ae \
-    --overrideDep core/.build.ae=core/.getFromGitHub.ae
+    --overrideDep core/.build.ae=core/.getFromGitHubReleases.ae
 
 # (b) build the core from source instead:
 aeb <lang>/.dist.ae
@@ -26,7 +26,7 @@ the `core/.build.ae` output for that platform). The Java binding uses
 
 ## The fetch node
 
-[`core/.getFromGitHub.ae`](../core/.getFromGitHub.ae) is a pure-Aether build node
+[`core/.getFromGitHubReleases.ae`](../core/.getFromGitHubReleases.ae) is a pure-Aether build node
 (no shell-out): it resolves the release asset for this host
 (`libphonenumber_ae-<tag>-<os>-<arch>.<ext>`), **downloads** it over
 `std.http.client`, **verifies** it against the published `.sha256`, **caches** it

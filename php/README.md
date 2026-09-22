@@ -46,7 +46,7 @@ a [release](https://github.com/aether-lang-dev/libphonenumber-ae/releases) with
 ```sh
 # (a) grab the prebuilt core from the release (nothing to compile):
 aeb php/.dist.ae \
-    --overrideDep core/.build.ae=core/.getFromGitHub.ae
+    --overrideDep core/.build.ae=core/.getFromGitHubReleases.ae
 
 # (b) build the core from source instead:
 aeb core/.build.ae && aeb php/.dist.ae

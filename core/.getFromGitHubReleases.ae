@@ -1,4 +1,4 @@
-// core/.getFromGitHub.ae — the FETCH substitute producer for the phonenumber
+// core/.getFromGitHubReleases.ae — the FETCH substitute producer for the phonenumber
 // core .so. Instead of compiling libphonenumber_ae from Aether source (what
 // core/.build.ae does), this node DOWNLOADS the prebuilt core for THIS platform
 // from the project's GitHub releases (verified against its published .sha256,
@@ -9,7 +9,7 @@
 // Use it via aeb's --overrideDep (aeb 0.314+): relabel the core-build edge to
 // this node —
 //
-//   aeb <binding>/.tests.ae --overrideDep core/.build.ae=core/.getFromGitHub.ae
+//   aeb <binding>/.tests.ae --overrideDep core/.build.ae=core/.getFromGitHubReleases.ae
 //
 // so a binding's tests/dist node consumes the FETCHED core (its dep_artifact
 // reads what this node publishes) rather than building it. This is the
