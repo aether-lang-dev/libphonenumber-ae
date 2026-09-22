@@ -49,11 +49,13 @@ finds it with no further configuration.
 
 You don't need aeb for the core: download the prebuilt one for your platform
 from a [release](https://github.com/aether-lang-dev/libphonenumber-ae/releases)
-and place it on a lib path, e.g.
+and place it on a lib path (`native/` is baked into `extra-lib-dirs`). Each
+release attaches `libphonenumber_ae-<tag>-<os>-<arch>.<ext>` (+ a `.sha256`):
 
 ```sh
-curl -fsSLO https://raw.githubusercontent.com/aether-lang-dev/libphonenumber-ae/main/get-core.sh
-sh get-core.sh latest native   # downloads the core into ./native/
+TAG=<tag>; ASSET="libphonenumber_ae-$TAG-linux-x86_64.so"   # pick your <os>-<arch>/<ext>
+BASE="https://github.com/aether-lang-dev/libphonenumber-ae/releases/download/$TAG"
+mkdir -p native && curl -fsSL "$BASE/$ASSET" -o "native/libphonenumber_ae.so"
 ```
 
 ## Develop / test

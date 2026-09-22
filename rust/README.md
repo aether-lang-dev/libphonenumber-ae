@@ -40,10 +40,14 @@ dir next to the crate, then the OS loader's search path — so set
 
 You don't need aeb for the core: download the prebuilt one for your platform
 from a [release](https://github.com/aether-lang-dev/libphonenumber-ae/releases)
-and point at it:
+and point at it. Each release attaches `libphonenumber_ae-<tag>-<os>-<arch>.<ext>`
+(+ a `.sha256`); grab the one for your platform and set `LIBPHONENUMBER_AE_LIB`:
 
 ```sh
-export LIBPHONENUMBER_AE_LIB="$(curl -fsSL https://raw.githubusercontent.com/aether-lang-dev/libphonenumber-ae/main/get-core.sh | sh)"
+TAG=<tag>; ASSET="libphonenumber_ae-$TAG-linux-x86_64.so"   # pick your <os>-<arch>/<ext>
+BASE="https://github.com/aether-lang-dev/libphonenumber-ae/releases/download/$TAG"
+curl -fsSLO "$BASE/$ASSET" && curl -fsSL "$BASE/$ASSET.sha256" | sha256sum -c -
+export LIBPHONENUMBER_AE_LIB="$PWD/$ASSET"
 ```
 
 ## Develop / test

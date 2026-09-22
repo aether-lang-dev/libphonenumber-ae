@@ -90,8 +90,9 @@ per-language packages (wheel/gem/jar/crate/…) are built from this repo's
 ### Two ways to consume the core — both use the prebuilt binaries above
 
 - **FFI / other languages** — the language bindings \`dlopen\` the core over its C
-  ABI. A consumer fetches the platform artifact (see \`get-core.sh\`) and points a
-  binding at it (\`LIBPHONENUMBER_AE_LIB\`, the OS loader path, or bundled beside the app).
+  ABI. The published HLL packages bundle the core inside (nothing to fetch); to
+  supply an external core, download the platform artifact from this release and
+  point a binding at it (\`LIBPHONENUMBER_AE_LIB\`, the OS loader path, or bundled).
 - **Aether (\`ae add\`)** — an Aether program consumes the SAME prebuilt core as an
   \`ae add\` binary package: this release attaches an \`aether.toml\` declaring
   \`[package] binary = \"libphonenumber_ae\"\`, so \`ae add

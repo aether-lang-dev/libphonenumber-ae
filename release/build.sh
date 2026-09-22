@@ -38,11 +38,10 @@ have ae  || die "ae not on PATH (run ./bootstrap.sh, or ci/versions.env's pins)"
 have zig || die "zig not on PATH — required for cross-compilation (ae build --target)"
 have sha256sum || die "sha256sum required to checksum artifacts"
 
-# The release tag. Single source of truth is the repo-root VERSION file — the
-# SAME file core/.getFromGitHub.ae reads to name the asset it fetches, so a
-# published asset and a fetched asset can never drift. RELEASE_TAG overrides it
-# (to cut a one-off / test build); git-describe is only the last-ditch fallback
-# if VERSION is somehow absent.
+# The release tag. Single source of truth is the repo-root VERSION file, so the
+# asset names the aeb builder emits carry the same tag every release. RELEASE_TAG
+# overrides it (to cut a one-off / test build); git-describe is only the last-ditch
+# fallback if VERSION is somehow absent.
 _version_file="$ROOT/VERSION"
 TAG="${RELEASE_TAG:-$( [ -f "$_version_file" ] && tr -d '[:space:]' < "$_version_file" || git describe --tags --always 2>/dev/null || echo dev )}"
 

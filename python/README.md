@@ -29,23 +29,20 @@ loader finds it in this order: an explicit `pn._native.load(path)`,
 `$LIBPHONENUMBER_AE_LIB`, the `phonenumber_ae/native/` dir a wheel ships, then the
 OS loader's search path.
 
-**With a downloaded core (no Aether toolchain).** Install the package, download
-the core for your platform, and point at it:
-
-```sh
-pip install target/dist/phonenumber_ae-*.whl   # or the published package, when there is one
-# get-core.sh downloads the core for this platform and prints its path:
-export LIBPHONENUMBER_AE_LIB="$(curl -fsSL https://raw.githubusercontent.com/aether-lang-dev/libphonenumber-ae/main/get-core.sh | sh)"
-```
-
-**Self-contained wheel (built here).** `aeb <lang>/.dist.ae` bundles the freshly
-built core *inside* the wheel, so an installed wheel needs no configuration —
-current-OS-only:
+**Self-contained wheel (no Aether toolchain).** `aeb python/.dist.ae` bundles the
+core *inside* the wheel, so an installed wheel needs no download and no
+`LIBPHONENUMBER_AE_LIB` — the loader finds the bundled `phonenumber_ae/native/`
+core. This is the no-toolchain path: install the wheel and go.
 
 ```sh
 aeb core/.build.ae && aeb python/.dist.ae   # -> target/dist/phonenumber_ae-*.whl (core inside)
 pip install target/dist/phonenumber_ae-*.whl
 ```
+
+**Point at an external core (optional).** If you'd rather supply the core
+yourself — e.g. a shared one from a
+[release](https://github.com/aether-lang-dev/libphonenumber-ae/releases) — set
+`LIBPHONENUMBER_AE_LIB` to its path; the loader prefers it over the bundled one.
 
 ## Develop / test
 

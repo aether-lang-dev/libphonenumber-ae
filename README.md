@@ -21,21 +21,32 @@ pn.number_type("US", "2015550123")            # pn.TYPE_FIXED_LINE
 
 ## Quick start — use a binding (no Aether toolchain)
 
-A binding needs only the core shared library. Download the prebuilt one for
-your platform from a [release](https://github.com/aether-lang-dev/libphonenumber-ae/releases)
-— **no clone, no aeb, no Aether**:
+A binding needs only the core shared library, and it comes bundled — **no clone,
+no aeb, no Aether**. Two no-toolchain paths, by what you're writing:
+
+**An HLL binding (Python, Ruby, Go, …).** Install the self-contained package for
+your language: the core library is bundled *inside* it, so there's nothing to
+download and no `LIBPHONENUMBER_AE_LIB` to set. See the
+[binding's own README](#bindings) for the one install line in that language (each
+`<lang>/.dist.ae` builds that package, with the core already in it).
+
+**An Aether program.** Add the released core as an `ae add` dependency — `ae`
+fetches the prebuilt core for your platform from the
+[release](https://github.com/aether-lang-dev/libphonenumber-ae/releases), verifies
+its checksum, and installs it; you `import phonenumber_ae` and call its ABI. No
+`.so` to place, no build:
 
 ```sh
-# fetches libphonenumber_ae-<tag>-<os>-<arch>.{so,dylib,dll} for this machine,
-# verifies its checksum, and prints the path
-curl -fsSL https://raw.githubusercontent.com/aether-lang-dev/libphonenumber-ae/main/get-core.sh | sh
+ae add github.com/aether-lang-dev/libphonenumber-ae@<tag>
 ```
 
-Then point your language's binding at that core library (via `LIBPHONENUMBER_AE_LIB`,
-the OS loader path, or bundled beside your app) and call it — see the
-[binding's own README](#bindings) for the install and usage in that language.
-Runtime-load bindings (Python/Ruby/JS/Java) can instead just install the
-published package with the core library already inside.
+```aether
+import phonenumber_ae
+phonenumber_ae.pn_embed_is_valid_number("US", "2015550123")   // 1
+```
+
+(Cross-platform bundling: `ae add … --target <os>-<arch>` fetches a foreign
+platform's core. Requires `ae` ≥ 0.696.)
 
 ## Build from source (contributors, or an unreleased platform)
 
@@ -46,7 +57,15 @@ sudo — pinned to the versions this repo is tested on
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/aether-lang-dev/aeb/main/get.sh \
-  | AE_PIN=0.681.0 AEB_REF=v0.315 sh
+  | AE_PIN=0.706.0 AEB_REF=v0.324 sh
+```
+
+`get.sh` is also a sourceable library — a CI step can source it (with
+`AEBGET_SOURCE_ONLY=1` so sourcing only *defines* the functions) then drive it:
+
+```bash
+AEBGET_SOURCE_ONLY=1 . <(curl -fsSL https://raw.githubusercontent.com/aether-lang-dev/aeb/main/get.sh)
+AE_PIN=0.706.0 AEB_REF=v0.324 aeb_bootstrap
 ```
 
 **2. Build the core, then your language's binding** (each needs only that

@@ -1,9 +1,10 @@
-# Orientation for an LLM working on libphonenumber-ae (the Aether port)
+# Orientation for an agent working on libphonenumber-ae (the Aether port)
 
-Short, opinionated, for a future LLM picking up mid-task. The code is the source
-of truth; this is the map so your *first* attempt lands clean. Read
+Short, opinionated, for a future coding agent picking up mid-task. The code is
+the source of truth; this is the map so your *first* attempt lands clean. Read
 `../aether/LLM.md` first (the language; its "Idioms that keep biting" section)
-and `../html-sanitizer/LLM.md` (the sibling this repo's layout copies).
+and `../html-sanitizer/LLM.md` (the sibling this repo's layout copies) — those
+siblings still use the `LLM.md` filename.
 
 ## What this is, in one paragraph
 
