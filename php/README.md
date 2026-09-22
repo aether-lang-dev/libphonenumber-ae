@@ -39,6 +39,23 @@ composer require libphonenumber-ae/phonenumber --dev \
     --repository '{"type":"artifact","url":"target/dist"}'
 ```
 
+Building only this binding? Skip compiling the core — fetch the prebuilt one from
+a [release](https://github.com/aether-lang-dev/libphonenumber-ae/releases) with
+`--overrideDep`, which relabels the tarball's core dependency to the fetch node:
+
+```sh
+# (a) grab the prebuilt core from the release (nothing to compile):
+aeb php/.dist.ae \
+    --overrideDep core/.build.ae=core/.getFromGitHub.ae
+
+# (b) build the core from source instead:
+aeb core/.build.ae && aeb php/.dist.ae
+```
+
+Same tarball either way — the core bytes are identical. See
+[`docs/Prebuilt-Core-Packaging.md`](../docs/Prebuilt-Core-Packaging.md) for the
+`--overrideDep` fetch-node flow.
+
 The tarball is current-OS-only (it vendors this platform's `.so`). The loader
 finds the core in this order: an explicit `PhoneNumberAe\Native::load($path)`,
 `$LIBPHONENUMBER_AE_LIB`, the package's own `native/`, then the OS loader's

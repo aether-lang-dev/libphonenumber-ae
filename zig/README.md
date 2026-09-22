@@ -39,6 +39,23 @@ aeb core/.build.ae && aeb zig/.dist.ae   # -> target/dist/phonenumber-ae-zig.tar
 tar xzf target/dist/phonenumber-ae-zig.tar.gz   # -> build.zig, build.zig.zon, src/, native/
 ```
 
+Building only this binding? Skip compiling the core — fetch the prebuilt one from
+a [release](https://github.com/aether-lang-dev/libphonenumber-ae/releases) with
+`--overrideDep`, which relabels the package's core dependency to the fetch node:
+
+```sh
+# (a) grab the prebuilt core from the release (nothing to compile):
+aeb zig/.dist.ae \
+    --overrideDep core/.build.ae=core/.getFromGitHub.ae
+
+# (b) build the core from source instead:
+aeb core/.build.ae && aeb zig/.dist.ae
+```
+
+Same package either way — the core bytes are identical. See
+[`docs/Prebuilt-Core-Packaging.md`](../docs/Prebuilt-Core-Packaging.md) for the
+`--overrideDep` fetch-node flow.
+
 Reference it as a dependency in your `build.zig.zon`, then in `build.zig`:
 
 ```zig

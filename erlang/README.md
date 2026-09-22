@@ -36,6 +36,23 @@ tar -xzf target/dist/phonenumber-ae-erlang.tar.gz -C /path/to/libs
 ERL_LIBS=/path/to/libs erl                  # OTP finds the phonenumber_ae_nif app
 ```
 
+Building only this binding? Skip compiling the core — fetch the prebuilt one from
+a [release](https://github.com/aether-lang-dev/libphonenumber-ae/releases) with
+`--overrideDep`, which relabels the tarball's core dependency to the fetch node:
+
+```sh
+# (a) grab the prebuilt core from the release (nothing to compile):
+aeb erlang/.dist.ae \
+    --overrideDep core/.build.ae=core/.getFromGitHub.ae
+
+# (b) build the core from source instead:
+aeb core/.build.ae && aeb erlang/.dist.ae
+```
+
+Same tarball either way — the core bytes are identical. See
+[`docs/Prebuilt-Core-Packaging.md`](../docs/Prebuilt-Core-Packaging.md) for the
+`--overrideDep` fetch-node flow.
+
 The tarball is current-OS-only (it bundles this platform's `.so`). The NIF
 `dlopen`s the core at load time in this order: `$LIBPHONENUMBER_AE_LIB`, then
 `priv/` beside the app, then the OS loader's search path — so an unpacked app needs

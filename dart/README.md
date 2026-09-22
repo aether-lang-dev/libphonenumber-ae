@@ -32,6 +32,23 @@ aeb core/.build.ae && aeb dart/.dist.ae   # -> target/dist/phonenumber-ae-dart.t
 tar xzf target/dist/phonenumber-ae-dart.tar.gz   # -> phonenumber-ae-dart/
 ```
 
+Building only this binding? Skip compiling the core — fetch the prebuilt one from
+a [release](https://github.com/aether-lang-dev/libphonenumber-ae/releases) with
+`--overrideDep`, which relabels the package's core dependency to the fetch node:
+
+```sh
+# (a) grab the prebuilt core from the release (nothing to compile):
+aeb dart/.dist.ae \
+    --overrideDep core/.build.ae=core/.getFromGitHub.ae
+
+# (b) build the core from source instead:
+aeb core/.build.ae && aeb dart/.dist.ae
+```
+
+Same package either way — the core bytes are identical. See
+[`docs/Prebuilt-Core-Packaging.md`](../docs/Prebuilt-Core-Packaging.md) for the
+`--overrideDep` fetch-node flow.
+
 Add it as a path dependency in your `pubspec.yaml`
 (`phonenumber_ae: {path: ../phonenumber-ae-dart}`) and `dart pub get`. The tarball
 is current-OS-only (it vendors this platform's `.so`). The loader finds the core

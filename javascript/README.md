@@ -32,6 +32,23 @@ aeb core/.build.ae && aeb javascript/.dist.ae   # -> target/dist/phonenumber_ae-
 npm install target/dist/phonenumber_ae-*.tgz
 ```
 
+Building only this binding? Skip compiling the core — fetch the prebuilt one from
+a [release](https://github.com/aether-lang-dev/libphonenumber-ae/releases) with
+`--overrideDep`, which relabels the package's core dependency to the fetch node:
+
+```sh
+# (a) grab the prebuilt core from the release (nothing to compile):
+aeb javascript/.dist.ae \
+    --overrideDep core/.build.ae=core/.getFromGitHub.ae
+
+# (b) build the core from source instead:
+aeb core/.build.ae && aeb javascript/.dist.ae
+```
+
+Same package either way — the core bytes are identical. See
+[`docs/Prebuilt-Core-Packaging.md`](../docs/Prebuilt-Core-Packaging.md) for the
+`--overrideDep` fetch-node flow.
+
 The tarball is current-OS-only (it bundles this platform's `.so`). The loader
 finds the core in this order: an explicit
 `require('phonenumber_ae/lib/native').load(path)`, `$LIBPHONENUMBER_AE_LIB`, the

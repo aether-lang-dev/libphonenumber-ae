@@ -32,6 +32,23 @@ aeb core/.build.ae && aeb nim/.dist.ae   # -> target/dist/phonenumber-ae-nim.tar
 tar xzf target/dist/phonenumber-ae-nim.tar.gz   # -> phonenumber_ae.nimble, src/, native/
 ```
 
+Building only this binding? Skip compiling the core — fetch the prebuilt one from
+a [release](https://github.com/aether-lang-dev/libphonenumber-ae/releases) with
+`--overrideDep`, which relabels the package's core dependency to the fetch node:
+
+```sh
+# (a) grab the prebuilt core from the release (nothing to compile):
+aeb nim/.dist.ae \
+    --overrideDep core/.build.ae=core/.getFromGitHub.ae
+
+# (b) build the core from source instead:
+aeb core/.build.ae && aeb nim/.dist.ae
+```
+
+Same package either way — the core bytes are identical. See
+[`docs/Prebuilt-Core-Packaging.md`](../docs/Prebuilt-Core-Packaging.md) for the
+`--overrideDep` fetch-node flow.
+
 `nimble install` it from the unpacked dir (or add `requires "phonenumber_ae"` and
 point at it as a local dependency). Unlike the dlopen bindings, this one *links*
 the core: the `{.passL.}` in `src/phonenumber_ae.nim` searches `nim/native` and

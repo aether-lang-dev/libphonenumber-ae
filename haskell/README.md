@@ -43,6 +43,23 @@ aeb core/.build.ae && aeb haskell/.dist.ae   # -> target/dist/phonenumber-ae-0.2
 cabal install --lib target/dist/phonenumber-ae-0.2.0.0.tar.gz
 ```
 
+Building only this binding? Skip compiling the core — fetch the prebuilt one from
+a [release](https://github.com/aether-lang-dev/libphonenumber-ae/releases) with
+`--overrideDep`, which relabels the package's core dependency to the fetch node:
+
+```sh
+# (a) grab the prebuilt core from the release (nothing to compile):
+aeb haskell/.dist.ae \
+    --overrideDep core/.build.ae=core/.getFromGitHub.ae
+
+# (b) build the core from source instead:
+aeb core/.build.ae && aeb haskell/.dist.ae
+```
+
+Same package either way — the core bytes are identical. See
+[`docs/Prebuilt-Core-Packaging.md`](../docs/Prebuilt-Core-Packaging.md) for the
+`--overrideDep` fetch-node flow.
+
 The `.cabal` bakes `native` and `../core/native` in as `extra-lib-dirs` and
 `rpath`, so once the core `.so` is on one of those paths the linked package
 finds it with no further configuration.

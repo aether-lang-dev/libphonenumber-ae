@@ -39,6 +39,23 @@ aeb core/.build.ae && aeb python/.dist.ae   # -> target/dist/phonenumber_ae-*.wh
 pip install target/dist/phonenumber_ae-*.whl
 ```
 
+Building only this binding? Skip compiling the core — fetch the prebuilt one from
+a [release](https://github.com/aether-lang-dev/libphonenumber-ae/releases) with
+`--overrideDep`, which relabels the wheel's core dependency to the fetch node:
+
+```sh
+# (a) grab the prebuilt core from the release (nothing to compile):
+aeb python/.dist.ae \
+    --overrideDep core/.build.ae=core/.getFromGitHub.ae
+
+# (b) build the core from source instead:
+aeb core/.build.ae && aeb python/.dist.ae
+```
+
+Same wheel either way — the core bytes are identical. See
+[`docs/Prebuilt-Core-Packaging.md`](../docs/Prebuilt-Core-Packaging.md) for the
+`--overrideDep` fetch-node flow.
+
 **Point at an external core (optional).** If you'd rather supply the core
 yourself — e.g. a shared one from a
 [release](https://github.com/aether-lang-dev/libphonenumber-ae/releases) — set
