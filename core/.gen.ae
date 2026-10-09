@@ -3,6 +3,13 @@
 // resources/. These .ae tables are build artifacts (gitignored), so every node
 // that compiles a core module (the .so build and each core gate) deps this
 // so a fresh checkout builds. Default language: English.
+//
+// Named .gen.ae (type "gen", label "gen:core"), NOT gen.build.ae: a non-dot file
+// is type "build", so the old name shared the "core" label with core/.build.ae.
+// In any graph holding both (the presubmit: core_tests dep this, the ABI gate and
+// every binding dep core/.build.ae) aeb's per-label visited-set dedup ran this
+// node and skipped core/.build.ae's shared_lib builder, so on a clean target/ no
+// libphonenumber_ae.so was built and every .so consumer failed.
 import bldr
 import std.os
 import bldr (_get)

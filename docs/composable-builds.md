@@ -47,12 +47,12 @@ bytes.
 ```
 # validation only (~320 KB)
 core/gen/assemble_embed.sh core/embed_validation.ae
-ae build --emit=lib core/embed_validation.ae --extra core/_embed_support.c \
+ae build --emit=lib --with=extern core/embed_validation.ae --extra core/_embed_support.c \
     -o libphonenumber_ae_validation.so
 
 # validation + geocoder
 core/gen/assemble_embed.sh core/embed_geo.ae geo
-ae build --emit=lib core/embed_geo.ae --extra core/_embed_support.c -o out.so
+ae build --emit=lib --with=extern core/embed_geo.ae --extra core/_embed_support.c -o out.so
 
 # any subset, in any order
 core/gen/assemble_embed.sh core/embed_mine.ae tz carrier
@@ -64,9 +64,12 @@ core/gen/assemble_embed.sh core/embed.ae all
 Or via aeb:
 
 - `aeb core/.build.ae` — the **full** library (all features), the default.
-- `aeb core/validation.build.ae` — the **validation-only** library.
-- Add your own `<name>.build.ae` node whose `source(...)` is your assembled
-  variant `.ae` for any other subset.
+- `aeb core/.validation.ae` — the **validation-only** library (generates the
+  metadata and assembles `core/embed_validation.ae` itself).
+- Add your own `.<name>.ae` node whose `source(...)` is your assembled
+  variant `.ae` for any other subset. Give it its own dot-type name: a
+  `<name>.build.ae` file is type `build` and shares the `core` label with
+  `core/.build.ae`, and aeb then runs only one of the two.
 
 ## Discovering features at runtime
 
@@ -105,7 +108,7 @@ included. Feature selection (`assemble_embed.sh`) and language selection
 # English + German + French carrier/geocoder names, geocoder feature only:
 core/gen/generate_metadata.sh en de fr
 core/gen/assemble_embed.sh core/embed_geo.ae geo
-ae build --emit=lib core/embed_geo.ae --extra core/_embed_support.c -o out.so
+ae build --emit=lib --with=extern core/embed_geo.ae --extra core/_embed_support.c -o out.so
 # out.so answers geo_description(region, input, "de") etc.; unknown langs -> en.
 ```
 

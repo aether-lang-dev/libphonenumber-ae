@@ -57,7 +57,7 @@ sudo — pinned to the versions this repo is tested on
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/aether-lang-dev/aeb/main/get.sh \
-  | AE_PIN=0.706.0 AEB_REF=v0.324 sh
+  | AE_PIN=0.801.0 AEB_REF=v0.326 sh
 ```
 
 `get.sh` is also a sourceable library — a CI step can source it (with
@@ -65,7 +65,7 @@ curl -fsSL https://raw.githubusercontent.com/aether-lang-dev/aeb/main/get.sh \
 
 ```bash
 AEBGET_SOURCE_ONLY=1 . <(curl -fsSL https://raw.githubusercontent.com/aether-lang-dev/aeb/main/get.sh)
-AE_PIN=0.706.0 AEB_REF=v0.324 aeb_bootstrap
+AE_PIN=0.801.0 AEB_REF=v0.326 aeb_bootstrap
 ```
 
 **2. Build the core, then your language's binding** (each needs only that

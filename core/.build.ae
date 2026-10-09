@@ -44,7 +44,7 @@ import aether
 import std.os
 import std.string
 import bldr (_get)
-import aether (source, extra_source, output, size, stem, target)
+import aether (source, extra_source, output, size, stem, target, caps)
 
 aeb(cap) {
     bldr.build() {
@@ -59,6 +59,7 @@ aeb(cap) {
             aether.shared_lib() {
                 source("embed.ae")
                 extra_source("_embed_support.c")
+                caps("extern")
                 size()
                 output("libphonenumber_ae.so")
                 target(t)
@@ -74,6 +75,7 @@ aeb(cap) {
         aether.shared_lib() {
             source("embed.ae")
             extra_source("_embed_support.c")
+            caps("extern")
             output("libphonenumber_ae.so")
         }
     }

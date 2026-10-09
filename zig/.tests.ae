@@ -1,17 +1,21 @@
 // Zig binding tests. Canonical aeb grammar (no shell-out): zig.test() runs the
-// `zig test` blocks (src/conformance.zig via src/root.zig). Zig LINKS the core
-// (build.zig turns the dep into a -L search path + rpath), and the SDK walks
-// deps for the shared_library_deps artifact so the link resolves. Mirrors the
-// selenium zig binding.
+// `zig test` blocks (src/conformance.zig via src/root.zig). Zig LINKS the core:
+// build.zig turns LIBPHONENUMBER_AE_LIB into a -L search path + rpath. aeb's
+// zig SDK does NOT walk deps for the shared_library_deps artifact (it only
+// prefixes env()), so the dep'd artifact path is handed over explicitly via
+// env(). Without it the link searched only zig/native + core/native, which
+// exist only if something staged them, so a fresh checkout failed to link.
 import bldr
 import zig
-import bldr (dep)
+import bldr (dep, dep_artifact, env)
 
 aeb(cap) {
     bldr.build() {
         prereq("zig")
         dep("core/.build.ae")
+        lib = dep_artifact("core/.build.ae", "shared_lib")
         zig.test() {
+            env("LIBPHONENUMBER_AE_LIB", lib)
         }
     }
 }
