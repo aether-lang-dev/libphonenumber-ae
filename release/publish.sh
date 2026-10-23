@@ -79,6 +79,11 @@ assets=( "${bins[@]}" "${toml[@]}" "${sums[@]}" "${manifest[@]}" )
 nbin=0; for f in "${bins[@]}"; do case "$f" in *.dll.lib) ;; *) nbin=$((nbin+1)) ;; esac; done
 
 COMMIT="$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || echo unknown)"
+if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+  die "working tree has uncommitted TRACKED changes — commit or stash them so the
+       tag ($TAG @ ${COMMIT:0:9}) and the built binaries are the same code
+       (untracked files are fine; use 'git status' to see what's dirty)"
+fi
 notes="Cross-built \`libphonenumber_ae\` core — ${nbin} platform artifact(s), each with a \`.sha256\` (and a combined \`SHA256SUMS.txt\`).
 
 The core is the shared, language-agnostic library every binding uses. Download the

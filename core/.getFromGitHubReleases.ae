@@ -39,12 +39,12 @@ import std.cryptography
 // truth: the repo-root VERSION file (one dir up from this node's core/ source
 // dir), read at build time so the tag lives in ONE place — release/build.sh
 // stamps the same file's tag into the asset names it publishes, so fetch and
-// publish can't drift. Falls back to the baked default only if unreadable.
+// publish can't drift.
 _tag(srcdir: string) -> string {
     v, err = fs.read(string.concat(srcdir, "/../VERSION"))
-    if string.length(err) > 0 { return "v0.1.0" }
+    if string.length(err) > 0 { return "" }
     t = string.trim(v)
-    if string.length(t) == 0 { return "v0.1.0" }
+    if string.length(t) == 0 { return "" }
     return t
 }
 _repo() -> string { return "aether-lang-dev/libphonenumber-ae" }
@@ -53,6 +53,11 @@ aeb(cap) {
     bldr.build() {
         srcdir = bldr.source_dir(builder_context())
         tag = _tag(srcdir)
+        if string.length(tag) == 0 {
+            bldr.fail(builder_context(), string.concat(
+                "cannot read the release tag from ",
+                string.concat(srcdir, "/../VERSION (missing or empty)")))
+        }
         os_ = _os_tag()
         arch = _arch()
         ext = _ext(os_)
@@ -113,6 +118,7 @@ aeb(cap) {
         publish_artifact("shared_lib", so_path)
         publish_artifact("shared_library", so_path)
         publish_artifact("shared_library_deps_including_transitive", so_path)
+        publish_artifact("ldlibdeps", so_path)
     }
 }
 

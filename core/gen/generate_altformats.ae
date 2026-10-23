@@ -46,7 +46,8 @@ fn cc_add(map: ptr, cc: string, rec: string) {
     n = list.size(map)
     prefix = "${cc}${us}"
     for (i = 0; i < n; i++) {
-        e, _ = list.get(map, i)
+        ep, _ = list.get(map, i)
+        e, _ = string.from_ptr(ep)
         if starts_with(e, prefix) == 1 {
             blob = string.substring(e, string.length(prefix), string.length(e))
             list.set(map, i, "${prefix}${blob}${rs}${rec}")
@@ -167,7 +168,8 @@ main() {
     println("altformats_for_cc(cc: string) -> string {")
     ncc = list.size(cc_map)
     for (i = 0; i < ncc; i++) {
-        entry, _ = list.get(cc_map, i)
+        entryp, _ = list.get(cc_map, i)
+        entry, _ = string.from_ptr(entryp)
         // entry = "cc\x1f<blob>": split off the cc tag, emit blob for that cc.
         us = string.from_char(31)
         pos = -1

@@ -37,8 +37,9 @@ fn cats() -> ptr {
 fn index_of_str(l: ptr, s: string) -> int {
     n = list.size(l)
     for (i = 0; i < n; i++) {
-        v, _ = list.get(l, i)
-        if v == s { return i }
+        vp, _ = list.get(l, i)
+        vs, _ = string.from_ptr(vp)
+        if vs == s { return i }
     }
     return -1
 }
@@ -129,7 +130,8 @@ main() {
             if pending == "general-nnp" { cur_general = squeeze(xml.text(p)); pending = "" }
             else if pending == "cat-nnp" {
                 if cur_cat >= 0 {
-                    prev, _ = list.get(cat_pat, cur_cat)
+                    prevp, _ = list.get(cat_pat, cur_cat)
+                    prev, _ = string.from_ptr(prevp)
                     if prev == "" { list.set(cat_pat, cur_cat, squeeze(xml.text(p))) }
                 }
                 pending = ""
@@ -161,11 +163,13 @@ main() {
 fn join_row(id: string, general: string, lengths: string, example: string, cat_pat: ptr, nct: int) -> string {
     sep = string.from_char(31)
     // shortCode is cat 0 -> place it as its own field after example, then the rest.
-    sc, _ = list.get(cat_pat, 0)
+    scp, _ = list.get(cat_pat, 0)
+    sc, _ = string.from_ptr(scp)
     row = "${id}${sep}${general}${sep}${lengths}${sep}${example}${sep}${sc}"
     for (t = 1; t < nct; t++) {
         v, _ = list.get(cat_pat, t)
-        row = "${row}${sep}${v}"
+        vs, _ = string.from_ptr(v)
+        row = "${row}${sep}${vs}"
     }
     return row
 }

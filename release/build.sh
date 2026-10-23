@@ -60,9 +60,12 @@ rm -rf "$DIST"; mkdir -p "$DIST"
 # collected. (We copy per-triple by exact name, but keep the source dir clean.)
 rm -rf "$ROOT/target/build/core/ae-add"
 
-# triple -> {os, arch, extension} for the artifact name.
+# triple -> {os, arch, libc-suffix, extension} for the artifact name.
+# emit_binary_package appends "-musl" to the asset triple for linux-musl targets
+# (lib/aether/module.ae ~3431), so the name must include it here too.
 os_of()  { case "$1" in *-linux|*-linux-musl) echo linux;; *-macos) echo macos;; *-windows) echo windows;; *-freebsd) echo freebsd;; *) echo unknown;; esac; }
 arch_of(){ case "$1" in aarch64-*) echo arm64;; x86_64-*) echo x86_64;; *) echo "$1";; esac; }
+libc_of(){ case "$1" in *-musl) echo "-musl";; *) echo "";; esac; }
 ext_of() { case "$1" in *-macos) echo dylib;; *-windows) echo dll;; *) echo so;; esac; }
 
 # aeb owns metadata generation + the cross-build + the `ae add` asset trio now:
@@ -106,8 +109,8 @@ freebsd_sysroot_for() {
 }
 
 for t in $MATRIX; do
-  os=$(os_of "$t"); arch=$(arch_of "$t"); ext=$(ext_of "$t")
-  name="libphonenumber_ae-${TAG}-${os}-${arch}.${ext}"
+  os=$(os_of "$t"); arch=$(arch_of "$t"); libc=$(libc_of "$t"); ext=$(ext_of "$t")
+  name="libphonenumber_ae-${TAG}-${os}-${arch}${libc}.${ext}"
   out="$DIST/$name"
   log="$DIST/.$t.log"
 
@@ -132,6 +135,7 @@ for t in $MATRIX; do
   # matched instead of THIS target's cross lib — silently staging the wrong-platform
   # bytes into the asset (a windows .dll that is actually a Mach-O). Wiping the dir
   # leaves only the current build's lib, so the resolver can't grab a stale one.
+  rm -rf "$ROOT/target/build/core/ae-add"
   rm -rf "$ROOT/target/build/core/lib"
   # aeb cross-builds the .so (--size, via aether.shared_lib target()) AND stages
   # the `ae add` asset trio (via aether.emit_binary_package) into core's ae-add/.
@@ -155,7 +159,7 @@ for t in $MATRIX; do
     # It is NOT part of the ae-add trio; grab it from the build lib dir + checksum.
     if [ "$os" = "windows" ]; then
       libsrc=$(ls "$ROOT"/target/build/core/lib/libphonenumber_ae.so.lib "$ROOT"/target/build/core/lib/libphonenumber_ae.dll.lib 2>/dev/null | head -1)
-      if [ -n "$libsrc" ] && [ -f "$libsrc" ]; then
+      if [ -n "$libsrc" ] && [ -s "$libsrc" ]; then
         cp "$libsrc" "$DIST/$name.lib"
         ( cd "$DIST" && sha256sum "$name.lib" > "$name.lib.sha256" )
       fi
