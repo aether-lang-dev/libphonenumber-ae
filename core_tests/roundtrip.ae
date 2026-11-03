@@ -27,7 +27,7 @@ main() {
     failures = 0
 
     for (i = 0; i < n; i++) {
-        region, _ = list.get(regs, i)
+        region, _ = list.get_string(regs, i)
         ex = phonenumber.example_number(region)
         if string.length(ex) == 0 { skipped = skipped + 1; continue }
         checked = checked + 1

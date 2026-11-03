@@ -27,6 +27,6 @@ pn_embed_short_is_sms_service(region: string, input: string) -> int {
 pn_embed_short_expected_cost(region: string, input: string) -> int {
     return shortnumber.expected_cost(region, input)
 }
-pn_embed_short_example_number(region: string) -> string {
+pn_embed_short_example_number(region: string) -> ptr {
     return pn_raw_dup(shortnumber.short_example_number(region))
 }

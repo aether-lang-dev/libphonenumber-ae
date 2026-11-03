@@ -12,8 +12,8 @@ import core.phonenumber
 import std.string
 import std.list
 
-extern pn_raw_dup(s: string) -> string
-extern pn_raw_free(s: string)
+extern pn_raw_dup(s: string) -> ptr
+extern pn_raw_free(s: ptr)
 
 exports(
     pn_embed_abi_version, pn_embed_free_string,
@@ -45,7 +45,7 @@ exports(
 // ABI revision (see the header note).
 pn_embed_abi_version() -> int { return 7 }
 
-pn_embed_free_string(s: string) { pn_raw_free(s) }
+pn_embed_free_string(s: ptr) { pn_raw_free(s) }
 
 // Parse a raw (region, input) to its E.164 digit string ("<cc><national>") for
 // the tz/carrier/geo fragments; "" on a parse error. Defined in the base so the
@@ -58,32 +58,32 @@ e164_digits_for(region: string, input: string) -> string {
 
 // ---- metadata queries ----
 
-pn_embed_country_code(region: string) -> string {
+pn_embed_country_code(region: string) -> ptr {
     return pn_raw_dup(phonenumber.country_code(region))
 }
-pn_embed_example_number(region: string) -> string {
+pn_embed_example_number(region: string) -> ptr {
     return pn_raw_dup(phonenumber.example_number(region))
 }
-pn_embed_example_number_for_type(region: string, ty: int) -> string {
+pn_embed_example_number_for_type(region: string, ty: int) -> ptr {
     return pn_raw_dup(phonenumber.example_number_for_type(region, ty))
 }
-pn_embed_invalid_example_number(region: string) -> string {
+pn_embed_invalid_example_number(region: string) -> ptr {
     return pn_raw_dup(phonenumber.invalid_example_number(region))
 }
-pn_embed_possible_lengths(region: string) -> string {
+pn_embed_possible_lengths(region: string) -> ptr {
     return pn_raw_dup(phonenumber.possible_lengths(region))
 }
-pn_embed_region_code_for_country_code(cc: string) -> string {
+pn_embed_region_code_for_country_code(cc: string) -> ptr {
     return pn_raw_dup(phonenumber.region_code_for_country_code(cc))
 }
 pn_embed_is_nanpa_country(region: string) -> int {
     return phonenumber.is_nanpa_country(region)
 }
-pn_embed_ndd_prefix_for_region(region: string, strip: int) -> string {
+pn_embed_ndd_prefix_for_region(region: string, strip: int) -> ptr {
     return pn_raw_dup(phonenumber.ndd_prefix_for_region(region, strip))
 }
 pn_embed_region_count() -> int { return phonenumber.region_count() }
-pn_embed_region_at(idx: int) -> string {
+pn_embed_region_at(idx: int) -> ptr {
     return pn_raw_dup(phonenumber.region_at(idx))
 }
 pn_embed_cc_region_count(cc: string) -> int {
@@ -92,7 +92,7 @@ pn_embed_cc_region_count(cc: string) -> int {
     list.free(l)
     return n
 }
-pn_embed_cc_region_at(cc: string, idx: int) -> string {
+pn_embed_cc_region_at(cc: string, idx: int) -> ptr {
     l = phonenumber.regions_for_country_code(cc)
     dupd = pn_raw_dup("")
     if idx >= 0 && idx < list.size(l) {
@@ -106,23 +106,23 @@ pn_embed_cc_region_at(cc: string, idx: int) -> string {
 
 // ---- parse + parsed-number accessors ----
 
-pn_embed_parse(input: string, region: string) -> string {
+pn_embed_parse(input: string, region: string) -> ptr {
     return pn_raw_dup(phonenumber.parse(input, region))
 }
-pn_embed_pn_region(pn: string) -> string { return pn_raw_dup(phonenumber.pn_region(pn)) }
-pn_embed_pn_country_code(pn: string) -> string { return pn_raw_dup(phonenumber.pn_country_code(pn)) }
-pn_embed_pn_national_number(pn: string) -> string { return pn_raw_dup(phonenumber.pn_national_number(pn)) }
-pn_embed_pn_extension(pn: string) -> string { return pn_raw_dup(phonenumber.pn_extension(pn)) }
+pn_embed_pn_region(pn: string) -> ptr { return pn_raw_dup(phonenumber.pn_region(pn)) }
+pn_embed_pn_country_code(pn: string) -> ptr { return pn_raw_dup(phonenumber.pn_country_code(pn)) }
+pn_embed_pn_national_number(pn: string) -> ptr { return pn_raw_dup(phonenumber.pn_national_number(pn)) }
+pn_embed_pn_extension(pn: string) -> ptr { return pn_raw_dup(phonenumber.pn_extension(pn)) }
 pn_embed_pn_italian_leading_zero(pn: string) -> int { return phonenumber.pn_italian_leading_zero(pn) }
 pn_embed_pn_source(pn: string) -> int { return phonenumber.pn_source(pn) }
-pn_embed_pn_error(pn: string) -> string { return pn_raw_dup(phonenumber.pn_error(pn)) }
-pn_embed_national_number(region: string, input: string) -> string {
+pn_embed_pn_error(pn: string) -> ptr { return pn_raw_dup(phonenumber.pn_error(pn)) }
+pn_embed_national_number(region: string, input: string) -> ptr {
     return pn_raw_dup(phonenumber.national_number(region, input))
 }
-pn_embed_region_code_for_number(pn: string) -> string {
+pn_embed_region_code_for_number(pn: string) -> ptr {
     return pn_raw_dup(phonenumber.region_code_for_number(pn))
 }
-pn_embed_national_significant_number(pn: string) -> string {
+pn_embed_national_significant_number(pn: string) -> ptr {
     return pn_raw_dup(phonenumber.national_significant_number(pn))
 }
 pn_embed_length_of_ndc(pn: string) -> int { return phonenumber.length_of_ndc(pn) }
@@ -152,13 +152,13 @@ pn_embed_can_be_internationally_dialled(region: string, input: string) -> int {
 
 // ---- formatting ----
 
-pn_embed_format(region: string, input: string, fmt: int) -> string {
+pn_embed_format(region: string, input: string, fmt: int) -> ptr {
     return pn_raw_dup(phonenumber.format(region, input, fmt))
 }
-pn_embed_format_out_of_country(region: string, input: string, calling_from: string) -> string {
+pn_embed_format_out_of_country(region: string, input: string, calling_from: string) -> ptr {
     return pn_raw_dup(phonenumber.format_out_of_country(region, input, calling_from))
 }
-pn_embed_format_in_original(pn: string, calling_from: string) -> string {
+pn_embed_format_in_original(pn: string, calling_from: string) -> ptr {
     return pn_raw_dup(phonenumber.format_in_original(pn, calling_from))
 }
 
@@ -167,13 +167,13 @@ pn_embed_format_in_original(pn: string, calling_from: string) -> string {
 pn_embed_is_number_match(a: string, b: string) -> int {
     return phonenumber.is_number_match(a, b)
 }
-pn_embed_truncate_too_long(region: string, input: string) -> string {
+pn_embed_truncate_too_long(region: string, input: string) -> ptr {
     return pn_raw_dup(phonenumber.truncate_too_long(region, input))
 }
-pn_embed_normalize_digits_only(s: string) -> string {
+pn_embed_normalize_digits_only(s: string) -> ptr {
     return pn_raw_dup(phonenumber.normalize_digits_only(s))
 }
-pn_embed_convert_alpha_characters(s: string) -> string {
+pn_embed_convert_alpha_characters(s: string) -> ptr {
     return pn_raw_dup(phonenumber.convert_alpha_characters(s))
 }
 pn_embed_is_alpha_number(s: string) -> int {
@@ -182,10 +182,10 @@ pn_embed_is_alpha_number(s: string) -> int {
 
 // ---- AsYouTypeFormatter ----
 
-pn_embed_ayt_new(region: string) -> string { return pn_raw_dup(phonenumber.ayt_new(region)) }
-pn_embed_ayt_input(state: string, ch: string) -> string { return pn_raw_dup(phonenumber.ayt_input(state, ch)) }
-pn_embed_ayt_result(state: string) -> string { return pn_raw_dup(phonenumber.ayt_result(state)) }
-pn_embed_ayt_clear(state: string) -> string { return pn_raw_dup(phonenumber.ayt_clear(state)) }
+pn_embed_ayt_new(region: string) -> ptr { return pn_raw_dup(phonenumber.ayt_new(region)) }
+pn_embed_ayt_input(state: string, ch: string) -> ptr { return pn_raw_dup(phonenumber.ayt_input(state, ch)) }
+pn_embed_ayt_result(state: string) -> ptr { return pn_raw_dup(phonenumber.ayt_result(state)) }
+pn_embed_ayt_clear(state: string) -> ptr { return pn_raw_dup(phonenumber.ayt_clear(state)) }
 
 // ---- PhoneNumberMatcher / findNumbers ----
 
@@ -198,6 +198,6 @@ pn_embed_matcher_start(text: string, region: string, leniency: int, idx: int) ->
 pn_embed_matcher_end(text: string, region: string, leniency: int, idx: int) -> int {
     return phonenumber.matcher_end(text, region, leniency, idx)
 }
-pn_embed_matcher_raw(text: string, region: string, leniency: int, idx: int) -> string {
+pn_embed_matcher_raw(text: string, region: string, leniency: int, idx: int) -> ptr {
     return pn_raw_dup(phonenumber.matcher_raw(text, region, leniency, idx))
 }
