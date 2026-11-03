@@ -5,14 +5,16 @@
 // Mirrors the selenium nim binding.
 import bldr
 import nim
-import bldr (dep, dep_artifact)
+import bldr (dep, dep_artifact, env)
 import nim (test_file, nim_flag)
 
 aeb(cap) {
     bldr.build() {
         prereq("nim")
         dep("core/.build.ae")
+        lib = dep_artifact("core/.build.ae", "shared_lib")
         nim.test() {
+            env("LIBPHONENUMBER_AE_LIB", lib)
             nim_flag("--hints:off")
             nim_flag("--path:src")
             test_file("tests/tconformance.nim")

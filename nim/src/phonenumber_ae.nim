@@ -26,9 +26,10 @@
 ## house style for that family (Go/cgo, Zig) is to LINK. So we do: `{.passL.}`
 ## below points the linker at `nim/native` and `../core/native`, and bakes both
 ## in as `rpath` so an in-tree binary finds the `.so` with no `LD_LIBRARY_PATH`.
-## `nim/.tests.ae` stages the core artifact into `nim/native/` before
-## compiling, exactly as `go/.tests.ae` does for cgo, so the link and the rpath
-## resolve wherever `aeb` put it.
+## `$LIBPHONENUMBER_AE_LIB` (the `.so`, or its directory), read at compile
+## time, is searched first: `nim/.tests.ae` sets it to the core artifact aeb
+## built, as `zig/.tests.ae` does, so the link and the rpath resolve wherever
+## `aeb` put it.
 ##
 ## The consequence to be aware of: the core must exist at BUILD time, not just
 ## at run time. A missing `.so` is a link error, not a nice exception.
@@ -51,14 +52,14 @@
 ## ABI is `int` throughout, so every ABI proc below uses `cint` explicitly. Do
 ## not "simplify" one of them to `int`.
 
-import std/[algorithm, os]
+import std/[algorithm, os, strutils]
 
 # ---------------------------------------------------------------------------
 # Linking
 # ---------------------------------------------------------------------------
 #
-# Search nim/native first (where .tests.ae stages the artifact), then the
-# in-tree core/native, and bake both in as rpath so the produced binary is
+# Search $LIBPHONENUMBER_AE_LIB first (what .tests.ae sets), then nim/native,
+# then the in-tree core/native, and bake both in as rpath so the produced binary is
 # runnable straight out of the build directory. `currentSourcePath` keeps this
 # correct no matter what directory the compiler was invoked from.
 
@@ -66,8 +67,17 @@ const
   srcDir = currentSourcePath().parentDir()
   nativeDir = srcDir & "/../native"
   coreNativeDir = srcDir & "/../../core/native"
+  envLib = getEnv("LIBPHONENUMBER_AE_LIB")  # compile time: a const
+  envDir =
+    if envLib.len == 0: ""
+    elif envLib.endsWith(".so") or envLib.endsWith(".dylib") or envLib.endsWith(".dll"):
+      envLib.parentDir()
+    else: envLib
+  envFlags =
+    if envDir.len == 0: ""
+    else: "-L" & envDir & " -Wl,-rpath," & envDir & " "
 
-{.passL: "-L" & nativeDir & " -L" & coreNativeDir & " -lphonenumber_ae" &
+{.passL: envFlags & "-L" & nativeDir & " -L" & coreNativeDir & " -lphonenumber_ae" &
          " -Wl,-rpath," & nativeDir & " -Wl,-rpath," & coreNativeDir.}
 
 # ---------------------------------------------------------------------------
