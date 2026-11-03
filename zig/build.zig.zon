@@ -10,7 +10,7 @@
     // A stable per-package id. Do not change it — it is how a consumer's
     // dependency graph identifies this package across renames.
     .fingerprint = 0x69f832e2fc7e4af8,
-    .minimum_zig_version = "0.16.0",
+    .minimum_zig_version = "0.17.0",
     .paths = .{
         "build.zig",
         "build.zig.zon",

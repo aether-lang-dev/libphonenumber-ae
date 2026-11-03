@@ -111,8 +111,8 @@ fn engineSearchPath(b: *std.Build, engine_opt: ?[]const u8) []const []const u8 {
         if (e.len > 0) dirs.append(gpa, asDir(b, e)) catch @panic("OOM");
     }
     // A staged copy next to this build file, then the in-tree monorepo path.
-    dirs.append(gpa, b.pathFromRoot("native")) catch @panic("OOM");
-    dirs.append(gpa, b.pathFromRoot("../core/native")) catch @panic("OOM");
+    dirs.append(gpa, (b.root.joinString(b.allocator, "native") catch @panic("OOM"))) catch @panic("OOM");
+    dirs.append(gpa, (b.root.joinString(b.allocator, "../core/native") catch @panic("OOM"))) catch @panic("OOM");
 
     return dirs.toOwnedSlice(gpa) catch @panic("OOM");
 }

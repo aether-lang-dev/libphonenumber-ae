@@ -3,7 +3,7 @@
 A thin Zig binding over the shared, pure-Aether libphonenumber core. All the
 phone logic lives in the one core (`core/phonenumber.ae`); this binding is just
 FFI marshalling over `libphonenumber_ae.so` (ABI v7, 66 exports). See the
-[repo README](../README.md) for the whole picture. Requires Zig 0.16.0 or newer.
+[repo README](../README.md) for the whole picture. Requires Zig 0.17.0 or newer.
 
 ## Use it
 
