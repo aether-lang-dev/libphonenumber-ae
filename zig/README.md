@@ -24,7 +24,7 @@ and the AsYouType state are each a caller-owned string you get back and free.
 > the styles are `.e164 = 0`, `.international = 1`, `.national = 2`,
 > `.rfc3966 = 3`. Use the `Format` enum and this is a non-issue.
 
-Requires **Zig 0.16.0** or newer.
+Requires **Zig 0.17.0** or newer (the build script uses the 0.17 build API).
 
 ## Building
 
