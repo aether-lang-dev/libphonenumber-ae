@@ -4,7 +4,7 @@ import bldr (dep)
 import std.os
 aeb(cap) {
     bldr.build() {
-        dep("core/gen.build.ae")
+        dep("core/.build.ae")   // generates the metadata tables this gate compiles against
         root = _get("root")
         out = "${root}/target/pn_short_probe"
         _m = os.system("mkdir -p \"${root}/target\"")

@@ -3,9 +3,13 @@
 // behavioural spec — metadata plumbing, isPossibleNumber, isValidNumber (with
 // the per-type national-number regexes), getNumberType, and formatting.
 //
-// Deliberately does NOT dep core/.build.ae: this path proves the ENGINE, and
-// building the .so is irrelevant to it. The ABI is proven separately by
-// core_tests/.abi.ae.
+// This path proves the ENGINE, not the .so (the ABI is proven separately by
+// core_tests/.abi.ae). It deps core/.build.ae only because that node generates
+// the metadata tables (core/*metadata*.ae, gitignored) the engine compiles
+// against. (There used to be a separate core/gen.build.ae for that, but two
+// nodes in one directory share aeb's dir-keyed `build:core` label, so a DAG
+// holding both ran the same label twice, concurrently, and both regenerated
+// core/*.ae at once — the full presubmit went red on that race.)
 
 import bldr
 import bldr (dep)
@@ -13,7 +17,7 @@ import std.os
 
 aeb(cap) {
     bldr.build() {
-        dep("core/gen.build.ae")
+        dep("core/.build.ae")   // generates the metadata tables this gate compiles against
         root = _get("root")
         out = "${root}/target/pn_probe"
 

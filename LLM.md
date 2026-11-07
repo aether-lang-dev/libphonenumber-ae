@@ -74,6 +74,21 @@ consumer; `docs/conformance.md` lists the 18 checks every binding runs.
 - **Format templates keep their spaces; patterns don't.** The generator
   `squeeze()`s national-number *patterns* (they span indented XML lines) but only
   `trim()`s *format templates* (`($1) $2-$3` — the interior space is significant).
+- **Returned strings cross as `ptr`, not `string`** (since the ae 0.897 move).
+  An extern declared `-> string` copies the C string into a counted Aether
+  string (leaking pn_raw_dup's malloc'd copy), and an exported `-> string`
+  hands the host a counted-string handle, not a `char*`. So `pn_raw_dup` and
+  every string-returning `pn_embed_*` in `core/embed/*.frag` are `-> ptr`.
+  Don't "tidy" them back to `-> string`; `abi_smoke.c` would see handles.
+- **Read string lists with `list.get_string`.** `list.get` hands back a `ptr`;
+  interpolating one is E0200 (the generators hit it on the 0.897 move).
+- **`--emit=lib` needs `--with=extern`** (aeb: `caps("extern")`) because the
+  embed declares pn_raw_dup/pn_raw_free as externs.
+- **One build node per directory.** aeb labels nodes by directory
+  (`build:core`), so a second `*.build.ae` in `core/` that shares a DAG with
+  `core/.build.ae` runs under the same label, concurrently — the old
+  `core/gen.build.ae` raced `core/.build.ae` regenerating `core/*.ae` and
+  reddened the presubmit. Gates dep `core/.build.ae` (which generates).
 - **aeb's exit status is unreliable** re: a leaf's PASS/FAIL. Read
   `target/.aeb/logs/<label>.log` for the actual verdict. Never run two top-level
   `aeb` invocations concurrently (they clobber `target/`).
@@ -91,7 +106,7 @@ omits that type. Field indices live as `F_*` consts in `core/phonenumber.ae`.
 ## Build / test
 
 ```
-./bootstrap.sh              install ae+aeb, build engine + every present binding
+./bootstrap.sh              install ae 0.897.0 + aeb v0.341 (ci/versions.env), build engine + every present binding
 aeb core/.build.ae          just the engine -> target/build/core/lib/libphonenumber_ae.so
 aeb core_tests/.tests.ae    engine behaviour (pure Aether)
 aeb core_tests/.abi.ae      C ABI over dlopen (the gate the bindings trust)
