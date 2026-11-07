@@ -20,7 +20,7 @@ aeb(cap) {
         if rc0 != 0 { println("core_tests: failed to assemble validation embed"); return 1 }
 
         // build it as a slim shared lib
-        rc1 = os.system("cd \"${root}\" && ae build --emit=lib \"${emb}\" --extra core/_embed_support.c -o \"${vlib}\"")
+        rc1 = os.system("cd \"${root}\" && ae build --emit=lib --with=extern \"${emb}\" --extra core/_embed_support.c -o \"${vlib}\"")
         if rc1 != 0 { println("core_tests: failed to build validation variant"); return 1 }
 
         rc2 = os.system("cc -D_GNU_SOURCE -o \"${bin}\" \"${root}/core_tests/variants_smoke.c\" -ldl")

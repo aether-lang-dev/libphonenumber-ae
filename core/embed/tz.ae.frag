@@ -6,16 +6,16 @@ pn_embed_tz_count(region: string, input: string) -> int {
     if e164 == "" { return 0 }
     return timezone.time_zone_count_for_e164(e164)
 }
-pn_embed_tz_at(region: string, input: string, idx: int) -> string {
+pn_embed_tz_at(region: string, input: string, idx: int) -> ptr {
     e164 = e164_digits_for(region, input)
     if e164 == "" { return pn_raw_dup(timezone.unknown_time_zone()) }
     return pn_raw_dup(timezone.time_zone_at_for_e164(e164, idx))
 }
-pn_embed_tz_all(region: string, input: string) -> string {
+pn_embed_tz_all(region: string, input: string) -> ptr {
     e164 = e164_digits_for(region, input)
     if e164 == "" { return pn_raw_dup(timezone.unknown_time_zone()) }
     return pn_raw_dup(timezone.time_zones_for_e164(e164))
 }
-pn_embed_tz_unknown() -> string {
+pn_embed_tz_unknown() -> ptr {
     return pn_raw_dup(timezone.unknown_time_zone())
 }

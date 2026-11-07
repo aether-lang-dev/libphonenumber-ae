@@ -172,7 +172,7 @@ fn row_for(region: string) -> string {
     out = ""
     n = list.size(rows)
     for (i = 0; i < n; i++) {
-        r, _ = list.get(rows, i)
+        r, _ = list.get_string(rows, i)
         if field(r, F_ID) == up { out = dup(r); break }
     }
     list.free(rows)
@@ -185,7 +185,7 @@ fn row_for_cc(cc: string) -> string {
     regs = regions_for_country_code(cc)
     out = ""
     if list.size(regs) > 0 {
-        mreg, _ = list.get(regs, 0)
+        mreg, _ = list.get_string(regs, 0)
         out = row_for(mreg)
     }
     list.free(regs)
@@ -198,7 +198,7 @@ regions() -> ptr {
     l = list.new()
     n = list.size(rows)
     for (i = 0; i < n; i++) {
-        r, _ = list.get(rows, i)
+        r, _ = list.get_string(rows, i)
         list.add(l, field(r, F_ID))
     }
     list.free(rows)
@@ -216,7 +216,7 @@ region_at(idx: int) -> string {
     rows = metadata.rows()
     out = ""
     if idx >= 0 && idx < list.size(rows) {
-        r, _ = list.get(rows, idx)
+        r, _ = list.get_string(rows, idx)
         out = field(r, F_ID)
     }
     list.free(rows)
@@ -514,7 +514,7 @@ fn split_extension(input: string) -> (string, string) {
     markers = ext_markers()
     n = list.size(markers)
     for (i = 0; i < n; i++) {
-        m, _ = list.get(markers, i)
+        m, _ = list.get_string(markers, i)
         idx = index_of_ci(input, m)
         if idx >= 0 {
             ext = digits(string.substring(input, idx + string.length(m), string.length(input)))
@@ -652,7 +652,7 @@ fn cc_known(cc: string) -> int {
     found = 0
     n = list.size(m)
     for (i = 0; i < n; i++) {
-        e, _ = list.get(m, i)
+        e, _ = list.get_string(m, i)
         if string.length(e) >= string.length(prefix) &&
            string.substring(e, 0, string.length(prefix)) == prefix { found = 1; break }
     }
@@ -718,7 +718,7 @@ fn row_for_cc_and_number(cc: string, nn: string) -> string {
     chosen = ""
     n = list.size(regs)
     for (i = 0; i < n; i++) {
-        rid, _ = list.get(regs, i)
+        rid, _ = list.get_string(regs, i)
         r = row_for(rid)
         if r == "" { continue }
         // strip that region's national prefix before testing its general pattern
@@ -727,7 +727,7 @@ fn row_for_cc_and_number(cc: string, nn: string) -> string {
         if string.length(gen) > 0 && full_match(gen, cand_nn) == 1 { chosen = r; break }
     }
     if chosen == "" && list.size(regs) > 0 {
-        mreg, _ = list.get(regs, 0)
+        mreg, _ = list.get_string(regs, 0)
         chosen = row_for(mreg)
     }
     list.free(regs)
@@ -738,7 +738,7 @@ fn default_region_for_cc(cc: string) -> string {
     regs = regions_for_country_code(cc)
     out = ""
     if list.size(regs) > 0 {
-        g0, _ = list.get(regs, 0)
+        g0, _ = list.get_string(regs, 0)
         out = dup(g0)
     }
     list.free(regs)
@@ -772,7 +772,7 @@ regions_for_country_code(cc: string) -> ptr {
     out = list.new()
     n = list.size(m)
     for (i = 0; i < n; i++) {
-        e, _ = list.get(m, i)
+        e, _ = list.get_string(m, i)
         if string.length(e) >= string.length(prefix) &&
            string.substring(e, 0, string.length(prefix)) == prefix {
             csv = string.substring(e, string.length(prefix), string.length(e))
@@ -803,7 +803,7 @@ region_code_for_country_code(cc: string) -> string {
     regs = regions_for_country_code(cc)
     out = ""
     if list.size(regs) > 0 {
-        g0, _ = list.get(regs, 0)
+        g0, _ = list.get_string(regs, 0)
         out = dup(g0)
     }
     list.free(regs)
@@ -820,7 +820,7 @@ region_code_for_number(pn: string) -> string {
     chosen = ""
     n = list.size(regs)
     for (i = 0; i < n; i++) {
-        rid, _ = list.get(regs, i)
+        rid, _ = list.get_string(regs, i)
         r = row_for(rid)
         if r == "" { continue }
         gen = field(r, F_GENERAL)
@@ -830,7 +830,7 @@ region_code_for_number(pn: string) -> string {
         }
     }
     if chosen == "" && list.size(regs) > 0 {
-        g0, _ = list.get(regs, 0)
+        g0, _ = list.get_string(regs, 0)
         chosen = dup(g0)
     }
     list.free(regs)

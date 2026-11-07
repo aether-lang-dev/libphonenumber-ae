@@ -29,11 +29,11 @@
 # BEFORE assembling/building, e.g.:
 #   core/gen/generate_metadata.sh en de fr    # metadata for en+de+fr
 #   core/gen/assemble_embed.sh core/embed_geo.ae geo
-#   ae build --emit=lib core/embed_geo.ae --extra core/_embed_support.c -o out.so
+#   ae build --emit=lib --with=extern core/embed_geo.ae --extra core/_embed_support.c -o out.so
 #   # -> the .so answers geo_description(region,input,"de") etc.
 #
 # Then build:
-#   ae build --emit=lib core/embed_geo.ae --extra core/_embed_support.c \
+#   ae build --emit=lib --with=extern core/embed_geo.ae --extra core/_embed_support.c \
 #       -o core/native/libphonenumber_ae.so
 set -euo pipefail
 
@@ -63,7 +63,7 @@ tmp="$(mktemp)"; trap 'rm -f "$tmp"' EXIT
     echo "// Variant: base${feats:+ + }$(IFS=' '; echo "${feats[*]:-}")"
     echo "//"
     echo "// A consumer builds this with:"
-    echo "//   ae build --emit=lib <this file> --extra core/_embed_support.c -o <out>.so"
+    echo "//   ae build --emit=lib --with=extern <this file> --extra core/_embed_support.c -o <out>.so"
     echo ""
     cat "$FRAG/base.ae.frag"
     for f in "${feats[@]:-}"; do

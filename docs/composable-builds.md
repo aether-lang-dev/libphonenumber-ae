@@ -47,12 +47,12 @@ bytes.
 ```
 # validation only (~320 KB)
 core/gen/assemble_embed.sh core/embed_validation.ae
-ae build --emit=lib core/embed_validation.ae --extra core/_embed_support.c \
+ae build --emit=lib --with=extern core/embed_validation.ae --extra core/_embed_support.c \
     -o libphonenumber_ae_validation.so
 
 # validation + geocoder
 core/gen/assemble_embed.sh core/embed_geo.ae geo
-ae build --emit=lib core/embed_geo.ae --extra core/_embed_support.c -o out.so
+ae build --emit=lib --with=extern core/embed_geo.ae --extra core/_embed_support.c -o out.so
 
 # any subset, in any order
 core/gen/assemble_embed.sh core/embed_mine.ae tz carrier
@@ -105,7 +105,7 @@ included. Feature selection (`assemble_embed.sh`) and language selection
 # English + German + French carrier/geocoder names, geocoder feature only:
 core/gen/generate_metadata.sh en de fr
 core/gen/assemble_embed.sh core/embed_geo.ae geo
-ae build --emit=lib core/embed_geo.ae --extra core/_embed_support.c -o out.so
+ae build --emit=lib --with=extern core/embed_geo.ae --extra core/_embed_support.c -o out.so
 # out.so answers geo_description(region, input, "de") etc.; unknown langs -> en.
 ```
 

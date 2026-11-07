@@ -8,13 +8,13 @@
 // no feature fragments). To compose a different subset (e.g. base + geocoder),
 // run e.g. `core/gen/assemble_embed.sh core/embed_geo.ae geo` and point a build
 // node at it, or build directly:
-//   ae build --emit=lib core/embed_geo.ae --extra core/_embed_support.c -o out.so
+//   ae build --emit=lib --with=extern core/embed_geo.ae --extra core/_embed_support.c -o out.so
 //
 // The default core/.build.ae builds the FULL variant (all features).
 
 import bldr
 import aether
-import aether (source, extra_source, output)
+import aether (source, extra_source, output, caps)
 
 aeb(cap) {
     bldr.build() {
@@ -22,6 +22,11 @@ aeb(cap) {
             source("embed_validation.ae")
             extra_source("_embed_support.c")
             output("libphonenumber_ae_validation.so")
+            // --with=extern: the embed declares pn_raw_dup/pn_raw_free from
+            // _embed_support.c as externs, and current ae (0.897) makes
+            // --emit=lib reject an extern without the explicit grant. The
+            // externs reach only our own bridge C (malloc/free a copy).
+            caps("extern")
         }
     }
 }

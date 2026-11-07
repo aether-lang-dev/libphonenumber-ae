@@ -16,14 +16,14 @@
 //
 // For other languages / feature subsets, run generate_metadata.sh with more
 // languages + assemble_embed.sh with a feature list, then build the assembled
-// embed (see docs/composable-builds.md). No caps(): the generation runs at BUILD
+// embed (see docs/composable-builds.md). The generation runs at BUILD
 // time in this orchestrator, not in the produced .so.
 
 import bldr
 import aether
 import std.os
 import bldr (_get)
-import aether (source, extra_source, output)
+import aether (source, extra_source, output, caps)
 
 aeb(cap) {
     bldr.build() {
@@ -36,6 +36,11 @@ aeb(cap) {
             source("embed.ae")
             extra_source("_embed_support.c")
             output("libphonenumber_ae.so")
+            // --with=extern: the embed declares pn_raw_dup/pn_raw_free from
+            // _embed_support.c as externs, and current ae (0.897) makes
+            // --emit=lib reject an extern without the explicit grant. The
+            // externs reach only our own bridge C (malloc/free a copy).
+            caps("extern")
         }
     }
 }
