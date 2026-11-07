@@ -106,7 +106,7 @@ omits that type. Field indices live as `F_*` consts in `core/phonenumber.ae`.
 ## Build / test
 
 ```
-./bootstrap.sh              install ae 0.897.0 + aeb v0.341 (ci/versions.env), build engine + every present binding
+./bootstrap.sh              install ae 0.897.0 + aeb v0.342 (ci/versions.env), build engine + every present binding
 aeb core/.build.ae          just the engine -> target/build/core/lib/libphonenumber_ae.so
 aeb core_tests/.tests.ae    engine behaviour (pure Aether)
 aeb core_tests/.abi.ae      C ABI over dlopen (the gate the bindings trust)
