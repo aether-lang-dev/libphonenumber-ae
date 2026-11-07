@@ -51,6 +51,10 @@ aeb(cap) {
             println("haskell: could not stage the engine into haskell/native")
             return 1
         }
+        // macOS: GHC's interpreter resolves `-lphonenumber_ae` as
+        // libphonenumber_ae.dylib in the -L dirs, never the .so name the engine
+        // is built under, so stage that name too (harmless elsewhere).
+        _d = os.system("[ \"$(uname)\" = Darwin ] && cp -f \"${lib}\" \"${dest}/libphonenumber_ae.dylib\"; true")
 
         // Drive the suite with runghc by preference, NOT cabal. cabal wants a
         // package database and, on a cold box, a `cabal update`. runghc compiles
