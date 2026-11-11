@@ -107,7 +107,7 @@ aeb python/.tests.ae           # one binding's suite
 aeb .presubmit.ae              # everything
 ```
 
-Toolchain: **ae 0.897.0 + aeb v0.342** (pinned in `ci/versions.env`;
+Toolchain: **ae 0.908.0 + aeb v0.344** (pinned in `ci/versions.env`;
 `bootstrap.sh` installs that pair via aeb's `get.sh`), and **Zig 0.17.0+** for
 the zig binding.
 
