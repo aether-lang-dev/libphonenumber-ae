@@ -70,7 +70,7 @@ fn row_for(region: string) -> string {
     out = ""
     n = list.size(rows)
     for (i = 0; i < n; i++) {
-        r, _ = list.get(rows, i)
+        r, _ = list.get_string(rows, i)
         if field(r, F_ID) == up { out = dup(r); break }
     }
     list.free(rows)

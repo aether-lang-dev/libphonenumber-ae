@@ -67,7 +67,7 @@ fn tz_list_for(e164: string) -> string {
     best_len = -1
     // Try each map prefix; keep the longest that is a prefix of `d`.
     for (i = 0; i < n; i++) {
-        r, _ = list.get(rows, i)
+        r, _ = list.get_string(rows, i)
         pfx = field(r, F_PREFIX)
         pl = string.length(pfx)
         if pl <= string.length(d) && pl > best_len {
