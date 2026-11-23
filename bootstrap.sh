@@ -36,7 +36,7 @@ AEB_GET_URL="https://raw.githubusercontent.com/aether-lang-dev/aeb/main/get.sh"
 # explicit, declared floor) -> the pinned AETHER_REF itself -> a last-ditch
 # default. AETHER_MIN is the one to bump when the port needs a newer ae than an
 # older pin would admit (an "already on PATH" ae below it is rejected, not used).
-MIN_AE="${MIN_AE:-${AETHER_MIN:-${AETHER_REF#v}}}"; MIN_AE="${MIN_AE:-0.936.0}"
+MIN_AE="${MIN_AE:-${AETHER_MIN:-${AETHER_REF#v}}}"; MIN_AE="${MIN_AE:-0.939.0}"
 
 say() { printf '\033[1;36m==>\033[0m %s\n' "$*"; }
 die() { printf '\033[1;31merror:\033[0m %s\n' "$*" >&2; exit 1; }
